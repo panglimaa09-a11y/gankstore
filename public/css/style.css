@@ -39,8 +39,6 @@ button{font:inherit;cursor:pointer} input,select,textarea{font:inherit;color:inh
 .btn{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:12px 20px;font-weight:700;text-decoration:none;border:1.5px solid transparent;font-size:16px}
 .btn-lime{background:#a3e635;color:#14230a}.btn-lime:hover{background:#bef264}
 .btn-ghost{border-color:#47624c;color:#eaf5e0;background:transparent}.btn-ghost:hover{border-color:#a3e635}
-.hero-points{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-.hero-points span{border:1px solid #33503a;border-radius:999px;padding:5px 13px;font-size:13.5px;font-weight:600;color:#cfe3c6}
 .hero-img{border-radius:14px;overflow:hidden;border:1px solid #2c4633}.hero-img img{width:100%;height:100%;object-fit:cover}
 
 /* home sections */
@@ -202,11 +200,9 @@ body.admin-mode .livebar{display:none}
 .live-badge{display:inline-flex;align-items:center;gap:7px;background:#dc2626;color:#fff;font-weight:800;font-size:12px;letter-spacing:.08em;padding:4px 10px;border-radius:999px;flex:none}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:pulse 1.4s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-.ticker-viewport{flex:1;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
-.ticker-track{display:inline-block;white-space:nowrap;animation:tickmove 36s linear infinite;font-size:14px;font-weight:600}
+.ticker-viewport{flex:1;overflow:hidden;min-width:0}
+.ticker-track{display:block;white-space:normal;font-size:13px;font-weight:600;line-height:1.45}
 .ticker-track b{color:#a3e635}
-@keyframes tickmove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.livebar:hover .ticker-track{animation-play-state:paused}
 @media (prefers-reduced-motion: reduce){.ticker-track{animation:none}.live-dot{animation:none}}
 .sale-popups{position:fixed;left:16px;bottom:16px;z-index:95;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
 @media (max-width:860px){.sale-popups{bottom:88px}}
@@ -279,8 +275,16 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 /* bottom nav mobile */
 .bottomnav{display:none}
 @media (max-width:860px){
+  html,body{overflow-x:hidden}
   body{padding-bottom:72px}
-  .hero-in{grid-template-columns:1fr;padding:32px 0;gap:24px}
+  .hero-in{grid-template-columns:1fr;padding:28px 0 32px;gap:20px}
+  .hero h1{font-size:27px;line-height:1.28}
+  .hero p{font-size:15.5px;margin:12px 0 20px}
+  .hero-img{max-width:560px;width:100%;margin:0 auto}
+  .hero-cta .btn{flex:1 1 0;justify-content:center;padding:12px 10px}
+  section[data-page="beranda"] main.wrap{padding-bottom:36px}
+  .section-head{margin:28px 0 14px}
+  .section-head h2{font-size:22px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .cat-grid{grid-template-columns:repeat(2,1fr)}
   .steps,.two-col,.detail-layout{grid-template-columns:1fr}
@@ -307,12 +311,10 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
    (pelajaran RekberStore: logo header raksasa karena tidak dibatasi). */
 .brand{display:inline-flex;align-items:center}
 .brand-logo{height:40px;width:auto;max-width:180px;object-fit:contain;display:block;border-radius:6px}
-.hero-logo{height:auto;width:min(320px,72vw);max-height:96px;object-fit:contain;display:block;margin-bottom:16px;border-radius:8px}
 .auth-logo{height:44px;width:auto;max-width:230px;object-fit:contain;display:block;margin:0 auto 12px;border-radius:6px}
 .footer-logo{height:28px;width:auto;vertical-align:middle;margin-right:4px;border-radius:4px;display:inline-block}
 @media (max-width:650px){
   .brand-logo{height:32px;max-width:150px}
-  .hero-logo{width:min(260px,72vw);max-height:80px}
   .auth-logo{height:38px;max-width:200px}
 }
 

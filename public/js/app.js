@@ -87,18 +87,20 @@
         analytics.orders.slice(0,3).forEach(function(o){
           parts.push(o.status==="terjual"?("<b>TERJUAL:</b> "+esc(o.title)+" — "+formatIDR(o.price)):("<b>DIPESAN:</b> "+esc(o.title)+" — "+formatIDR(o.price)));
         });
-        parts.push("Stok tersedia: <b>"+countBy("tersedia")+" akun</b>");
-        parts.push("Sedang dipesan: <b>"+countBy("dipesan")+" akun</b>");
-        parts.push("Sudah terjual: <b>"+countBy("terjual")+" akun</b>");
+        parts.push("Tersedia: <b>"+countBy("tersedia")+" akun</b>");
+        parts.push("Terjual: <b>"+countBy("terjual")+" akun</b>");
         parts.push("Total penjualan: <b>"+formatIDR(totalRevenue())+"</b>");
-        parts.push("Kunjungan sesi ini: <b>"+analytics.pageViews+"</b>");
-        if(!analytics.orders.length)parts.push("Klik Beli di akun yang kamu mau — pesananmu langsung tercatat di toko ini");
         return parts.join(" &nbsp;◆&nbsp; ");
       }
       function renderTicker(){
+        var bar=document.querySelector(".livebar");if(!bar)return;
+        /* Bila belum ada penjualan/pesanan/stok sama sekali, ticker
+           disembunyikan sekalian — jangan tampilkan baris angka 0. */
+        var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
+        bar.style.display=empty?"none":"";
+        if(empty)return;
         var t=document.getElementById("tickerTrack");if(!t)return;
-        var txt=tickerText();
-        t.innerHTML="<span>"+txt+" &nbsp;◆&nbsp; </span><span>"+txt+" &nbsp;◆&nbsp; </span>";
+        t.innerHTML="<span>"+tickerText()+"</span>";
       }
       function showEventPopup(p,kind){
         var box=document.getElementById("salePopups");if(!box)return;
@@ -346,11 +348,19 @@
       }
 
       function renderHome(){
-        document.getElementById("homeStats").innerHTML=
-          '<div class="stat"><b>'+state.products.length+'</b><span>Total akun PB dipajang</span></div>'+
-          '<div class="stat"><b>'+countBy("tersedia")+'</b><span>Akun tersedia</span></div>'+
-          '<div class="stat"><b>'+countBy("dipesan")+'</b><span>Sedang dipesan</span></div>'+
-          '<div class="stat"><b>'+countBy("terjual")+'</b><span>Sudah terjual</span></div>';
+        /* Bila semua angka 0, kartu statistik disembunyikan saja —
+           pesan "Belum ada akun dipajang" sudah ada di bagian
+           Akun Terbaru di bawah, jadi jangan ditulis dua kali. */
+        var hs=document.getElementById("homeStats");
+        var allZero=!state.products.length&&!countBy("tersedia")&&!countBy("dipesan")&&!countBy("terjual");
+        hs.style.display=allZero?"none":"";
+        if(!allZero){
+          hs.innerHTML=
+            '<div class="stat"><b>'+state.products.length+'</b><span>Total akun PB dipajang</span></div>'+
+            '<div class="stat"><b>'+countBy("tersedia")+'</b><span>Akun tersedia</span></div>'+
+            '<div class="stat"><b>'+countBy("dipesan")+'</b><span>Sedang dipesan</span></div>'+
+            '<div class="stat"><b>'+countBy("terjual")+'</b><span>Sudah terjual</span></div>';
+        }
         homeGrid.innerHTML="";
         state.products.slice().sort(function(a,b){return b.id-a.id;}).slice(0,4).forEach(function(p){homeGrid.appendChild(buildCard(p));});
         document.getElementById("homeEmpty").hidden=state.products.length!==0;
