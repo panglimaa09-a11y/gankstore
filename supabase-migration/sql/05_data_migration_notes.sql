@@ -1,0 +1,75 @@
+-- =====================================================================
+-- GankStore — migrasi backend ke Supabase (project BARU khusus GankStore)
+-- File 05: catatan migrasi DATA dari SQLite lama (bukan untuk dijalankan
+-- buta-buta — baca dulu)
+-- =====================================================================
+--
+-- KONDISI DATA LAMA (dicek 6 Nov 2026, backend/gankstore.db):
+--   products       : 0 baris   (katalog masih kosong)
+--   orders         : 0 baris
+--   topup_packages : 0 baris
+--   users          : 1 baris   (hanya akun demo demo@gankstore.my.id)
+--   activity / support_messages : tidak dihitung (data sekali pakai)
+--
+-- Artinya: TIDAK ADA data toko yang perlu dipindah. Yang perlu dibuat
+-- ulang di project Supabase baru:
+--   1. Akun demo (pembeli): buat lewat Dashboard Supabase →
+--      Authentication → Users → Add user, email demo@gankstore.my.id,
+--      password baru. JANGAN jadikan admin.
+--   2. Admin toko: setelah Tuan daftar/login dengan email aslinya,
+--      jalankan di SQL Editor (ganti <email-admin> dengan email asli):
+--        update public.profiles set is_admin = true
+--        where email = '<email-admin>';
+--      Lalu verifikasi:
+--        select email, is_admin from public.profiles;
+--   3. Nomor invoice: sequence invoice_seq sudah mulai dari 1000
+--      (lihat 01_schema.sql) supaya tidak bentrok dengan invoice lama.
+--
+-- BILA suatu saat ada data lama yang harus dipindah (mis. migrasi
+-- diulang setelah toko sudah berisi stok), caranya:
+--
+--   A. Export dari SQLite (di VM, shell):
+--        sqlite3 backend/gankstore.db ".mode insert products" \
+--          "SELECT id, game, title, rank, level, server, price, specs, \
+--           description, photo, status, created_at FROM products;" \
+--          > /tmp/products.sql
+--      Ulangi untuk topup_packages dan orders (tanpa kolom kredensial).
+--      Kredensial dipisah:
+--        sqlite3 backend/gankstore.db ".mode insert product_creds" \
+--          "SELECT id, cred_email, cred_pass FROM products \
+--           WHERE cred_email <> '';" > /tmp/product_creds.sql
+--        sqlite3 backend/gankstore.db ".mode insert order_creds" \
+--          "SELECT invoice_no, cred_email, cred_pass FROM orders \
+--           WHERE cred_pending = 1;" > /tmp/order_creds.sql
+--
+--   B. Import ke Postgres: jalankan file-file itu di SQL Editor / psql
+--      sebagai postgres (service_role). Perhatian:
+--        - specs di SQLite adalah TEXT berisi JSON → di Postgres jsonb:
+--          ubah INSERT menjadi specs = specs::jsonb (atau biarkan
+--          Postgres meng-cast otomatis dari literal string).
+--        - id eksplisit dari SQLite akan menggeser identity sequence:
+--          setelah import, jalankan:
+--            select setval('public.products_id_seq',
+--                          (select max(id) from public.products));
+--            select setval('public.orders_id_seq',
+--                          (select max(id) from public.orders));
+--            select setval('public.topup_packages_id_seq',
+--                          (select max(id) from public.topup_packages));
+--        - buyer_id di orders lama tidak bisa dipetakan (user id SQLite
+--          bukan UUID auth.users) → isi NULL, dan buyer_email tetap
+--          terisi supaya admin masih bisa melacak pesanan lama.
+--        - JANGAN commit file .sql hasil export ke GitHub — file itu
+--          berisi kredensial akun game.
+--
+--   C. Yang TIDAK BISA dipindah (jujur):
+--        - Password user lama (hash PBKDF2 SQLite tidak bisa dipakai
+--          Supabase Auth). User lama wajib reset password lewat email
+--          ("Lupa password" di halaman #/akun) atau login dengan Google
+--          (email yang sama otomatis tertaut ke akun yang sama).
+--        - Sesi login lama (token di tabel sessions) — semua user harus
+--          login ulang sekali.
+--        - Foto produk: photo di DB hanya string (data URL base64 atau
+--          path). Bila foto berupa data URL, ikut terpindah bersama
+--          baris products; bila berupa file lokal, upload ulang lewat
+--          Panel Admin (atau pindahkan ke Supabase Storage di fase
+--          berikutnya — di luar cakupan migrasi ini).

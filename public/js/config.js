@@ -18,18 +18,18 @@ window.GS_CONFIG = {
      gankstore-backend. */
   TOPUP_MAINTENANCE: true,
 
-  /* Alamat API backend. "" = origin yang sama (saat disajikan backend
-     Python). Saat dibuka sebagai file statis, fetch ke /api/* gagal dan
-     toko otomatis jalan dalam mode lokal (localStorage + memori).
-     Backend GankStore jalan di VM ini dan dipublikasikan lewat tunnel
-     ngrok yang sama seperti /pb-ai dan /onerouter (route /gankstore-api
-     di revproxy2.py). URL ini yang dipakai frontend Vercel. */
-  API_BASE: "https://curvature-reunite-perfected.ngrok-free.dev/gankstore-api",
+  /* Backend Supabase (project BARU khusus GankStore — JANGAN pakai
+     project RekberSTORE atau project lain yang sudah ada).
+     Anon key BOLEH tampil di browser (kunci publik, dibatasi RLS).
+     service_role key JANGAN PERNAH ditulis di file ini. */
+  SUPABASE_URL: "https://fbncsifwelllkpvoxmfe.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZibmNzaWZ3ZWxsbGtwdm94bWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5NjY0MjQsImV4cCI6MjEwOTU0MjQyNH0.SdIgeFhxhYtCfaCY8kpA8e-DxdIqVC0dGjizLuEgrrM",
 
-  /* Client ID Google OAuth (identifier PUBLIK — aman di frontend,
-     BUKAN secret; Client Secret tidak pernah dipakai/disimpan di
-     GankStore). Project "GankStore" (akun Spectrum AB), consent
-     screen Production, origin https://gankstore.my.id. */
+  /* GOOGLE_CLIENT_ID di bawah ini peninggalan login GIS lama — TIDAK
+     LAGI dipakai frontend. Login Google kini lewat Supabase Auth
+     (provider Google di dashboard, Client ID "GankStore Web" yang
+     sama). Client Secret hanya ada di dashboard Supabase, bukan di
+     file ini. */
   GOOGLE_CLIENT_ID: "308078866758-2qdr6ep644jpkm0e5jtu15vatgno14u0.apps.googleusercontent.com",
 
   /* Daftar game tetap untuk Top Up (all game). Kalau user mengubah daftar,

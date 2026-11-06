@@ -3,31 +3,95 @@
       var state={products:[],filterGame:"Semua",query:"",sort:"baru",status:"semua",photoData:"",seq:0};
       var grid=document.getElementById("grid"), homeGrid=document.getElementById("homeGrid"), emptyState=document.getElementById("emptyState"), emptyTitle=document.getElementById("emptyTitle"), emptyText=document.getElementById("emptyText"), catalogCount=document.getElementById("catalogCount"), chipsBox=document.getElementById("gameChips"), toastEl=document.getElementById("toast");
       var toastTimer=null, currentDetail=null;
-      /* ---------- mode server (Python/FastAPI) vs lokal ---------- */
-      /* Kalau halaman disajikan backend Python, stok/pesanan/akun tersimpan
-         di SQLite server. Kalau dibuka sebagai file statis (Vercel statis /
-         GitHub Pages), semua fungsi lama (localStorage + memori) tetap jalan. */
+      /* ---------- mode server (Supabase) vs lokal ---------- */
+      /* Backend GankStore adalah Supabase (project baru khusus GankStore).
+         Stok/pesanan/akun tersimpan di Postgres Supabase. Kalau Supabase
+         tidak terjangkau, semua fungsi lama (localStorage + memori) tetap
+         jalan (mode lokal). Tidak ada lagi backend Python. */
       var Server={enabled:false,token:null,user:null,payments:{configured:false,is_production:false,client_key:null}};
-      /* API_BASE dari config.js: alamat backend remote (lewat tunnel ngrok).
-         "" = origin yang sama (saat disajikan backend Python). Sebelumnya
-         API_BASE didefinisikan tapi TIDAK PERNAH dipakai — api() selalu
-         fetch relatif, jadi frontend Vercel tidak pernah bisa mencapai
-         backend remote. Sekarang semua fetch API melewati API_BASE. */
-      var API_BASE=(window.GS_CONFIG.API_BASE||"").replace(/\/$/,"");
       /* Video intro hero: hormati prefers-reduced-motion — jangan autoplay,
          tampilkan poster saja. */
       (function(){var v=document.querySelector(".hero-video");if(!v)return;if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){v.removeAttribute("autoplay");v.pause();}})();
-      function apiToken(){try{return localStorage.getItem("gankstore_token");}catch(e){return null;}}
-      function setToken(t){try{if(t)localStorage.setItem("gankstore_token",t);else localStorage.removeItem("gankstore_token");}catch(e){}}
-      function api(path,opts){
-        opts=opts||{};
-        var headers={"Content-Type":"application/json"};
-        var t=apiToken();if(t)headers["Authorization"]="Bearer "+t;
-        return fetch(API_BASE+path,{method:opts.method||"GET",headers:headers,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
-          if(!r.ok)throw new Error("HTTP "+r.status);
-          return r.json();
-        });
-      }
+function apiToken(){ try { return (window.Supa && Supa.getAccessToken()) || localStorage.getItem("gankstore_token"); } catch (e) { return window.Supa ? Supa.getAccessToken() : null; } }
+function setToken(t){ try { if (t) localStorage.setItem("gankstore_token", t); else localStorage.removeItem("gankstore_token"); } catch (e) {} }
+
+/* ---------- api(): REST lama -> Supabase ----------
+   Bentuk kembalian dipertahankan sama seperti backend FastAPI lama
+   (snake_case, invoice_no, buyer_email, cred_email, ...) supaya
+   mapper & pemanggil di app.js/topup.js/payments.js tidak berubah.
+   Error dilempar sebagai Error(message); pesan RPC Postgres berisi
+   kode singkat (mis. 'forbidden', 'topup_maintenance',
+   'already_revealed', 'product_not_available'). */
+function api(path, opts){
+  /* Supa.* bisa throw sinkron bila klien belum ada (CDN gagal dimuat).
+     Semua pemanggil memakai .catch() — kembalikan rejected promise,
+     jangan throw sinkron. */
+  try { return apiImpl(path, opts); }
+  catch (e) { return Promise.reject(e); }
+}
+function apiImpl(path, opts){
+  opts = opts || {};
+  var method = opts.method || "GET";
+  var body = opts.body || null;
+  var qi = path.indexOf("?");
+  var base = qi >= 0 ? path.slice(0, qi) : path;
+  var query = qi >= 0 ? path.slice(qi + 1) : "";
+  function qparam(name){
+    var m = query.match(new RegExp("(?:^|&)" + name + "=([^&]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+  function seg(i){ var p = base.split("/"); return p[i] || ""; }
+  function isAdmin(){ return !!(typeof Server !== "undefined" && Server.user && Server.user.is_admin); }
+
+  /* --- health & config --- */
+  if (base === "/api/health" && method === "GET") return Supa.getHealth();
+  if (base === "/api/payments/config" && method === "GET") return Supa.getPaymentsConfig();
+  if (base === "/api/topup/games" && method === "GET") return Promise.resolve(window.GS_CONFIG.TOPUP_GAMES || []);
+  if (base === "/api/stats" && method === "GET") return Supa.getStats();
+
+  /* --- produk --- */
+  if (base === "/api/products" && method === "GET") return Supa.listProducts(isAdmin());
+  if (base === "/api/products" && method === "POST") return Supa.createProduct(body);
+  if (seg(1) === "api" && seg(2) === "products" && seg(4) === "relist" && method === "POST") return Supa.relistProduct(Number(seg(3)));
+  if (seg(1) === "api" && seg(2) === "products" && seg(3) && method === "DELETE") return Supa.deleteProduct(Number(seg(3)));
+
+  /* --- pesanan --- */
+  if (base === "/api/orders" && method === "GET") return Supa.listOrders(qparam("kind") || null);
+  if (base === "/api/orders" && method === "POST") return Supa.createAccountOrder(body.product_id);
+  if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "confirm" && method === "POST") return Supa.confirmOrder(decodeURIComponent(seg(3)));
+  if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "cancel" && method === "POST") return Supa.cancelOrder(decodeURIComponent(seg(3)));
+  if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "credentials" && method === "GET") return Supa.revealCredentials(decodeURIComponent(seg(3)));
+
+  /* --- top up --- */
+  if (base === "/api/topup/packages" && method === "GET") return Supa.listPackages(qparam("game") || null);
+  if (base === "/api/topup/packages" && method === "POST") return Supa.savePackage(body, null);
+  if (seg(1) === "api" && seg(2) === "topup" && seg(3) === "packages" && seg(4) && method === "PUT") return Supa.savePackage(body, Number(seg(4)));
+  if (seg(1) === "api" && seg(2) === "topup" && seg(3) === "packages" && seg(4) && method === "DELETE") return Supa.deletePackage(Number(seg(4)));
+  if (base === "/api/topup/orders" && method === "POST") return Supa.createTopupOrder(body.package_id, body.user_id, body.server_id || "");
+
+  /* --- aktivitas & support --- */
+  if (base === "/api/activity" && method === "GET") return Supa.listActivity();
+  if (base === "/api/support" && method === "POST") return Supa.sendSupport(body);
+  if (base === "/api/support" && method === "GET") return Supa.listSupport();
+  if (seg(1) === "api" && seg(2) === "support" && seg(4) === "replied" && method === "POST") return Supa.markSupportReplied(seg(3));
+
+  /* --- auth --- */
+  if (base === "/api/auth/register" && method === "POST") {
+    return Supa.register(body.name, body.email, body.password).then(function(r){
+      if (r.needsConfirmation) throw new Error("needs_confirmation");
+      return r;
+    });
+  }
+  if (base === "/api/auth/login" && method === "POST") return Supa.login(body.email, body.password);
+  if (base === "/api/auth/google" && method === "POST") return Promise.reject(new Error("Gunakan tombol Google (Supabase Auth)."));
+  if (base === "/api/auth/logout" && method === "POST") return Supa.signOut();
+  if (base === "/api/auth/me" && method === "GET") return Supa.me();
+
+  /* --- Midtrans --- */
+  if (base === "/api/payments/snap-token" && method === "POST") return Supa.requestSnapToken(body.invoice_no);
+
+  return Promise.reject(new Error("HTTP 404"));
+}
       function serverProductToLocal(p){return{id:p.id,game:p.game,title:p.title,rank:p.rank||"",level:p.level||"",server:p.server||"",price:p.price,specs:p.specs||[],desc:p.desc||"",photo:p.photo||"",sold:p.status==="terjual",status:p.status,credEmail:p.cred_email||"",credPass:p.cred_pass||"",credWiped:!!p.cred_wiped};}
       function serverOrderToLocal(o){return{id:o.product_id||o.package_id,kind:o.kind||"akun",invoiceNo:o.invoice_no,title:o.title,price:o.price,fee:o.fee,total:o.total,photo:o.photo||"",game:o.game,rank:o.rank||"",time:(o.created_at||"").slice(11,19),status:o.status,buyerName:o.buyer_name||"",buyerEmail:o.buyer_email||"",userId:o.user_id_game||"",serverId:o.server_id||"",packageName:o.package_name||"",amount:o.amount||"",currency:o.currency||"",credPending:!!o.cred_pending,credRevealed:!!o.cred_revealed,credEmail:"",credPass:""};}
       function serverPackageToLocal(p){return{id:p.id,game:p.game,name:p.name,amount:p.amount,currency:p.currency,price:p.price};}
@@ -41,30 +105,51 @@
           render();
         }).catch(function(){});
       }
-      function initServer(){
-        return fetch(API_BASE+"/api/health",{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("no api");return r.json();}).then(function(){
-          Server.enabled=true;
-          return Promise.all([
-            api("/api/products").catch(function(){return[];}),
-            api("/api/orders").catch(function(){return[];}),
-            api("/api/topup/packages").catch(function(){return[];}),
-            api("/api/activity").catch(function(){return[];}),
-            api("/api/auth/me").catch(function(){return null;}),
-            api("/api/payments/config").catch(function(){return null;})
-          ]).then(function(res){
-            state.products=(res[0]||[]).map(serverProductToLocal);
-            state.seq=(res[0]||[]).reduce(function(m,p){return Math.max(m,p.id||0);},0);
-            analytics.orders=(res[1]||[]).map(serverOrderToLocal);
-            analytics.invoiceSeq=analytics.orders.length;
-            if(window.TopUp&&TopUp.setPackages)TopUp.setPackages((res[2]||[]).map(serverPackageToLocal));
-            var acts=res[3]||[];
-            if(acts.length){analytics.activity=acts.map(function(a){return{time:a.time,tag:a.tag,text:a.text};});}
-            if(res[4]&&res[4].email){Server.user={name:res[4].name,email:res[4].email,is_admin:!!res[4].is_admin};}
-            if(res[5]){Server.payments=res[5];}
-          });
-        }).catch(function(){Server.enabled=false;});
-      }
+function healthOnce(){
+  var timeout = new Promise(function(_, reject){
+    setTimeout(function(){ reject(new Error("timeout")); }, 5000);
+  });
+  /* Supa.getHealth() bisa throw SINKRON bila klien Supabase belum ada
+     (CDN gagal dimuat) — tanpa try/catch ini, initServer() ikut throw
+     sinkron dan rantai boot putus (mode lokal tidak tercapai). */
+  var probe;
+  try { probe = Supa.getHealth(); }
+  catch (e) { probe = Promise.reject(e); }
+  return Promise.race([probe, timeout]);
+}
 
+/* ---------- initServer: sama seperti lama, tapi flag Top Up dibaca
+   dari settings Supabase (bukan config.js saja). ---------- */
+function initServer(attempt){
+  attempt = attempt || 1;
+  return healthOnce().then(function(health){
+    Server.enabled = true;
+    if (health && typeof health.topup_maintenance === "boolean") {
+      window.GS_CONFIG.TOPUP_MAINTENANCE = health.topup_maintenance;
+    }
+    return Promise.all([
+      api("/api/products").catch(function(){ return []; }),
+      api("/api/orders").catch(function(){ return []; }),
+      api("/api/topup/packages").catch(function(){ return []; }),
+      api("/api/activity").catch(function(){ return []; }),
+      api("/api/auth/me").catch(function(){ return null; }),
+      api("/api/payments/config").catch(function(){ return null; })
+    ]).then(function(res){
+      state.products = (res[0] || []).map(serverProductToLocal);
+      state.seq = (res[0] || []).reduce(function(m, p){ return Math.max(m, p.id || 0); }, 0);
+      analytics.orders = (res[1] || []).map(serverOrderToLocal);
+      analytics.invoiceSeq = analytics.orders.length;
+      if (window.TopUp && TopUp.setPackages) TopUp.setPackages((res[2] || []).map(serverPackageToLocal));
+      var acts = res[3] || [];
+      if (acts.length) { analytics.activity = acts.map(function(a){ return { time: a.time, tag: a.tag, text: a.text }; }); }
+      if (res[4] && res[4].email) { Server.user = { name: res[4].name, email: res[4].email, is_admin: !!res[4].is_admin }; }
+      if (res[5]) { Server.payments = res[5]; }
+    });
+  }).catch(function(){
+    if (attempt < 3) { return new Promise(function(res){ setTimeout(res, 1000); }).then(function(){ return initServer(attempt + 1); }); }
+    Server.enabled = false;
+  });
+}
       function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
       function formatIDR(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
       function showToast(msg){toastEl.textContent=msg;toastEl.classList.add("show");if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2600);}
@@ -643,43 +728,64 @@
       }
       document.getElementById("tabLogin").addEventListener("click",function(){showAuthTab("login");});
       document.getElementById("tabRegister").addEventListener("click",function(){showAuthTab("register");});
-      /* ---------- login Google (GIS + backend) ---------- */
-      /* Tombol Google beneran (Google Identity Services). Client ID di
-         config.js adalah identifier PUBLIK — bukan secret. Nonce acak
-         dibuat per load dan disimpan di sessionStorage, lalu dikirim
-         bersama credential supaya server bisa memeriksa nonce di dalam
-         ID token. Bila GIS gagal dimuat (offline) atau server tidak
-         aktif, tampilkan pesan jujur — jangan tampilkan tombol mati. */
-      var GOOGLE_CLIENT_ID=window.GS_CONFIG.GOOGLE_CLIENT_ID||"";
-      function googleNonce(){
-        var n="";try{n=sessionStorage.getItem("gs_google_nonce")||"";}catch(e){}
-        if(!n){n=Math.random().toString(36).slice(2)+Date.now().toString(36)+Math.random().toString(36).slice(2);try{sessionStorage.setItem("gs_google_nonce",n);}catch(e){}}
-        return n;
-      }
-      function googleMsgShow(text){var m=document.getElementById("googleMsg");if(m){m.textContent=text;m.hidden=false;}}
-      function handleGoogleCredential(resp){
-        if(!resp||!resp.credential){formError("loginError","Login Google gagal. Coba lagi.");return;}
-        var nonce="";try{nonce=sessionStorage.getItem("gs_google_nonce")||"";}catch(e){}
-        api("/api/auth/google",{method:"POST",body:{credential:resp.credential,nonce:nonce}}).then(function(r){
-          setToken(r.token);Server.user={name:r.name,email:r.email,is_admin:!!r.is_admin};
-          afterLogin(Server.user);refreshServerData();
-        }).catch(function(){formError("loginError","Login Google ditolak oleh server. Coba lagi atau pakai email + password.");});
-      }
-      var _googleTries=0;
-      function initGoogleSignIn(){
-        var wrap=document.getElementById("googleBtnWrap");if(!wrap)return;
-        if(!Server.enabled){wrap.style.display="none";googleMsgShow("Login Google butuh koneksi ke server toko — pakai email + password di bawah.");return;}
-        if(!GOOGLE_CLIENT_ID)return;
-        if(!window.google||!window.google.accounts||!window.google.accounts.id){
-          if(_googleTries<10){_googleTries++;setTimeout(initGoogleSignIn,500);return;}
-          wrap.style.display="none";googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.");return;
-        }
-        try{
-          window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential,nonce:googleNonce(),ux_mode:"popup"});
-          var w=wrap.clientWidth||320;if(w<200)w=200;if(w>400)w=400;
-          window.google.accounts.id.renderButton(wrap,{theme:"outline",size:"large",width:w,text:"continue_with"});
-        }catch(e){wrap.style.display="none";googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.");}
-      }
+      /* ---------- login Google via Supabase Auth ---------- */
+      /* Tidak ada lagi GIS, nonce, atau endpoint /api/auth/google.
+         Klik tombol -> Supabase redirect ke Google -> kembali ke
+         https://gankstore.my.id/ -> sesi terdeteksi otomatis. */
+      function googleMsgShow(text,showRetry){var m=document.getElementById("googleMsg");if(m){m.textContent=text;m.hidden=false;}var b=document.getElementById("googleRetryBtn");if(b)b.hidden=!showRetry;}
+      function googleMsgHide(){var m=document.getElementById("googleMsg");if(m)m.hidden=true;var b=document.getElementById("googleRetryBtn");if(b)b.hidden=true;}
+var _googleTries = 0;
+var _googleServerRetried = false;
+function initGoogleSignIn(){
+  var wrap = document.getElementById("googleBtnWrap"); if (!wrap) return;
+  if (!Server.enabled) {
+    if (!_googleServerRetried) {
+      _googleServerRetried = true;
+      setTimeout(function(){ initServer().then(function(){ _googleTries = 0; initGoogleSignIn(); }); }, 1000);
+      return;
+    }
+    wrap.style.display = "none";
+    googleMsgShow("Login Google butuh koneksi ke server toko — pakai email + password di bawah.", true);
+    return;
+  }
+  _googleServerRetried = false;
+  googleMsgHide();
+  wrap.style.display = "";
+  wrap.innerHTML = "";
+  if (!window.Supa || !Supa.ready) {
+    wrap.style.display = "none";
+    googleMsgShow("Login Google belum terhubung — pakai email + password di bawah.", true);
+    return;
+  }
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn btn-ghost";
+  btn.style.width = "100%";
+  btn.style.justifyContent = "center";
+  btn.style.marginTop = "10px";
+  btn.textContent = "Lanjutkan dengan Google";
+  btn.addEventListener("click", function(){
+    btn.disabled = true;
+    btn.textContent = "Membuka Google…";
+    Supa.signInWithGoogle().catch(function(){
+      btn.disabled = false;
+      btn.textContent = "Lanjutkan dengan Google";
+      googleMsgShow("Login Google gagal dibuka — pakai email + password di bawah.", true);
+    });
+  });
+  wrap.appendChild(btn);
+}
+      /* Tombol "Coba lagi" di pesan Google: sambung ulang ke server
+         lalu coba inisialisasi Google lagi — tanpa reload halaman. */
+      (function(){
+        var b=document.getElementById("googleRetryBtn");
+        if(!b)return;
+        b.addEventListener("click",function(){
+          _googleTries=0;_googleServerRetried=false;
+          googleMsgHide();
+          initServer().then(function(){initGoogleSignIn();});
+        });
+      })();
       function formError(id,msg){var e=document.getElementById(id);e.textContent=msg;e.classList.add("show");}
       function clearError(id){document.getElementById(id).classList.remove("show");}
       document.getElementById("loginForm").addEventListener("submit",function(ev){
@@ -717,7 +823,7 @@
             ev.target.reset();
             showToast("Akun berhasil dibuat. Selamat datang, "+name.split(" ")[0]+"!");
             afterLogin(Server.user);refreshServerData();
-          }).catch(function(){formError("registerError","Email ini sudah terdaftar, atau server tidak bisa dihubungi.");});
+          }).catch(function(e){formError("registerError",e&&e.message==="needs_confirmation"?"Akun dibuat — cek email kamu untuk konfirmasi, lalu masuk.":"Email ini sudah terdaftar, atau server tidak bisa dihubungi.");});
           return;
         }
         var users=loadUsers(),dup=false;

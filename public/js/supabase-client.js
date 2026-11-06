@@ -1,0 +1,376 @@
+/* GankStore — klien Supabase (pengganti backend FastAPI + ngrok).
+   ================================================================
+   CARA PAKAI (lihat frontend/app.js.patch.md untuk langkah lengkap):
+     1. Isi SUPABASE_URL + SUPABASE_ANON_KEY di public/js/config.js
+        (dari project Supabase BARU khusus GankStore — JANGAN pakai
+        project RekberSTORE atau project lain yang sudah ada).
+     2. Muat supabase-js dari CDN di index.html SEBELUM file ini.
+     3. Muat file ini SEBELUM js/app.js.
+   File ini TIDAK mendefinisikan nama yang bentrok dengan app.js
+   (api, initServer, Server, ...). Semua akses Supabase lewat objek
+   window.Supa. Blok api()/auth/Google di app.js diganti dengan isi
+   frontend/supabase-api.js (penerjemah path REST lama -> Supa.*).
+
+   Aturan keamanan:
+   - ANON KEY boleh tampil di browser (kunci publik, dibatasi RLS).
+   - JANGAN taruh service_role key / Server Key Midtrans di file ini.
+   - Kredensial akun game TIDAK PERNAH dibaca lewat tabel products /
+     orders langsung — hanya lewat fungsi RPC (reveal) dan tabel
+     product_creds yang RLS-nya admin saja.
+*/
+(function(){
+  "use strict";
+  var cfg = window.GS_CONFIG || {};
+  var URL = cfg.SUPABASE_URL || "";
+  var ANON = cfg.SUPABASE_ANON_KEY || "";
+  var FN_BASE = URL ? URL.replace(/\/$/, "") + "/functions/v1/midtrans" : "";
+
+  var client = null;
+  if (URL && ANON && window.supabase && window.supabase.createClient) {
+    try {
+      client = window.supabase.createClient(URL, ANON, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+    } catch (e) { client = null; }
+  }
+
+  var _session = null;          /* sesi Supabase Auth terakhir */
+  var _accessToken = null;      /* access token (cache, untuk Edge Function) */
+  var _settingsCache = null;    /* {at, data} — cache settings 60 detik */
+  var _meCache = null;          /* profil pemakai saat ini */
+
+  function setSessionCache(session){
+    _session = session || null;
+    _accessToken = (session && session.access_token) || null;
+    if (!session) _meCache = null;
+  }
+  function errText(err){
+    if (!err) return "Terjadi kesalahan.";
+    if (typeof err === "string") return err;
+    return err.message || "Terjadi kesalahan.";
+  }
+  function fail(err){ throw new Error(errText(err)); }
+  function needClient(){
+    if (!client) throw new Error("Supabase belum terhubung. Cek SUPABASE_URL / SUPABASE_ANON_KEY di config.js.");
+  }
+  /* Ambil data dari hasil query supabase-js ({data, error}). */
+  function take(res){
+    if (res.error) fail(res.error);
+    return res.data;
+  }
+  /* Panggil RPC; error Postgres (RAISE EXCEPTION di fungsi) muncul
+     sebagai error.message berisi kode singkat (mis. 'forbidden'). */
+  function rpc(name, params){
+    needClient();
+    return client.rpc(name, params || {}).then(function(res){
+      if (res.error) fail(res.error);
+      return res.data;
+    });
+  }
+  function edgeFetch(path, opts){
+    opts = opts || {};
+    var headers = { "apikey": ANON, "Content-Type": "application/json" };
+    if (_accessToken) headers["Authorization"] = "Bearer " + _accessToken;
+    else headers["Authorization"] = "Bearer " + ANON;
+    return fetch(FN_BASE + path, {
+      method: opts.method || "GET",
+      headers: headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    }).then(function(r){
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+  }
+
+  var Supa = {
+    client: client,
+    ready: !!client,
+    fnBase: FN_BASE,
+
+    /* ---------- sesi ---------- */
+    refreshSession: function(){
+      needClient();
+      return client.auth.getSession().then(function(res){
+        if (res.error) fail(res.error);
+        setSessionCache(res.data.session);
+        return _session;
+      });
+    },
+    onAuthStateChange: function(cb){
+      if (!client) return;
+      client.auth.onAuthStateChange(function(event, session){
+        setSessionCache(session);
+        cb(event, session);
+      });
+    },
+    getAccessToken: function(){ return _accessToken; },
+
+    /* ---------- auth (menggantikan /api/auth/*) ---------- */
+    register: function(name, email, password){
+      needClient();
+      return client.auth.signUp({
+        email: email, password: password,
+        options: { data: { name: name }, emailRedirectTo: location.origin + "/" }
+      }).then(function(res){
+        if (res.error) fail(res.error);
+        var user = res.data.user;
+        var session = res.data.session;
+        /* Bila konfirmasi email AKTIF di project, signUp tidak langsung
+           memberi sesi — pemanggil menampilkan "cek email" (lihat
+           PLAN.md: matikan konfirmasi email untuk toko ini). */
+        if (!session) return { needsConfirmation: true, email: email };
+        setSessionCache(session);
+        return Supa.me().then(function(me){
+          return { token: session.access_token, id: user.id, name: me.name, email: me.email, is_admin: me.is_admin };
+        });
+      });
+    },
+    login: function(email, password){
+      needClient();
+      return client.auth.signInWithPassword({ email: email, password: password })
+        .then(function(res){
+          if (res.error) fail(res.error);
+          setSessionCache(res.data.session);
+          return Supa.me().then(function(me){
+            return { token: res.data.session.access_token, id: res.data.user.id, name: me.name, email: me.email, is_admin: me.is_admin };
+          });
+        });
+    },
+    signInWithGoogle: function(){
+      needClient();
+      try { sessionStorage.setItem("gs_after_oauth", location.hash || "#/"); } catch (e) {}
+      return client.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: location.origin + "/" }
+      }).then(function(res){ if (res.error) fail(res.error); return res.data; });
+    },
+    signOut: function(){
+      if (!client) return Promise.resolve({ ok: true });
+      return client.auth.signOut().then(function(){
+        setSessionCache(null);
+        return { ok: true };
+      });
+    },
+    /* Profil pemakai saat ini (dari tabel profiles). Dipakai /api/auth/me.
+       Sekaligus mengembalikan hash halaman yang disimpan sebelum login
+       Google, supaya pemakai kembali ke halaman semula. */
+    me: function(){
+      needClient();
+      return Supa.refreshSession().then(function(session){
+        if (!session || !session.user) throw new Error("HTTP 401");
+        var uid = session.user.id;
+        if (_meCache && _meCache.id === uid) return _meCache;
+        return client.from("profiles").select("id,name,email,is_admin")
+          .eq("id", uid).single().then(function(res){
+            if (res.error) fail(res.error);
+            _meCache = { id: res.data.id, name: res.data.name, email: res.data.email, is_admin: !!res.data.is_admin };
+            /* Kembali ke halaman sebelum OAuth (disimpan signInWithGoogle). */
+            try {
+              var back = sessionStorage.getItem("gs_after_oauth");
+              if (back) { sessionStorage.removeItem("gs_after_oauth"); location.hash = back; }
+            } catch (e) {}
+            return _meCache;
+          });
+      });
+    },
+
+    /* ---------- settings (saklar toko) ---------- */
+    getSettings: function(force){
+      needClient();
+      if (!force && _settingsCache && (Date.now() - _settingsCache.at) < 60000) {
+        return Promise.resolve(_settingsCache.data);
+      }
+      return client.from("settings").select("key,value").then(function(res){
+        if (res.error) fail(res.error);
+        var map = {};
+        (res.data || []).forEach(function(r){ map[r.key] = r.value; });
+        _settingsCache = { at: Date.now(), data: map };
+        return map;
+      });
+    },
+    isTopupMaintenance: function(){
+      return Supa.getSettings().then(function(s){
+        return (s.topup_maintenance || "true") === "true";
+      }).catch(function(){ return true; /* gagal baca = tetap maintenance (aman) */ });
+    },
+
+    /* ---------- produk (menggantikan /api/products) ---------- */
+    listProducts: function(isAdmin){
+      needClient();
+      return client.from("products").select("*").order("id", { ascending: false })
+        .then(function(res){
+          var rows = take(res);
+          if (!isAdmin) return rows;
+          /* Admin: gabungkan kredensial dari product_creds. */
+          return client.from("product_creds").select("*").then(function(cr){
+            var creds = {};
+            (take(cr) || []).forEach(function(c){ creds[c.product_id] = c; });
+            rows.forEach(function(p){
+              var c = creds[p.id];
+              p.cred_email = c ? c.cred_email : "";
+              p.cred_pass = c ? c.cred_pass : "";
+            });
+            return rows;
+          });
+        });
+    },
+    createProduct: function(p){
+      needClient();
+      return client.from("products").insert({
+        game: p.game, title: p.title, rank: p.rank || "", level: String(p.level || ""),
+        server: p.server || "", price: p.price, specs: p.specs || [],
+        description: p.desc || "", photo: p.photo || "", status: "tersedia"
+      }).select("*").single().then(function(res){
+        var row = take(res);
+        return client.from("product_creds").insert({
+          product_id: row.id, cred_email: p.credEmail || "", cred_pass: p.credPass || ""
+        }).then(function(cr){
+          if (cr.error) {
+            /* Kredensial gagal tersimpan — hapus produknya supaya tidak
+               ada stok tanpa kredensial. */
+            return client.from("products").delete().eq("id", row.id).then(function(){ fail(cr.error); });
+          }
+          row.cred_email = p.credEmail || "";
+          row.cred_pass = p.credPass || "";
+          return row;
+        });
+      });
+    },
+    deleteProduct: function(id){ return rpc("delete_product", { p_product_id: id }).then(function(){ return { ok: true }; }); },
+    relistProduct: function(id){ return rpc("relist_product", { p_product_id: id }); },
+
+    /* ---------- pesanan (menggantikan /api/orders) ---------- */
+    listOrders: function(kind){
+      needClient();
+      var q = client.from("orders").select("*").order("id", { ascending: false });
+      if (kind) q = q.eq("kind", kind);
+      return q.then(function(res){ return take(res); });
+    },
+    createAccountOrder: function(productId){ return rpc("create_account_order", { p_product_id: productId }); },
+    createTopupOrder: function(packageId, userId, serverId){
+      return rpc("create_topup_order", { p_package_id: packageId, p_user_id_game: userId, p_server_id: serverId || "" });
+    },
+    confirmOrder: function(invoiceNo){ return rpc("confirm_order", { p_invoice: invoiceNo }); },
+    cancelOrder: function(invoiceNo){ return rpc("cancel_order", { p_invoice: invoiceNo }); },
+    /* Tampilkan kredensial SATU KALI — fungsi RPC menghapusnya. */
+    revealCredentials: function(invoiceNo){ return rpc("reveal_order_credentials", { p_invoice: invoiceNo }); },
+
+    /* ---------- paket top up (menggantikan /api/topup/packages) ---------- */
+    listPackages: function(game){
+      needClient();
+      var q = client.from("topup_packages").select("*").order("price", { ascending: true });
+      if (game) q = q.eq("game", game);
+      return q.then(function(res){ return take(res); });
+    },
+    savePackage: function(pkg, id){
+      needClient();
+      /* Currency TIDAK dikirim form (body hanya game/name/amount/price)
+         — diturunkan dari daftar game, sama seperti backend lama
+         (TOPUP_GAME_MAP di main.py). */
+      var currency = "";
+      (window.GS_CONFIG.TOPUP_GAMES || []).forEach(function(g){ if (g.name === pkg.game) currency = g.currency; });
+      if (!currency) throw new Error("Game tidak ada di daftar top up.");
+      var row = { game: pkg.game, name: pkg.name, amount: pkg.amount, currency: currency, price: pkg.price };
+      if (id) {
+        return client.from("topup_packages").update(row).eq("id", id).select("*").single()
+          .then(function(res){ return take(res); });
+      }
+      return client.from("topup_packages").insert(row).select("*").single()
+        .then(function(res){ return take(res); });
+    },
+    deletePackage: function(id){
+      needClient();
+      /* Tolak bila ada pesanan top up aktif untuk paket ini (HTTP 409 lama). */
+      return client.from("orders").select("id").eq("package_id", id)
+        .eq("kind", "topup").eq("status", "dipesan").limit(1)
+        .then(function(res){
+          if (res.error) fail(res.error);
+          if ((res.data || []).length) throw new Error("package_has_active_order");
+          return client.from("topup_packages").delete().eq("id", id).then(function(dr){
+            if (dr.error) fail(dr.error);
+            return { ok: true };
+          });
+        });
+    },
+
+    /* ---------- aktivitas & support ---------- */
+    listActivity: function(){
+      needClient();
+      return client.from("activity").select("time,tag,text")
+        .order("id", { ascending: false }).limit(40)
+        .then(function(res){ return take(res); });
+    },
+    sendSupport: function(msg){
+      needClient();
+      return client.from("support_messages").insert({
+        name: msg.name, contact: msg.contact, topic: msg.topic, message: msg.message
+      }).select("*").single().then(function(res){ return take(res); });
+    },
+    listSupport: function(){
+      needClient();
+      return client.from("support_messages").select("*").order("id", { ascending: false })
+        .then(function(res){ return take(res); });
+    },
+    markSupportReplied: function(id){
+      needClient();
+      return client.from("support_messages").update({ status: "dibalas" }).eq("id", id)
+        .select("*").single().then(function(res){ return take(res); });
+    },
+
+    /* ---------- statistik (dulu /api/stats — tidak dipakai frontend,
+       tapi disediakan supaya endpoint lama tetap ada padanannya) ---------- */
+    getStats: function(){
+      needClient();
+      /* Hitung dari list (katalog masih kecil) — cukup untuk dasbor admin. */
+      return Promise.all([Supa.listProducts(false), Supa.listOrders()]).then(function(res){
+        var products = res[0] || [], orders = res[1] || [];
+        function count(arr, fn){ return arr.filter(fn).length; }
+        return {
+          products_total: products.length,
+          products_tersedia: count(products, function(p){ return p.status === "tersedia"; }),
+          products_dipesan: count(products, function(p){ return p.status === "dipesan"; }),
+          products_terjual: count(products, function(p){ return p.status === "terjual"; }),
+          orders_total: orders.length,
+          orders_dipesan: count(orders, function(o){ return o.status === "dipesan"; }),
+          orders_terjual: count(orders, function(o){ return o.status === "terjual"; }),
+          topup_terjual: count(orders, function(o){ return o.kind === "topup" && o.status === "terjual"; }),
+          revenue_akun: products.filter(function(p){ return p.status === "terjual"; })
+            .reduce(function(s, p){ return s + Number(p.price || 0); }, 0),
+          revenue_topup: orders.filter(function(o){ return o.kind === "topup" && o.status === "terjual"; })
+            .reduce(function(s, o){ return s + Number(o.price || 0); }, 0)
+        };
+      });
+    },
+
+    /* ---------- Midtrans (Edge Function; dulu /api/payments/*) ---------- */
+    getPaymentsConfig: function(){
+      if (!FN_BASE) return Promise.resolve({ configured: false, is_production: false, client_key: null });
+      return edgeFetch("/config").catch(function(){
+        return { configured: false, is_production: false, client_key: null };
+      });
+    },
+    requestSnapToken: function(invoiceNo){
+      if (!FN_BASE) throw new Error("Edge Function Midtrans belum dikonfigurasi.");
+      return Supa.refreshSession().catch(function(){ return null; }).then(function(){
+        return edgeFetch("/snap-token", { method: "POST", body: { invoice_no: invoiceNo } });
+      });
+    },
+    getHealth: function(){
+      return Promise.all([
+        Supa.getSettings().catch(function(){ return {}; }),
+        Supa.getPaymentsConfig()
+      ]).then(function(res){
+        var settings = res[0] || {}, pay = res[1] || {};
+        return {
+          ok: true,
+          mode: "supabase",
+          midtrans_configured: !!pay.configured,
+          midtrans_production: !!pay.is_production,
+          topup_maintenance: (settings.topup_maintenance || "true") === "true"
+        };
+      });
+    }
+  };
+
+  window.Supa = Supa;
+})();

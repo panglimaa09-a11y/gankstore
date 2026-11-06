@@ -189,6 +189,7 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 #googleBtnWrap{width:100%;min-height:44px}
 #googleBtnWrap>div{width:100%!important}
 .auth-msg{font-size:14px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:10px 13px;margin:12px 0 0;font-weight:600}
+#googleRetryBtn{width:100%;justify-content:center;margin-top:10px}
 .auth-divider{display:flex;align-items:center;gap:12px;color:var(--ink-faint);font-size:13.5px;font-weight:600;margin:18px 0}
 .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--line)}
 .auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg-sink);border-radius:10px;padding:5px;margin-bottom:18px}
