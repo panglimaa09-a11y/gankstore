@@ -45,7 +45,8 @@ body.sidebar-open{overflow:hidden}
 .side-link:hover{background:var(--bg-sink)}
 .side-link.active{background:var(--ink);color:var(--bg)}
 .side-link.active .nav-maint{color:#1c1005}
-.side-ic{flex:none;width:22px;text-align:center;font-size:17px;line-height:1;color:var(--accent-strong)}
+.side-ic{flex:none;width:22px;display:flex;align-items:center;justify-content:center;color:var(--accent-strong)}
+.side-ic svg{width:18px;height:18px;display:block}
 .side-link.active .side-ic{color:var(--bg)}
 .side-user{font-weight:800;font-size:15.5px;padding:4px 12px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .side-logout{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;color:var(--danger);font-weight:700;font-size:15.5px;padding:11px 12px;border-radius:10px}
@@ -221,7 +222,8 @@ body.admin-mode .adminbar{display:block;position:sticky;top:0;z-index:50;backgro
 .admin-dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:22px 0 6px}
 .admin-menu-card{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--bg-raise);border:1.5px solid var(--line);border-radius:16px;padding:22px;text-decoration:none;color:var(--ink)}
 .admin-menu-card:hover{border-color:var(--accent)}
-.admin-menu-card .amc-icon{font-size:30px;line-height:1}
+.admin-menu-card .amc-icon{font-size:30px;line-height:1;display:flex;align-items:center}
+.admin-menu-card .amc-icon svg{width:28px;height:28px;display:block}
 .admin-menu-card b{font-size:19px;font-family:"Chakra Petch",sans-serif}
 .admin-menu-card span{color:var(--ink-soft);font-size:14.5px}
 .admin-menu-card .arr{margin-top:8px;font-weight:800;color:var(--accent-strong);font-size:14.5px}
