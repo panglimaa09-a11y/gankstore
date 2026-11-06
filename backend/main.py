@@ -29,6 +29,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import store
+from .google_auth import verify_google_id_token
 from .midtrans import create_snap_token, midtrans_config, verify_signature
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -107,6 +108,11 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: str = Field(max_length=90)
     password: str = Field(max_length=90)
+
+
+class GoogleAuthIn(BaseModel):
+    credential: str = Field(min_length=10, max_length=8192)
+    nonce: str = ""
 
 
 class ProductIn(BaseModel):
@@ -291,6 +297,47 @@ def login(body: LoginIn):
     user = store.verify_user(body.email.strip().lower(), body.password)
     if not user:
         raise HTTPException(status_code=401, detail="Email atau password salah.")
+    token = store.create_session(user["id"])
+    return {"token": token, **_public_user(user)}
+
+
+@app.post("/api/auth/google")
+def google_login(body: GoogleAuthIn):
+    """Login dengan Google (GIS credential = ID token). Token diverifikasi
+    SECARA OFFLINE melawan JWKS Google yang di-cache di server — tanpa
+    internet per-request (service systemd VM ini tidak punya proxy
+    egress). Token tanpa signature valid / aud salah / kedaluwarsa /
+    nonce tidak cocok → 401. Akun baru dibuat sebagai pembeli; akun
+    email lama ditautkan google_sub-nya."""
+    try:
+        claims = verify_google_id_token(body.credential, body.nonce.strip())
+    except Exception:
+        raise HTTPException(
+            status_code=401, detail="Login Google ditolak: token tidak valid."
+        )
+    email = str(claims.get("email", "")).strip().lower()
+    if not EMAIL_RE.match(email):
+        raise HTTPException(
+            status_code=401, detail="Login Google ditolak: token tidak valid."
+        )
+    google_sub = str(claims.get("sub", ""))
+    user = store.get_user_by_google_sub(google_sub)
+    if not user:
+        user = store.get_user_by_email(email)
+        if user:
+            if not store.link_google_sub(user["id"], google_sub):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Akun Google ini sudah tertaut ke akun lain.",
+                )
+        else:
+            name = str(claims.get("name") or "").strip()[:40] or email.split("@")[0]
+            user = store.create_google_user(name, email, google_sub)
+            if not user:
+                raise HTTPException(
+                    status_code=401,
+                    detail="Login Google gagal: email sudah terdaftar.",
+                )
     token = store.create_session(user["id"])
     return {"token": token, **_public_user(user)}
 

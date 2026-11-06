@@ -123,6 +123,17 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
   `GS_ADMIN_EMAIL`; bila env kosong, admin **sementara** adalah akun
   demo `demo@gankstore.my.id` — ganti ke email Tuan + ganti password
   demo sebelum toko dibuka untuk umum (lihat "Peran admin" di bawah).
+- **Login dengan Google** — tombol Google beneran di halaman Masuk
+  (Google Identity Services, project "GankStore" akun Spectrum AB,
+  consent screen Production). Server memverifikasi ID token **offline**
+  melawan JWKS Google yang di-cache di `backend/google_jwks.json`
+  (tanpa internet per-request — service systemd VM tidak punya proxy
+  egress). Akun baru dibuat sebagai pembeli; email lama ditautkan
+  `google_sub`-nya. Client ID ada di `public/js/config.js` (identifier
+  publik, bukan secret — Client Secret tidak pernah dipakai/disimpan).
+  Refresh cache JWKS berkala dari shell (bukan systemd):
+  `.venv/bin/python backend/refresh_google_jwks.py` (contoh cron tiap
+  12 jam ada di file itu). File cache JANGAN di-commit (`.gitignore`).
 - **Order + invoice in-app** — klik Beli Sekarang → akun otomatis DIPESAN →
   invoice `INV-…` dengan **biaya admin 10%** (Rp1.000 → admin Rp100 →
   total Rp1.100). Admin **Konfirmasi Lunas** → TERJUAL; **Batalkan Pesanan**
@@ -227,6 +238,7 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
 |---|---|
 | `GET /api/health` | Status server + Midtrans |
 | `POST /api/auth/register`, `/api/auth/login`, `/api/auth/logout`, `GET /api/auth/me` | Akun pengguna (token Bearer) |
+| `POST /api/auth/google` | Login Google — verifikasi ID token offline (JWKS cache); buat/tautkan akun pembeli |
 | `GET /api/products`, `POST /api/products`, `DELETE /api/products/{id}`, `POST /api/products/{id}/relist` | Stok akun |
 | `GET /api/orders`, `POST /api/orders`, `POST /api/orders/{inv}/confirm`, `POST /api/orders/{inv}/cancel`, `GET /api/orders/{inv}/credentials` | Pesanan & invoice |
 | `GET /api/topup/games`, `GET /api/topup/packages`, `POST/PUT/DELETE /api/topup/packages`, `POST /api/topup/orders` | Top up |

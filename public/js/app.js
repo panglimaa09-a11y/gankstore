@@ -643,7 +643,43 @@
       }
       document.getElementById("tabLogin").addEventListener("click",function(){showAuthTab("login");});
       document.getElementById("tabRegister").addEventListener("click",function(){showAuthTab("register");});
-      document.getElementById("btnGoogle").addEventListener("click",function(){document.getElementById("googleMsg").hidden=false;});
+      /* ---------- login Google (GIS + backend) ---------- */
+      /* Tombol Google beneran (Google Identity Services). Client ID di
+         config.js adalah identifier PUBLIK — bukan secret. Nonce acak
+         dibuat per load dan disimpan di sessionStorage, lalu dikirim
+         bersama credential supaya server bisa memeriksa nonce di dalam
+         ID token. Bila GIS gagal dimuat (offline) atau server tidak
+         aktif, tampilkan pesan jujur — jangan tampilkan tombol mati. */
+      var GOOGLE_CLIENT_ID=window.GS_CONFIG.GOOGLE_CLIENT_ID||"";
+      function googleNonce(){
+        var n="";try{n=sessionStorage.getItem("gs_google_nonce")||"";}catch(e){}
+        if(!n){n=Math.random().toString(36).slice(2)+Date.now().toString(36)+Math.random().toString(36).slice(2);try{sessionStorage.setItem("gs_google_nonce",n);}catch(e){}}
+        return n;
+      }
+      function googleMsgShow(text){var m=document.getElementById("googleMsg");if(m){m.textContent=text;m.hidden=false;}}
+      function handleGoogleCredential(resp){
+        if(!resp||!resp.credential){formError("loginError","Login Google gagal. Coba lagi.");return;}
+        var nonce="";try{nonce=sessionStorage.getItem("gs_google_nonce")||"";}catch(e){}
+        api("/api/auth/google",{method:"POST",body:{credential:resp.credential,nonce:nonce}}).then(function(r){
+          setToken(r.token);Server.user={name:r.name,email:r.email,is_admin:!!r.is_admin};
+          afterLogin(Server.user);refreshServerData();
+        }).catch(function(){formError("loginError","Login Google ditolak oleh server. Coba lagi atau pakai email + password.");});
+      }
+      var _googleTries=0;
+      function initGoogleSignIn(){
+        var wrap=document.getElementById("googleBtnWrap");if(!wrap)return;
+        if(!Server.enabled){wrap.style.display="none";googleMsgShow("Login Google butuh koneksi ke server toko — pakai email + password di bawah.");return;}
+        if(!GOOGLE_CLIENT_ID)return;
+        if(!window.google||!window.google.accounts||!window.google.accounts.id){
+          if(_googleTries<10){_googleTries++;setTimeout(initGoogleSignIn,500);return;}
+          wrap.style.display="none";googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.");return;
+        }
+        try{
+          window.google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential,nonce:googleNonce(),ux_mode:"popup"});
+          var w=wrap.clientWidth||320;if(w<200)w=200;if(w>400)w=400;
+          window.google.accounts.id.renderButton(wrap,{theme:"outline",size:"large",width:w,text:"continue_with"});
+        }catch(e){wrap.style.display="none";googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.");}
+      }
       function formError(id,msg){var e=document.getElementById(id);e.textContent=msg;e.classList.add("show");}
       function clearError(id){document.getElementById(id).classList.remove("show");}
       document.getElementById("loginForm").addEventListener("submit",function(ev){
@@ -762,5 +798,5 @@
       if(!location.hash) location.hash="#/";
       initServer().then(function(){
         logActivity("kunjung","Sesi toko dimulai.");
-        render();renderAuth();applyRoute();
+        render();renderAuth();applyRoute();initGoogleSignIn();
       });

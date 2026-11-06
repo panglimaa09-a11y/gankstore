@@ -143,6 +143,13 @@ def init_db():
                     "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
                 )
                 conn.commit()
+            # Login Google: simpan `sub` Google (ID unik akun Google) supaya
+            # akun yang sama selalu dikenali, tanpa mengandalkan email saja.
+            if "google_sub" not in cols:
+                conn.execute(
+                    "ALTER TABLE users ADD COLUMN google_sub TEXT NOT NULL DEFAULT ''"
+                )
+                conn.commit()
         finally:
             conn.close()
     seed_demo_user()
@@ -238,6 +245,66 @@ def get_user_by_email(email):
         return dict(row) if row else None
     finally:
         conn.close()
+
+
+def get_user_by_google_sub(google_sub):
+    if not google_sub:
+        return None
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM users WHERE google_sub = ?", (google_sub,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def link_google_sub(user_id, google_sub):
+    """Tautkan akun Google ke user yang sudah ada. Gagal (False) bila
+    user sudah tertaut ke google_sub lain, atau sub ini sudah dipakai
+    user lain."""
+    if not google_sub:
+        return False
+    with _lock:
+        conn = _connect()
+        try:
+            row = conn.execute(
+                "SELECT id, google_sub FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+            if not row:
+                return False
+            current = row["google_sub"] or ""
+            if current and current != google_sub:
+                return False
+            other = conn.execute(
+                "SELECT id FROM users WHERE google_sub = ? AND id != ?",
+                (google_sub, user_id),
+            ).fetchone()
+            if other:
+                return False
+            conn.execute(
+                "UPDATE users SET google_sub = ? WHERE id = ?",
+                (google_sub, user_id),
+            )
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
+
+def create_google_user(name, email, google_sub):
+    """Buat akun pembeli baru dari login Google. Password-nya acak yang
+    tidak bisa dipakai login (32 byte hex yang di-hash PBKDF2 seperti
+    biasa, tapi nilainya tidak pernah ditampilkan/disimpan di tempat
+    lain) — akun ini hanya bisa masuk lewat Google, kecuali pemiliknya
+    memakai fitur lupa/reset password bila nanti ada."""
+    user = create_user(name, email, secrets.token_hex(32))
+    if not user:
+        return None
+    if not link_google_sub(user["id"], google_sub):
+        return None
+    return get_user_by_id(user["id"])
 
 
 def verify_user(email, password):

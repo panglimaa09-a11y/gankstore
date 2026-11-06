@@ -1,6 +1,7 @@
 # Rahasia & data lokal — jangan masuk repo
 .env
 backend/gankstore.db
+backend/google_jwks.json
 __pycache__/
 *.pyc
 .venv/

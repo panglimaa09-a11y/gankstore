@@ -26,6 +26,12 @@ window.GS_CONFIG = {
      di revproxy2.py). URL ini yang dipakai frontend Vercel. */
   API_BASE: "https://curvature-reunite-perfected.ngrok-free.dev/gankstore-api",
 
+  /* Client ID Google OAuth (identifier PUBLIK — aman di frontend,
+     BUKAN secret; Client Secret tidak pernah dipakai/disimpan di
+     GankStore). Project "GankStore" (akun Spectrum AB), consent
+     screen Production, origin https://gankstore.my.id. */
+  GOOGLE_CLIENT_ID: "308078866758-2qdr6ep644jpkm0e5jtu15vatgno14u0.apps.googleusercontent.com",
+
   /* Daftar game tetap untuk Top Up (all game). Kalau user mengubah daftar,
      edit di sini DAN di backend/main.py (TOPUP_GAMES) supaya sama.
      idLabel/idPlaceholder: label kolom identitas di form order per
