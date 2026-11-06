@@ -350,6 +350,7 @@
         if(h==="/katalog")return{page:"katalog"};
         if(h==="/cara-beli")return{page:"cara-beli"};
         if(h==="/bantuan")return{page:"bantuan"};
+        if(h==="/privacy-policy")return{page:"privacy-policy"};
         if(h==="/akun")return{page:"akun"};
         if(h==="/admin")return{page:"admin"};
         if(h==="/admin/tambah")return{page:"admin-tambah"};
@@ -378,7 +379,7 @@
         var nowMs=Date.now();
         if(analytics.lastRoute!==r.page||nowMs-analytics.lastRouteAt>1200){
           analytics.lastRoute=r.page;analytics.lastRouteAt=nowMs;analytics.pageViews++;
-          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","bantuan":"Bantuan","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up","admin-support":"Pesan Support"};
+          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","bantuan":"Bantuan","privacy-policy":"Kebijakan Privasi","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up","admin-support":"Pesan Support"};
           if(pageNames[r.page])logActivity("kunjung","Pengunjung membuka "+pageNames[r.page]+".");
           renderReport();
         }
