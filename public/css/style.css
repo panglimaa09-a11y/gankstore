@@ -363,3 +363,20 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
   .btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.bottomnav a,.topnav a,.card,.admin-menu-card,.cat-card{transition:none}
   .btn:active,.btn-dark:active,.btn-auth:active,.btn-pay:active,.btn-add:active,.btn-detail:active,.btn-buy:active,.mini:active,.btn-logout:active,.btn-google:active,.card:active,.admin-menu-card:active,.cat-card:active{transform:none}
 }
+
+/* ---------- Bantuan / Support (Jarvis — Support GankStore) ---------- */
+.support-agent{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.support-avatar{flex:none;width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:26px}
+.support-agent b{display:block;font-size:18px}
+.support-agent span{display:block;color:var(--ink-soft);font-size:14.5px;margin-top:3px}
+.support-contacts{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.support-contacts .btn{white-space:nowrap}
+.support-alt{color:var(--ink-faint);font-size:14px;font-weight:600}
+.support-list{display:flex;flex-direction:column;gap:14px}
+.support-item{border:1px solid var(--line);border-radius:12px;padding:16px}
+.support-item p{margin:10px 0 0;color:var(--ink-soft);white-space:pre-wrap}
+.support-meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13.5px;color:var(--ink-faint);font-weight:600}
+.support-meta b{color:var(--ink);font-size:15px}
+.support-topic{background:var(--bg-sink);border-radius:999px;padding:3px 10px}
+.support-status{background:#fef3c7;color:#92400e;border-radius:999px;padding:3px 10px}
+.support-status.done{background:#dcfce7;color:#166534}

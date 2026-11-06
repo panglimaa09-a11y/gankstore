@@ -123,6 +123,15 @@ def init_db():
                     name TEXT PRIMARY KEY,
                     value INTEGER NOT NULL DEFAULT 0
                 );
+                CREATE TABLE IF NOT EXISTS support_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    contact TEXT NOT NULL,
+                    topic TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'baru',
+                    created_at TEXT NOT NULL
+                );
                 """
             )
             conn.commit()
@@ -629,6 +638,65 @@ def delete_package(package_id):
             conn.commit()
         finally:
             conn.close()
+
+
+# ---------- pesan support ----------
+
+def create_support_message(data):
+    with _lock:
+        conn = _connect()
+        try:
+            cur = conn.execute(
+                "INSERT INTO support_messages (name, contact, topic, message,"
+                " status, created_at) VALUES (?, ?, ?, ?, 'baru', ?)",
+                (
+                    data["name"],
+                    data["contact"],
+                    data["topic"],
+                    data["message"],
+                    now_str(),
+                ),
+            )
+            conn.commit()
+            return get_support_message(cur.lastrowid)
+        finally:
+            conn.close()
+
+
+def get_support_message(msg_id):
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM support_messages WHERE id = ?", (msg_id,)
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def list_support_messages():
+    conn = _connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM support_messages ORDER BY id DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def mark_support_message_replied(msg_id):
+    with _lock:
+        conn = _connect()
+        try:
+            conn.execute(
+                "UPDATE support_messages SET status = 'dibalas' WHERE id = ?",
+                (msg_id,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    return get_support_message(msg_id)
 
 
 # ---------- aktivitas & statistik ----------

@@ -133,6 +133,13 @@ class PackageIn(BaseModel):
     price: int = Field(ge=0)
 
 
+class SupportMessageIn(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    contact: str = Field(min_length=1, max_length=90)
+    topic: str = Field(min_length=1, max_length=30)
+    message: str = Field(min_length=1, max_length=1000)
+
+
 class SnapTokenIn(BaseModel):
     invoice_no: str
 
@@ -218,6 +225,43 @@ def get_stats(user: dict = Depends(require_admin)):
 @app.get("/api/activity")
 def get_activity(user: dict = Depends(optional_user)):
     return store.list_activity()
+
+
+# ---------- support (Jarvis — Support GankStore) ----------
+
+SUPPORT_TOPICS = {"Pesanan", "Pembayaran", "Akun game", "Top Up", "Lainnya"}
+
+
+@app.post("/api/support")
+def create_support_message(body: SupportMessageIn):
+    """Pesan dari form Hubungi Support — siapa pun boleh kirim (tidak
+    perlu login), disimpan di database server untuk dibaca admin.
+    Tidak dikirim ke pihak ketiga dan tidak ada balasan otomatis instan:
+    admin toko yang menindaklanjuti."""
+    topic = body.topic.strip()
+    if topic not in SUPPORT_TOPICS:
+        raise HTTPException(status_code=400, detail="Topik tidak dikenal.")
+    return store.create_support_message(
+        {
+            "name": body.name.strip(),
+            "contact": body.contact.strip(),
+            "topic": topic,
+            "message": body.message.strip(),
+        }
+    )
+
+
+@app.get("/api/support")
+def list_support_messages(user: dict = Depends(require_admin)):
+    return store.list_support_messages()
+
+
+@app.post("/api/support/{msg_id}/replied")
+def mark_support_replied(msg_id: int, user: dict = Depends(require_admin)):
+    row = store.mark_support_message_replied(msg_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Pesan tidak ditemukan.")
+    return row
 
 
 # ---------- akun pengguna ----------

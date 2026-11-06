@@ -52,6 +52,7 @@
           <a href="#/admin/laporan" data-anav="admin-laporan">Statistik &amp; Live</a>
           <a href="#/admin/topup" data-anav="admin-toppup">Top Up</a>
           <a href="#/admin/pengaturan" data-anav="admin-pengaturan">Pengaturan Toko</a>
+          <a href="#/admin/support" data-anav="admin-support">Pesan Support</a>
         </nav>
       </div>
     </div>
@@ -96,6 +97,7 @@
           <div class="sales-rows" id="homeSalesRows"></div>
         </div>
 
+        <p style="text-align:center;margin:26px 0 0"><a class="link-more" href="#/bantuan">Butuh bantuan? Hubungi Support →</a></p>
       </main>
     </section>
 
@@ -208,6 +210,89 @@
       </main>
     </section>
 
+    <!-- ============ HALAMAN BANTUAN / SUPPORT (terpisah) ============ -->
+    <section class="page" data-page="bantuan">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">GankStore / Bantuan</div>
+          <h1>Bantuan &amp; Support</h1>
+          <p>Butuh bantuan soal pesanan, pembayaran, atau akun? Agen support kami siap membantu.</p>
+        </div>
+
+        <div class="panel support-agent">
+          <div class="support-avatar">J</div>
+          <div>
+            <b>Jarvis — Support GankStore</b>
+            <span>Layanan pelanggan GankStore dibantu Jarvis. Pesanmu diteruskan ke admin toko, dan admin yang menindaklanjuti pesanan dan pembayaranmu.</span>
+          </div>
+        </div>
+
+        <div class="support-contacts">
+          <a class="btn btn-lime" href="https://wa.me/6289681992892" target="_blank" rel="noopener">Chat WhatsApp — 0896 8199 2892</a>
+          <span class="support-alt">Telegram: Admin GankStore &nbsp;·&nbsp; Jam layanan: setiap hari, mengikuti jam kerja admin — respon tercepat lewat WhatsApp.</span>
+        </div>
+
+        <div class="two-col">
+          <div class="info-box">
+            <h3>Cara beli — singkat</h3>
+            <ul>
+              <li>Pilih akun di Katalog, buka detailnya.</li>
+              <li>Klik Beli Sekarang — invoice langsung terbit.</li>
+              <li>Bayar total invoice (harga + biaya admin 10%) lewat Midtrans.</li>
+            </ul>
+          </div>
+          <div class="info-box">
+            <h3>Cara cek pesanan / invoice</h3>
+            <ul>
+              <li>Buka halaman Akun → Pesanan Saya.</li>
+              <li>Klik invoice-nya untuk melihat status: Menunggu Pembayaran, Lunas, atau Dibatalkan.</li>
+              <li>Simpan nomor invoice-mu — itu bukti pesananmu.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="info-box">
+            <h3>Cara klaim data akun yang sudah lunas</h3>
+            <ul>
+              <li>Setelah admin mengonfirmasi lunas, buka invoice-mu.</li>
+              <li>Klik tombol ke halaman sukses — email &amp; password akun ditampilkan <strong>satu kali</strong>.</li>
+              <li>Salin dan simpan saat itu juga, lalu segera ganti password akunnya.</li>
+            </ul>
+          </div>
+          <div class="info-box">
+            <h3>Kebijakan toko</h3>
+            <ul>
+              <li>Biaya admin 10% dari harga, selalu tertulis di invoice.</li>
+              <li>Data akun tampil sekali lalu otomatis terhapus dari toko.</li>
+              <li>Top up diproses manual oleh admin setelah lunas — belum otomatis.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 style="font-size:24px;margin:26px 0 14px">Tanya Jawab</h2>
+        <details><summary>Apakah saya sudah bisa bayar asli lewat Midtrans?</summary><p>Belum. Pembayaran Midtrans Production masih menunggu aktivasi KYC oleh Midtrans. Yang jalan saat ini: mode Sandbox untuk tes, dan Konfirmasi Lunas manual oleh admin setelah kamu membayar dan memberitahu admin. Jangan transfer ke siapa pun di luar invoice toko ini.</p></details>
+        <details><summary>Invoice saya masih "Menunggu Pembayaran", apa artinya?</summary><p>Artinya pesananmu tercatat dan akunnya ditandai Dipesan atas namamu, tapi pembayaranmu belum dikonfirmasi lunas oleh admin. Setelah lunas dikonfirmasi, status berubah jadi Lunas.</p></details>
+        <details><summary>Top up saya belum masuk, bagaimana?</summary><p>Top up diproses manual oleh admin setelah pembayaran lunas. Cek status di Pesanan Saya, dan pastikan User ID yang kamu isi sudah benar — salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi. Kalau sudah lewat dari perkiraan, kirim pesan lewat form di bawah dengan nomor invoice-mu.</p></details>
+        <details><summary>Saya tidak sempat menyimpan email &amp; password akun, bagaimana?</summary><p>Data akun memang hanya ditampilkan satu kali lalu otomatis dihapus dari toko, jadi tidak bisa ditampilkan lagi dari halaman sukses. Kirim pesan lewat form di bawah dengan nomor invoice-mu — admin akan menindaklanjutinya.</p></details>
+        <details><summary>Akun yang saya mau sudah terjual, bagaimana?</summary><p>Akun berlabel TERJUAL sudah tidak bisa dibeli. Cek akun lain yang tersedia di Katalog.</p></details>
+
+        <div class="auth-wrap" style="max-width:640px;margin:26px 0 0">
+          <form class="panel" id="supportForm" novalidate>
+            <h3>Hubungi Support</h3>
+            <p class="hint" style="font-size:14px;color:var(--ink-soft);font-weight:600;margin:-6px 0 14px">Pesanmu tersimpan dan dibaca admin toko. Ini bukan balasan otomatis instan — admin menindaklanjuti pesanan dan pembayaranmu. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.</p>
+            <div class="form-error" id="supportError" role="alert"></div>
+            <div class="field"><label for="sName">Nama</label><input id="sName" type="text" placeholder="cth. Bayu" maxlength="40" required /></div>
+            <div class="field"><label for="sContact">Email / WhatsApp</label><input id="sContact" type="text" placeholder="cth. nama@email.com atau 081234567890" maxlength="90" required /></div>
+            <div class="field"><label for="sTopic">Topik</label><select id="sTopic" required><option>Pesanan</option><option>Pembayaran</option><option>Akun game</option><option>Top Up</option><option>Lainnya</option></select></div>
+            <div class="field"><label for="sMessage">Pesan</label><textarea id="sMessage" rows="4" placeholder="Tulis pesanmu, sertakan nomor invoice bila ada…" maxlength="1000" required></textarea></div>
+            <button class="btn-add" type="submit">Kirim Pesan</button>
+            <p class="hint" id="supportNote" style="font-size:13.5px;color:var(--ink-soft);font-weight:600;margin:12px 0 0"></p>
+          </form>
+        </div>
+      </main>
+    </section>
+
     <!-- ============ ADMIN: HALAMAN DASHBOARD (terpisah) ============ -->
     <section class="page" data-page="admin">
       <main class="wrap">
@@ -223,6 +308,7 @@
           <a class="admin-menu-card" href="#/admin/laporan"><span class="amc-icon">◉</span><b>Statistik &amp; Live Tracking</b><span>Pengunjung, stok, penjualan, pesanan masuk, dan aktivitas toko secara langsung.</span><span class="arr">Buka halaman Statistik &amp; Live →</span></a>
           <a class="admin-menu-card" href="#/admin/topup"><span class="amc-icon">◆</span><b>Paket Top Up</b><span>Tambah / edit / hapus paket top up per game dan proses pesanan top up yang masuk.</span><span class="arr">Buka halaman Paket Top Up →</span></a>
           <a class="admin-menu-card" href="#/admin/pengaturan"><span class="amc-icon">⚙</span><b>Pengaturan Toko</b><span>Metode pembayaran Midtrans dan aturan biaya admin 10% yang berlaku di semua invoice.</span><span class="arr">Buka halaman Pengaturan →</span></a>
+          <a class="admin-menu-card" href="#/admin/support"><span class="amc-icon">✉</span><b>Pesan Support</b><span>Pesan masuk dari form Hubungi Support di halaman Bantuan — baca dan tandai sudah dibalas.</span><span class="arr">Buka Pesan Support →</span></a>
         </div>
         <p class="scope-note">Versi server (Python): stok, pesanan, dan paket top up tersimpan di database server dan tetap ada setelah halaman ditutup.</p>
       </main>
@@ -334,6 +420,20 @@
           </div>
         </div>
         <p class="scope-note">Versi server: penghitung dan laporan dihitung dari database server, jadi mencakup semua perangkat. Di versi statis lama, angka hanya dari browser perangkat ini.</p>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN PESAN SUPPORT (terpisah) ============ -->
+    <section class="page" data-page="admin-support">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Pesan Support</div>
+          <h1>Pesan Support Masuk</h1>
+          <p>Pesan dari form Hubungi Support di halaman Bantuan. Jawab pembeli lewat kontak yang mereka tulis (email / WhatsApp), lalu tandai pesannya sudah dibalas di sini.</p>
+        </div>
+        <div class="panel" style="margin-top:20px">
+          <div class="support-list" id="supportMsgList"></div>
+        </div>
       </main>
     </section>
 
@@ -522,7 +622,7 @@
     <footer>
       <div class="wrap">
         <span><img class="footer-logo" src="brand/gankstore-logo.png" alt="GankStore" /> — toko akun Point Blank, semua akun adalah stok milik penjual sendiri.</span>
-        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up</a> · <a href="#/akun">Akun</a></span>
+        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up</a> · <a href="#/bantuan">Bantuan</a> · <a href="#/akun">Akun</a></span>
       </div>
     </footer>
 

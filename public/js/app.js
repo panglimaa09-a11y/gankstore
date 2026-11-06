@@ -311,6 +311,7 @@
         if(!h||h==="/")return{page:"beranda"};
         if(h==="/katalog")return{page:"katalog"};
         if(h==="/cara-beli")return{page:"cara-beli"};
+        if(h==="/bantuan")return{page:"bantuan"};
         if(h==="/akun")return{page:"akun"};
         if(h==="/admin")return{page:"admin"};
         if(h==="/admin/tambah")return{page:"admin-tambah"};
@@ -323,6 +324,7 @@
         if(h==="/topup")return{page:"topup"};
         if(h.indexOf("/topup/")===0){return{page:"topup-game",game:decodeURIComponent(h.slice(7))};}
         if(h==="/admin/topup")return{page:"admin-toppup"};
+        if(h==="/admin/support")return{page:"admin-support"};
         return{page:"beranda"};
       }
       function applyRoute(){
@@ -337,7 +339,7 @@
         var nowMs=Date.now();
         if(analytics.lastRoute!==r.page||nowMs-analytics.lastRouteAt>1200){
           analytics.lastRoute=r.page;analytics.lastRouteAt=nowMs;analytics.pageViews++;
-          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up"};
+          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","bantuan":"Bantuan","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up","admin-support":"Pesan Support"};
           if(pageNames[r.page])logActivity("kunjung","Pengunjung membuka "+pageNames[r.page]+".");
           renderReport();
         }
@@ -350,6 +352,8 @@
         if(r.page==="invoice")renderInvoice(r.invoiceNo);
         if(r.page==="sukses")renderSukses(r.invoiceNo);
         if(r.page==="akun")renderAuth();
+        if(r.page==="bantuan")renderSupportPage();
+        if(r.page==="admin-support")renderSupportAdmin();
         if(r.page==="topup"&&window.TopUp)TopUp.renderTopup();
         if(r.page==="topup-game"&&window.TopUp)TopUp.renderTopupGame(r.game);
         if(r.page==="admin-toppup"&&window.TopUp)TopUp.renderTopupAdmin();
@@ -641,6 +645,65 @@
         if(Server.enabled){api("/api/auth/logout",{method:"POST"}).catch(function(){});setToken(null);Server.user=null;}
         setSession(null);pendingAdmin=false;renderAuth();showToast("Kamu sudah keluar.");location.hash="#/";if(getRoute().page==="beranda")applyRoute();
       });
+
+      /* ---------- support: Jarvis — Support GankStore ---------- */
+      var LS_SUPPORT="gankstore_support_messages";
+      function loadLocalSupport(){try{var m=JSON.parse(localStorage.getItem(LS_SUPPORT)||"[]");return Array.isArray(m)?m:[];}catch(e){return[];}}
+      function saveLocalSupport(m){try{localStorage.setItem(LS_SUPPORT,JSON.stringify(m));}catch(e){}}
+      function renderSupportPage(){
+        var note=document.getElementById("supportNote");if(!note)return;
+        note.textContent=Server.enabled
+          ?"Pesanmu tersimpan di server toko dan dibaca admin."
+          :"Mode lokal (backend tidak terhubung): pesanmu tersimpan di perangkat ini. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.";
+      }
+      document.getElementById("supportForm").addEventListener("submit",function(ev){
+        ev.preventDefault();clearError("supportError");
+        var name=document.getElementById("sName").value.trim();
+        var contact=document.getElementById("sContact").value.trim();
+        var topic=document.getElementById("sTopic").value;
+        var message=document.getElementById("sMessage").value.trim();
+        if(!name){formError("supportError","Nama belum diisi.");return;}
+        if(!contact){formError("supportError","Email / WhatsApp belum diisi — admin butuh ini untuk membalasmu.");return;}
+        if(message.length<3){formError("supportError","Pesan terlalu pendek. Tulis masalahmu, sertakan nomor invoice bila ada.");return;}
+        var done=function(local){
+          ev.target.reset();renderSupportPage();
+          showToast(local?"Pesan tersimpan di perangkat ini. Untuk respon tercepat, hubungi via WhatsApp.":"Pesan terkirim ke admin. Jarvis — Support GankStore akan menindaklanjutinya.");
+        };
+        if(Server.enabled){
+          api("/api/support",{method:"POST",body:{name:name,contact:contact,topic:topic,message:message}}).then(function(){done(false);}).catch(function(){showToast("Gagal mengirim ke server. Coba lagi, atau hubungi langsung via WhatsApp.");});
+          return;
+        }
+        var list=loadLocalSupport();
+        list.unshift({id:Date.now(),name:name,contact:contact,topic:topic,message:message,status:"baru",created_at:new Date().toLocaleString("id-ID")});
+        saveLocalSupport(list);
+        done(true);
+      });
+      function supportItemHTML(m){
+        var replied=m.status==="dibalas";
+        return '<div class="support-item"><div class="support-meta"><b>'+esc(m.name)+'</b><span>'+esc(m.contact)+'</span><span class="support-topic">'+esc(m.topic)+'</span><span>'+esc(m.created_at||"")+'</span><span class="support-status '+(replied?"done":"")+'">'+(replied?"Sudah dibalas":"Baru")+'</span></div><p>'+esc(m.message)+'</p>'+(replied?"":'<button class="mini lunas" type="button" data-replied="'+m.id+'">Tandai sudah dibalas</button>')+"</div>";
+      }
+      function renderSupportAdmin(){
+        var box=document.getElementById("supportMsgList");if(!box)return;
+        if(!isAdminUser()){box.innerHTML="";return;}
+        function paint(list){
+          if(!list.length){box.innerHTML='<p class="stock-empty">Belum ada pesan support masuk.</p>';return;}
+          box.innerHTML=list.map(supportItemHTML).join("");
+          box.querySelectorAll("[data-replied]").forEach(function(b){b.addEventListener("click",function(){
+            var id=b.getAttribute("data-replied");
+            if(Server.enabled){
+              api("/api/support/"+encodeURIComponent(id)+"/replied",{method:"POST"}).then(function(){renderSupportAdmin();showToast("Pesan ditandai sudah dibalas.");}).catch(function(){showToast("Gagal menandai di server.");});
+              return;
+            }
+            var l=loadLocalSupport();l.forEach(function(m){if(String(m.id)===String(id))m.status="dibalas";});
+            saveLocalSupport(l);renderSupportAdmin();showToast("Pesan ditandai sudah dibalas.");
+          });});
+        }
+        if(Server.enabled){
+          api("/api/support").then(function(list){paint(list||[]);}).catch(function(){box.innerHTML='<p class="stock-empty">Gagal memuat pesan dari server. Coba muat ulang halaman.</p>';});
+          return;
+        }
+        paint(loadLocalSupport());
+      }
 
       if(!location.hash) location.hash="#/";
       initServer().then(function(){

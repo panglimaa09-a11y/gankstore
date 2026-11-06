@@ -150,6 +150,28 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
   `GS_DEMO_PASSWORD` (contoh: `Demo1234`). Ganti password itu sebelum
   toko dibuka untuk umum, atau set `GS_SEED_DEMO=0`.
 
+## Support Service (Jarvis — Support GankStore)
+
+- Halaman Bantuan terpisah (`#/bantuan`): cara beli singkat, cara cek
+  pesanan/invoice, cara klaim data akun yang sudah lunas, kebijakan
+  (admin fee 10%, kredensial tampil sekali lalu terhapus, top up manual),
+  FAQ, dan form Hubungi Support.
+- Agen support: **Jarvis — Support GankStore**. Layanan pelanggan
+  dibantu Jarvis; admin toko yang menindaklanjuti pesanan dan
+  pembayaran. Kontak langsung tercepat: WhatsApp
+  **089681992892** (`wa.me/6289681992892`) dan Telegram admin toko.
+- Form Hubungi Support (nama, kontak email/WA, topik, pesan) tersimpan
+  ke database server (tabel `support_messages`, endpoint
+  `POST /api/support` — tanpa login) dan dibaca admin di Panel Admin →
+  Pesan Support (`GET /api/support`, admin saja), lalu ditandai sudah
+  dibalas (`POST /api/support/{id}/replied`). **Tidak dikirim ke pihak
+  ketiga dan tidak ada balasan otomatis instan.** Bila backend tidak
+  terhubung (mode lokal/statis), pesan tersimpan di perangkat dan
+  halaman Bantuan menuliskannya dengan jujur.
+- FAQ di halaman Bantuan jujur soal Midtrans: pembayaran Production
+  masih menunggu aktivasi KYC — yang jalan Sandbox + Konfirmasi Lunas
+  manual admin.
+
 ## Peran admin (Panel Admin disembunyikan dari user biasa)
 
 - Admin toko ditentukan dari env **`GS_ADMIN_EMAIL`** (lihat
@@ -201,4 +223,5 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
 | `GET /api/orders`, `POST /api/orders`, `POST /api/orders/{inv}/confirm`, `POST /api/orders/{inv}/cancel`, `GET /api/orders/{inv}/credentials` | Pesanan & invoice |
 | `GET /api/topup/games`, `GET /api/topup/packages`, `POST/PUT/DELETE /api/topup/packages`, `POST /api/topup/orders` | Top up |
 | `GET /api/stats`, `GET /api/activity` | Laporan & live tracking |
+| `POST /api/support`, `GET /api/support`, `POST /api/support/{id}/replied` | Pesan support (kirim tanpa login; baca/tandai admin saja) |
 | `GET /api/payments/config`, `POST /api/payments/snap-token`, `POST /api/payments/midtrans-webhook` | Midtrans |
