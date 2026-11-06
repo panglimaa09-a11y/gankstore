@@ -94,3 +94,51 @@ Data lama saat ini (6 Nov 2026): **0 produk, 0 order, 0 paket, 1 user
   produk/paket palsu (prinsip lama).
 - **Daftar game top up**: 15 game, sama persis dengan `TOPUP_GAMES`
   (config.js) — disalin ke `settings.topup_games`.
+
+---
+
+## 5. Model stok unit (perintah Tuan 6 Nov 2026 23:08 WIB — `sql/06_stock_units.sql`, desain: `PLAN-stock-units.md`)
+
+Model lama (01–03): 1 baris `products` = 1 akun, 1 kredensial di
+`product_creds` (1:1). Listing mati setelah terjual — admin harus
+bikin listing baru. Model baru: `products` = LISTING, stok = banyak
+unit di `stock_units`.
+
+### 5.1 Tabel baru / berubah
+
+| Baru / berubah | Isi | Perubahan |
+|---|---|---|
+| `stock_units` (baru) | id, product_id FK products (cascade), cred_user (USERNAME PB, bukan email), cred_pass, status ('tersedia'/'dipesan'/'terjual'), order_invoice FK orders (set null), created_at | RLS aktif + policy admin saja (pola `product_creds` dulu). Pembeli tidak bisa baca lewat API. |
+| `products.status` | CHECK diperluas: 'tersedia', 'dipesan', 'terjual', **'habis'** (baru: 0 unit sama sekali) | Status jadi cerminan jumlah unit — dihitung ulang trigger `stock_units_status_sync` → `refresh_product_status()` setiap unit berubah. RPC beli/lunas/batal TIDAK lagi mengubah status produk manual. |
+| `order_creds.cred_email` | diganti nama → `cred_user` | Rename kolom (data tetap). |
+| `product_creds` | DEPRECATED | Isinya dipindah ke `stock_units` saat apply 06 (cred_email lama menjadi cred_user unit — mis. produk live Rp800.000 mendapat unit username `986qqrb@gmail.com`), lalu barisnya dihapus. Tabel dibiarkan kosong. |
+
+### 5.2 Fungsi RPC — ganti / baru (06, `CREATE OR REPLACE`)
+
+| Fungsi | Perubahan dari 03 |
+|---|---|
+| `get_stock_counts()` (baru) | Jumlah unit per produk (angka saja, tanpa kredensial). Boleh anon — dipakai badge "Stok: N" di katalog. |
+| `add_stock_units(product_id, units jsonb)` (baru) | Admin menambah N unit `[{username, password}]` ke listing yang ada. Satu transaksi; trigger mengembalikan status listing ke 'tersedia'. |
+| `delete_stock_unit(unit_id)` (baru) | Admin menghapus 1 unit yang masih 'tersedia' saja. |
+| `create_account_order(product_id)` | Klaim 1 unit 'tersedia' (`FOR UPDATE SKIP LOCKED`, atomik) → unit 'dipesan' + `order_invoice`. Listing tetap bisa dibeli selama sisa unit > 0. |
+| `confirm_order(invoice)` | Unit yang terikat invoice jadi 'terjual'; username+password-nya pindah ke `order_creds`. |
+| `cancel_order(invoice)` | Unit kembali 'tersedia', `order_invoice` dikosongkan; kredensial tetap di stok. |
+| `delete_product(product_id)` | Tolak bila ada unit 'dipesan' ATAU order 'dipesan'. |
+| `relist_product(product_id)` | Tidak lagi "pajang lagi" — hanya menghitung ulang status dari unit (kompatibilitas; tombolnya dihapus dari UI). |
+| `reveal_order_credentials(invoice)` | Kunci kembalian 'username' (bukan 'email'). Tampil sekali (baca + hapus satu transaksi) — tidak berubah. |
+
+### 5.3 Frontend (live) — perubahan
+
+| Area | Perubahan |
+|---|---|
+| `supabase-client.js` | `listProducts()` menggabungkan jumlah stok via `get_stock_counts()` (bukan lagi `product_creds`); baru: `listStockUnits()`, `addStockUnits()`, `deleteStockUnit()`; `createProduct()` memakai `p.units`; `getStats()` pendapatan akun dari order terjual + hitung unit. |
+| `app.js` | `pStatus()` diturunkan dari jumlah unit; `trackBuy()` klaim unit; kartu katalog + detail menampilkan "Stok: N" dan tombol Beli nonaktif bila stok 0 ("Stok habis"/"Dipesan"/"Terjual"); form Tambah Akun memakai **Username** (bukan email); Daftar Stok baru per listing: ringkasan stok, pesanan aktif per invoice (Lunas/Batal), daftar unit (username terlihat, password tertutup + Lihat, hapus bila tersedia), form Tambah Stok N baris; halaman sukses/invoice memakai label "Username"; `totalRevenue()` dari order terjual. |
+| `index.html` | `fCredEmail` → `fCredUser` (type text, placeholder username); teks hint + intro Daftar Stok menyebut username & Tambah Stok; filter status tambah opsi "Stok habis". |
+| `style.css` | Kelas baru `.stock-line`, `.stock-sec-title`, `.stock-order-row`, `.unit-row`, `.unit-chip`, `.add-stock*`, `.dlg-stock` — kartu tumpuk vertikal (perbaikan bug huruf-per-baris 23:04 WIB). |
+| Edge Function Midtrans | `confirmOrderPaid`/`cancelOrderPaid` memakai `stock_units` + `order_creds.cred_user`; TIDAK lagi mengubah `products.status` langsung (trigger yang mengurus). WAJIB deploy bersamaan dengan apply SQL 06. |
+
+### 5.4 Aturan bisnis yang tetap
+
+Biaya admin 10%, kredensial tampil sekali, admin/user tegas,
+Top Up maintenance, tamu boleh beli, login Google GIS +
+`signInWithIdToken` — semuanya tidak berubah.

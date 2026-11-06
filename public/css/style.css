@@ -169,12 +169,14 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 .photo-preview{margin-top:8px;border-radius:10px;overflow:hidden;display:none;border:1px solid var(--line)} .photo-preview img{width:100%;aspect-ratio:16/9;object-fit:cover}
 .btn-add{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px;font-weight:700;font-size:16px;margin-top:4px}
 .stock-list{display:flex;flex-direction:column;gap:10px}
-.stock-item{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.stock-item{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg)}
+.stock-item .stock-head{display:flex;gap:12px;align-items:center;min-width:0}
 .stock-item .thumb{width:52px;height:40px;border-radius:6px;flex:none;overflow:hidden;background:var(--hero-bg);display:flex;align-items:center;justify-content:center;color:#a3e635;font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:12px;text-align:center}
 .stock-item .thumb img{width:100%;height:100%;object-fit:cover}
 .stock-item .meta{flex:1;min-width:0}.stock-item .meta b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stock-item .meta span{font-size:13.5px;color:var(--ink-faint);font-weight:600}
-.stock-item .acts{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.stock-item .acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.stock-item .acts .acts-note{flex:1;min-width:140px;font-size:13px;color:var(--ink-faint);font-weight:600}
 .mini{border:1.5px solid var(--line);background:var(--bg-raise);color:var(--ink);border-radius:8px;padding:6px 11px;font-weight:700;font-size:13.5px}
 .mini.danger{color:var(--danger)}
 .stock-empty{color:var(--ink-faint);font-size:15px;padding:8px 0}
@@ -296,7 +298,36 @@ body.admin-mode .livebar{display:none}
 .cred-row span{color:var(--ink-soft);font-weight:600;flex:none}
 .cred-row code{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;font-size:16px;word-break:break-all;text-align:right}
 .cred-warn{font-size:14px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:11px 14px;font-weight:700;margin-top:12px}
-.admin-cred{font-size:13px;color:var(--ink-soft);font-weight:600;display:block;margin-top:3px;word-break:break-all}
+.admin-cred{font-size:13px;color:var(--ink-soft);font-weight:600;display:block;background:var(--bg-raise);border:1px solid var(--line);border-radius:8px;padding:9px 11px;overflow-wrap:break-word}
+.admin-cred-head{font-weight:800;margin-bottom:6px}
+.admin-cred-row{display:flex;gap:8px;align-items:baseline;padding:2px 0}
+.admin-cred-label{flex:none;font-weight:800;color:var(--ink)}
+.admin-cred-value{min-width:0;overflow-wrap:anywhere}
+/* ---------- stok unit (model baru 6 Nov 2026) ----------
+   Kartu Daftar Stok tumpuk vertikal — tiap bagian baris sendiri,
+   tidak ada kolom sempit yang memaksa teks patah per huruf. */
+.stock-line{font-size:13.5px;color:var(--ink-faint);font-weight:600;margin-top:2px}
+.stock-line b{color:var(--accent-strong)}
+.stock-sec-title{font-size:13px;font-weight:800;color:var(--ink);margin:12px 0 6px}
+.stock-orders,.unit-list,.add-stock{border-top:1px solid var(--line);padding-top:2px}
+.stock-order-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--bg-raise);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.stock-order-meta{flex:1;min-width:0}
+.stock-order-meta b{display:block;font-size:14px}
+.stock-order-meta span{font-size:12.5px;color:var(--ink-faint);font-weight:600}
+.unit-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bg-raise);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.unit-cred{display:flex;gap:6px;align-items:baseline;min-width:0;flex:1 1 160px}
+.unit-label{flex:none;font-size:12.5px;font-weight:800;color:var(--ink-faint)}
+.unit-value{min-width:0;overflow-wrap:anywhere;font-size:13.5px;font-weight:600}
+.unit-pass{font-family:ui-monospace,Menlo,Consolas,monospace}
+.unit-chip{flex:none;font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;background:var(--bg);border:1px solid var(--line)}
+.unit-chip.tersedia{color:var(--accent-strong)}
+.unit-chip.dipesan{color:var(--amber)}
+.unit-chip.terjual{color:var(--ink-faint)}
+.add-stock-row{display:flex;gap:8px;margin-bottom:6px}
+.add-stock-row input{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);font-size:14px;color:var(--ink)}
+.add-stock .mini{margin:2px 4px 2px 0}
+.dlg-stock{font-size:14.5px;font-weight:600;color:var(--ink-soft);margin:10px 0 16px}
+.dlg-stock b{color:var(--accent-strong)}
 @media (max-width:860px){.report-grid{grid-template-columns:1fr}.funnel-row{grid-template-columns:104px 1fr 44px}}
 .sales-rows{display:flex;flex-direction:column;gap:10px}
 .sales-row{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg-raise)}

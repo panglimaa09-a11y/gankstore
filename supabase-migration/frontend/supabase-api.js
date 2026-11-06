@@ -8,10 +8,15 @@
      - healthOnce()                 -> probe Supabase (bukan /api/health)
      - initServer(attempt)          -> sama, tapi flag Top Up dibaca dari
                                        settings Supabase
-     - handleGoogleCredential()     -> DIHAPUS (GIS tidak dipakai lagi)
-     - googleNonce()                -> DIHAPUS (nonce diurus Supabase Auth)
-     - initGoogleSignIn()           -> tombol "Lanjutkan dengan Google"
-                                       (Supabase Auth OAuth)
+     - handleGoogleCredential()     -> GIS LANGSUNG + signInWithIdToken
+                                       (seperti RekberSTORE; layar pilih
+                                       akun tertulis gankstore.my.id)
+     - googleNonceRaw() / sha256Hex() -> nonce GIS (raw ke Supabase,
+                                       SHA-256 ke Google)
+     - initGoogleSignIn()           -> tombol Google dirender GIS
+  Tambahan model stok unit (06_stock_units.sql): rute unit stok di
+  apiImpl — GET /api/stock-units, GET/POST /api/products/:id/stock,
+  DELETE /api/stock-units/:id.
    Yang TIDAK berubah: semua pemanggil api() di app.js / topup.js /
    payments.js, mapper serverProductToLocal / serverOrderToLocal /
    serverPackageToLocal, currentUser() / isAdminUser() / renderAuth() /
@@ -28,7 +33,7 @@ function setToken(t){ try { if (t) localStorage.setItem("gankstore_token", t); e
 
 /* ---------- api(): REST lama -> Supabase ----------
    Bentuk kembalian dipertahankan sama seperti backend FastAPI lama
-   (snake_case, invoice_no, buyer_email, cred_email, ...) supaya
+   (snake_case, invoice_no, buyer_email, cred_user, ...) supaya
    mapper & pemanggil di app.js/topup.js/payments.js tidak berubah.
    Error dilempar sebagai Error(message); pesan RPC Postgres berisi
    kode singkat (mis. 'forbidden', 'topup_maintenance',
@@ -60,11 +65,16 @@ function apiImpl(path, opts){
   if (base === "/api/topup/games" && method === "GET") return Promise.resolve(window.GS_CONFIG.TOPUP_GAMES || []);
   if (base === "/api/stats" && method === "GET") return Supa.getStats();
 
-  /* --- produk --- */
+  /* --- produk (listing; stok = stock_units) --- */
   if (base === "/api/products" && method === "GET") return Supa.listProducts(isAdmin());
   if (base === "/api/products" && method === "POST") return Supa.createProduct(body);
   if (seg(1) === "api" && seg(2) === "products" && seg(4) === "relist" && method === "POST") return Supa.relistProduct(Number(seg(3)));
   if (seg(1) === "api" && seg(2) === "products" && seg(3) && method === "DELETE") return Supa.deleteProduct(Number(seg(3)));
+  /* --- unit stok --- */
+  if (base === "/api/stock-units" && method === "GET") return Supa.listStockUnits(null);
+  if (seg(1) === "api" && seg(2) === "products" && seg(4) === "stock" && method === "GET") return Supa.listStockUnits(Number(seg(3)));
+  if (seg(1) === "api" && seg(2) === "products" && seg(4) === "stock" && method === "POST") return Supa.addStockUnits(Number(seg(3)), body.units || []);
+  if (seg(1) === "api" && seg(2) === "stock-units" && seg(3) && method === "DELETE") return Supa.deleteStockUnit(Number(seg(3)));
 
   /* --- pesanan --- */
   if (base === "/api/orders" && method === "GET") return Supa.listOrders(qparam("kind") || null);
@@ -94,7 +104,7 @@ function apiImpl(path, opts){
     });
   }
   if (base === "/api/auth/login" && method === "POST") return Supa.login(body.email, body.password);
-  if (base === "/api/auth/google" && method === "POST") return Promise.reject(new Error("Gunakan tombol Google (Supabase Auth)."));
+  if (base === "/api/auth/google" && method === "POST") return Promise.reject(new Error("Gunakan tombol Google."));
   if (base === "/api/auth/logout" && method === "POST") return Supa.signOut();
   if (base === "/api/auth/me" && method === "GET") return Supa.me();
 

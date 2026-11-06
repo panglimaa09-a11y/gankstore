@@ -16,7 +16,7 @@
    - JANGAN taruh service_role key / Server Key Midtrans di file ini.
    - Kredensial akun game TIDAK PERNAH dibaca lewat tabel products /
      orders langsung — hanya lewat fungsi RPC (reveal) dan tabel
-     product_creds yang RLS-nya admin saja.
+     stock_units yang RLS-nya admin saja.
 */
 (function(){
   "use strict";
@@ -206,44 +206,72 @@
       }).catch(function(){ return true; /* gagal baca = tetap maintenance (aman) */ });
     },
 
-    /* ---------- produk (menggantikan /api/products) ---------- */
+    /* ---------- produk (menggantikan /api/products) ----------
+       products = LISTING; stok = stock_units (1 baris = 1 akun).
+       listProducts menggabungkan jumlah stok per produk (angka saja,
+       tanpa kredensial) lewat RPC get_stock_counts(). Kredensial unit
+       TIDAK dimuat di sini — hanya admin lewat listStockUnits(). */
+    getStockCounts: function(){
+      needClient();
+      return rpc("get_stock_counts", {}).then(function(data){ return data || []; });
+    },
     listProducts: function(isAdmin){
       needClient();
       return client.from("products").select("*").order("id", { ascending: false })
         .then(function(res){
           var rows = take(res);
-          if (!isAdmin) return rows;
-          /* Admin: gabungkan kredensial dari product_creds. */
-          return client.from("product_creds").select("*").then(function(cr){
-            var creds = {};
-            (take(cr) || []).forEach(function(c){ creds[c.product_id] = c; });
+          return Supa.getStockCounts().then(function(counts){
+            var map = {};
+            (counts || []).forEach(function(c){ map[c.product_id] = c; });
             rows.forEach(function(p){
-              var c = creds[p.id];
-              p.cred_email = c ? c.cred_email : "";
-              p.cred_pass = c ? c.cred_pass : "";
+              var c = map[p.id] || { available: 0, dipesan: 0, terjual: 0, total: 0 };
+              p.stock_available = Number(c.available || 0);
+              p.stock_dipesan = Number(c.dipesan || 0);
+              p.stock_terjual = Number(c.terjual || 0);
+              p.stock_total = Number(c.total || 0);
             });
             return rows;
           });
         });
     },
+    /* Unit stok — ADMIN saja (RLS stock_units_all_admin). Dipakai
+       halaman Daftar Stok. Tanpa productId = semua unit (admin). */
+    listStockUnits: function(productId){
+      needClient();
+      var q = client.from("stock_units").select("*").order("id", { ascending: true });
+      if (productId) q = q.eq("product_id", productId);
+      return q.then(function(res){ return take(res); });
+    },
+    addStockUnits: function(productId, units){
+      needClient();
+      return rpc("add_stock_units", { p_product_id: productId, p_units: units });
+    },
+    deleteStockUnit: function(id){ return rpc("delete_stock_unit", { p_unit_id: id }).then(function(){ return { ok: true }; }); },
     createProduct: function(p){
       needClient();
+      /* Stok awal listing: p.units = [{username, password}, ...].
+         Minimal 1 unit (form Tambah Akun wajib isi username+password). */
+      var units = p.units || [];
+      if (!units.length && (p.credUser || p.credPass)) {
+        units = [{ username: p.credUser, password: p.credPass }];
+      }
       return client.from("products").insert({
         game: p.game, title: p.title, rank: p.rank || "", level: String(p.level || ""),
         server: p.server || "", price: p.price, specs: p.specs || [],
         description: p.desc || "", photo: p.photo || "", status: "tersedia"
       }).select("*").single().then(function(res){
         var row = take(res);
-        return client.from("product_creds").insert({
-          product_id: row.id, cred_email: p.credEmail || "", cred_pass: p.credPass || ""
-        }).then(function(cr){
-          if (cr.error) {
-            /* Kredensial gagal tersimpan — hapus produknya supaya tidak
-               ada stok tanpa kredensial. */
-            return client.from("products").delete().eq("id", row.id).then(function(){ fail(cr.error); });
+        row.stock_available = 0; row.stock_dipesan = 0; row.stock_terjual = 0; row.stock_total = 0;
+        if (!units.length) return row;
+        return client.from("stock_units").insert(units.map(function(u){
+          return { product_id: row.id, cred_user: u.username, cred_pass: u.password, status: "tersedia" };
+        })).then(function(ir){
+          if (ir.error) {
+            /* Unit gagal tersimpan — hapus produknya supaya tidak
+               ada listing tanpa stok. */
+            return client.from("products").delete().eq("id", row.id).then(function(){ fail(ir.error); });
           }
-          row.cred_email = p.credEmail || "";
-          row.cred_pass = p.credPass || "";
+          row.stock_available = units.length; row.stock_total = units.length;
           return row;
         });
       });
@@ -264,7 +292,8 @@
     },
     confirmOrder: function(invoiceNo){ return rpc("confirm_order", { p_invoice: invoiceNo }); },
     cancelOrder: function(invoiceNo){ return rpc("cancel_order", { p_invoice: invoiceNo }); },
-    /* Tampilkan kredensial SATU KALI — fungsi RPC menghapusnya. */
+    /* Tampilkan kredensial SATU KALI — fungsi RPC menghapusnya.
+       Kembalian: {username, password} (username PB, bukan email). */
     revealCredentials: function(invoiceNo){ return rpc("reveal_order_credentials", { p_invoice: invoiceNo }); },
 
     /* ---------- paket top up (menggantikan /api/topup/packages) ---------- */
@@ -333,7 +362,10 @@
        tapi disediakan supaya endpoint lama tetap ada padanannya) ---------- */
     getStats: function(){
       needClient();
-      /* Hitung dari list (katalog masih kecil) — cukup untuk dasbor admin. */
+      /* Hitung dari list (katalog masih kecil) — cukup untuk dasbor admin.
+         Pendapatan akun dihitung dari ORDER terjual (1 order = 1 unit),
+         bukan dari status produk — listing yang masih tersedia pun bisa
+         sudah menjual beberapa unit. */
       return Promise.all([Supa.listProducts(false), Supa.listOrders()]).then(function(res){
         var products = res[0] || [], orders = res[1] || [];
         function count(arr, fn){ return arr.filter(fn).length; }
@@ -342,12 +374,15 @@
           products_tersedia: count(products, function(p){ return p.status === "tersedia"; }),
           products_dipesan: count(products, function(p){ return p.status === "dipesan"; }),
           products_terjual: count(products, function(p){ return p.status === "terjual"; }),
+          products_habis: count(products, function(p){ return p.status === "habis"; }),
+          units_total: products.reduce(function(s, p){ return s + Number(p.stock_total || 0); }, 0),
+          units_tersedia: products.reduce(function(s, p){ return s + Number(p.stock_available || 0); }, 0),
           orders_total: orders.length,
           orders_dipesan: count(orders, function(o){ return o.status === "dipesan"; }),
           orders_terjual: count(orders, function(o){ return o.status === "terjual"; }),
           topup_terjual: count(orders, function(o){ return o.kind === "topup" && o.status === "terjual"; }),
-          revenue_akun: products.filter(function(p){ return p.status === "terjual"; })
-            .reduce(function(s, p){ return s + Number(p.price || 0); }, 0),
+          revenue_akun: orders.filter(function(o){ return o.kind === "akun" && o.status === "terjual"; })
+            .reduce(function(s, o){ return s + Number(o.price || 0); }, 0),
           revenue_topup: orders.filter(function(o){ return o.kind === "topup" && o.status === "terjual"; })
             .reduce(function(s, o){ return s + Number(o.price || 0); }, 0)
         };

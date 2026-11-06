@@ -168,7 +168,7 @@
             <option value="baru">Paling baru</option><option value="murah">Harga termurah</option><option value="mahal">Harga termahal</option>
           </select>
           <select class="sortsel" id="statusSelect" aria-label="Filter status">
-            <option value="semua">Semua status</option><option value="tersedia">Tersedia saja</option><option value="dipesan">Sedang dipesan</option><option value="terjual">Sudah terjual</option>
+            <option value="semua">Semua status</option><option value="tersedia">Tersedia saja</option><option value="dipesan">Sedang dipesan</option><option value="terjual">Sudah terjual</option><option value="habis">Stok habis</option>
           </select>
         </div>
         <div class="grid" id="grid"></div>
@@ -448,10 +448,10 @@
             <div class="field"><label for="fSpecs">Isi akun (pisahkan dengan koma)</label><input id="fSpecs" type="text" placeholder="cth. Kriss S.V, AUG A3, KAR98k, 10 char" maxlength="160" /></div>
             <div class="field"><label for="fDesc">Deskripsi</label><textarea id="fDesc" rows="3" placeholder="Detail tambahan: riwayat akun, bind, garansi, dsb." maxlength="600"></textarea></div>
             <div class="field-row">
-              <div class="field"><label for="fCredEmail">Email akun game (wajib, khusus admin)</label><input id="fCredEmail" type="email" placeholder="cth. akunpb01@email.com" maxlength="90" required /></div>
+              <div class="field"><label for="fCredUser">Username akun Point Blank (wajib, khusus admin)</label><input id="fCredUser" type="text" placeholder="cth. 986qqrb (bukan email)" maxlength="90" required /></div>
               <div class="field"><label for="fCredPass">Password akun game (wajib, khusus admin)</label><input id="fCredPass" type="text" placeholder="Password login akun ini" maxlength="90" required /></div>
             </div>
-            <p class="hint" style="font-size:13.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:10px 13px;font-weight:600;margin:-4px 0 14px">🔒 Email &amp; password ini harus sesuai dengan judul akun di atas. Keduanya disembunyikan dari pembeli dan hanya terlihat oleh Admin di Daftar Stok. Begitu akun laku dan kamu klik Konfirmasi Lunas, email &amp; password otomatis ditampilkan <strong>satu kali</strong> ke pembeli di halaman sukses, lalu <strong>otomatis dihapus</strong> dari data stok.</p>
+            <p class="hint" style="font-size:13.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:10px 13px;font-weight:600;margin:-4px 0 14px">🔒 Username &amp; password ini harus sesuai dengan judul akun di atas. Keduanya disembunyikan dari pembeli dan hanya terlihat oleh Admin di Daftar Stok. Begitu akun laku dan kamu klik Konfirmasi Lunas, username &amp; password otomatis ditampilkan <strong>satu kali</strong> ke pembeli di halaman sukses, lalu <strong>otomatis dihapus</strong> dari data stok.</p>
             <div class="field">
               <label for="fPhoto">Foto akun (screenshot profil / koleksi)</label>
               <input id="fPhoto" type="file" accept="image/*" />
@@ -469,7 +469,7 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Daftar Stok</div>
           <h1>Daftar Stok</h1>
-          <p>Akun yang dibeli otomatis berstatus <strong>Dipesan</strong> — klik <strong>Konfirmasi Lunas</strong> setelah pembayaran diterima, statusnya jadi Terjual dan email &amp; password akun diserahkan satu kali ke pembeli lalu dihapus dari stok. Pesanan juga bisa dibatalkan. Baris 🔒 di tiap stok adalah email &amp; password akun — hanya terlihat di area admin ini.</p>
+          <p>Akun yang dibeli otomatis berstatus <strong>Dipesan</strong> — klik <strong>Konfirmasi Lunas</strong> setelah pembayaran diterima, statusnya jadi Terjual dan username &amp; password akun diserahkan satu kali ke pembeli lalu dihapus dari stok. Pesanan juga bisa dibatalkan. Stok bisa ditambah kapan saja lewat form <strong>Tambah Stok</strong> di tiap listing — listing tidak perlu dibuat ulang. Username &amp; password tiap unit hanya terlihat di area admin ini.</p>
         </div>
         <div class="panel" style="margin-top:20px">
           <div class="stock-page-list" id="stockList"></div>

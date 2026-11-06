@@ -71,17 +71,19 @@ async function logActivity(tag: string, text: string): Promise<void> {
 }
 
 // Konfirmasi lunas dari webhook — SAMA dengan confirm_order() di SQL
-// (03_functions.sql), tapi dijalankan service_role tanpa perlu login admin.
+// (06_stock_units.sql), tapi dijalankan service_role tanpa perlu login admin.
+// Unit yang terikat invoice jadi 'terjual', username+password-nya pindah
+// ke order_creds. Status listing TIDAK diubah di sini — trigger
+// stock_units_status_sync yang menghitung ulang dari unit.
 async function confirmOrderPaid(order: Record<string, unknown>): Promise<void> {
   const invoiceNo = order.invoice_no as string;
   await service.from("orders").update({ status: "terjual", updated_at: new Date().toISOString() }).eq("invoice_no", invoiceNo);
   if (order.kind === "akun" && order.product_id) {
-    await service.from("products").update({ status: "terjual" }).eq("id", order.product_id);
-    const { data: cred } = await service.from("product_creds").select("*").eq("product_id", order.product_id).maybeSingle();
-    if (cred && cred.cred_email && cred.cred_pass) {
-      await service.from("order_creds").upsert({ invoice_no: invoiceNo, cred_email: cred.cred_email, cred_pass: cred.cred_pass });
+    const { data: unit } = await service.from("stock_units").select("*").eq("order_invoice", invoiceNo).maybeSingle();
+    if (unit && unit.cred_user && unit.cred_pass) {
+      await service.from("order_creds").upsert({ invoice_no: invoiceNo, cred_user: unit.cred_user, cred_pass: unit.cred_pass });
       await service.from("orders").update({ cred_pending: true }).eq("invoice_no", invoiceNo);
-      await service.from("product_creds").delete().eq("product_id", order.product_id);
+      await service.from("stock_units").update({ status: "terjual" }).eq("id", unit.id);
     }
   }
   await logActivity("lunas", `Pembayaran Midtrans lunas (webhook) — "${order.title}" resmi TERJUAL.`);
@@ -91,7 +93,8 @@ async function cancelOrderPaid(order: Record<string, unknown>, txStatus: string)
   const invoiceNo = order.invoice_no as string;
   await service.from("orders").update({ status: "dibatalkan", updated_at: new Date().toISOString() }).eq("invoice_no", invoiceNo);
   if (order.kind === "akun" && order.product_id) {
-    await service.from("products").update({ status: "tersedia" }).eq("id", order.product_id);
+    // Unit kembali tersedia (status listing dihitung ulang trigger).
+    await service.from("stock_units").update({ status: "tersedia", order_invoice: null }).eq("order_invoice", invoiceNo);
   }
   await logActivity("batal", `Pembayaran Midtrans ${txStatus} — pesanan "${order.title}" dibatalkan.`);
 }
