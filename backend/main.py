@@ -86,6 +86,13 @@ TOPUP_GAMES = [
 ]
 TOPUP_GAME_MAP = {g["name"]: g for g in TOPUP_GAMES}
 
+# Top Up MAINTENANCE (perintah Tuan, 6 Nov 2026): order top up ditolak
+# 503 sampai flag dimatikan. Matikan: GS_TOPUP_MAINTENANCE=0 + restart
+# service gankstore-backend, DAN TOPUP_MAINTENANCE=false di
+# public/js/config.js (supaya halaman #/topup tampil normal lagi).
+# Akun Point Blank TIDAK kena maintenance ini.
+TOPUP_MAINTENANCE = os.environ.get("GS_TOPUP_MAINTENANCE", "1") == "1"
+
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
 
 
@@ -204,6 +211,7 @@ def health():
         "mode": "server",
         "midtrans_configured": cfg["configured"],
         "midtrans_production": cfg["is_production"],
+        "topup_maintenance": TOPUP_MAINTENANCE,
     }
 
 
@@ -538,6 +546,11 @@ def remove_package(package_id: int, user: dict = Depends(require_admin)):
 
 @app.post("/api/topup/orders")
 def create_topup_order(body: TopupOrderIn, user: dict = Depends(optional_user)):
+    if TOPUP_MAINTENANCE:
+        raise HTTPException(
+            status_code=503,
+            detail="Top Up sedang maintenance — kembali lagi nanti. Akun Point Blank tetap bisa dibeli.",
+        )
     package = store.get_package(body.package_id)
     if not package:
         raise HTTPException(status_code=404, detail="Paket top up tidak ditemukan.")

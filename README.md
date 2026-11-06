@@ -86,6 +86,14 @@ Lainnya**. Semuanya **mulai KOSONG** dan bisa diisi admin lewat Panel Admin
 > ini diproses **manual oleh admin** setelah pembayaran lunas, sama seperti
 > top up game. Jangan klaim otomatis di mana pun.
 
+> **MAINTENANCE (6 Nov 2026, perintah Tuan):** Top Up sedang maintenance —
+> `TOPUP_MAINTENANCE: true` di `public/js/config.js` dan
+> `GS_TOPUP_MAINTENANCE=1` (default) di `backend/main.py`. Pembeli melihat
+> halaman maintenance di `#/topup` dan `#/topup/<game>`, order top up
+> ditolak server dengan 503. Akun Point Blank tetap bisa dibeli normal.
+> Mengaktifkan lagi: ubah flag di config.js jadi `false` + set
+> `GS_TOPUP_MAINTENANCE=0` di server + restart `gankstore-backend`.
+
 ## Cara jalanin lokal
 
 ```bash
