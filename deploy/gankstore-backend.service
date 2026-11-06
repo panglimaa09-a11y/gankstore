@@ -1,0 +1,18 @@
+[Unit]
+Description=GankStore backend (FastAPI :8773, publik via tunnel /gankstore-api/)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/hatch/workspace/gankstore-fullstack
+Environment=GANKSTORE_DB=/home/hatch/workspace/gankstore-fullstack/backend/gankstore.db
+Environment=GS_SEED_DEMO=1
+ExecStart=/home/hatch/workspace/gankstore-fullstack/.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8773
+Restart=always
+RestartSec=5
+StandardOutput=append:/tmp/gankstore-backend.log
+StandardError=append:/tmp/gankstore-backend.log
+
+[Install]
+WantedBy=multi-user.target

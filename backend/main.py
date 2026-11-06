@@ -20,6 +20,7 @@ import os
 import re
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -31,6 +32,23 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PUBLIC_DIR = os.path.join(os.path.dirname(BASE_DIR), "public")
 
 app = FastAPI(title="GankStore API", version="1.0.0")
+
+# CORS: frontend live di Vercel (gankstore.my.id) memanggil backend ini
+# lewat tunnel ngrok (/gankstore-api) — origin berbeda, jadi browser
+# memblokir fetch tanpa header CORS. Hanya origin toko yang diizinkan.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://gankstore.my.id",
+        "https://www.gankstore.my.id",
+        "https://gankstore.vercel.app",
+        "https://curvature-reunite-perfected.ngrok-free.dev",
+        "http://127.0.0.1:8773",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"],
+)
 
 store.init_db()
 

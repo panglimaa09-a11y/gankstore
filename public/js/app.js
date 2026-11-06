@@ -8,13 +8,19 @@
          di SQLite server. Kalau dibuka sebagai file statis (Vercel statis /
          GitHub Pages), semua fungsi lama (localStorage + memori) tetap jalan. */
       var Server={enabled:false,token:null,user:null,payments:{configured:false,is_production:false,client_key:null}};
+      /* API_BASE dari config.js: alamat backend remote (lewat tunnel ngrok).
+         "" = origin yang sama (saat disajikan backend Python). Sebelumnya
+         API_BASE didefinisikan tapi TIDAK PERNAH dipakai — api() selalu
+         fetch relatif, jadi frontend Vercel tidak pernah bisa mencapai
+         backend remote. Sekarang semua fetch API melewati API_BASE. */
+      var API_BASE=(window.GS_CONFIG.API_BASE||"").replace(/\/$/,"");
       function apiToken(){try{return localStorage.getItem("gankstore_token");}catch(e){return null;}}
       function setToken(t){try{if(t)localStorage.setItem("gankstore_token",t);else localStorage.removeItem("gankstore_token");}catch(e){}}
       function api(path,opts){
         opts=opts||{};
         var headers={"Content-Type":"application/json"};
         var t=apiToken();if(t)headers["Authorization"]="Bearer "+t;
-        return fetch(path,{method:opts.method||"GET",headers:headers,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
+        return fetch(API_BASE+path,{method:opts.method||"GET",headers:headers,body:opts.body?JSON.stringify(opts.body):undefined}).then(function(r){
           if(!r.ok)throw new Error("HTTP "+r.status);
           return r.json();
         });
@@ -33,7 +39,7 @@
         }).catch(function(){});
       }
       function initServer(){
-        return fetch("/api/health",{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("no api");return r.json();}).then(function(){
+        return fetch(API_BASE+"/api/health",{cache:"no-store"}).then(function(r){if(!r.ok)throw new Error("no api");return r.json();}).then(function(){
           Server.enabled=true;
           return Promise.all([
             api("/api/products").catch(function(){return[];}),

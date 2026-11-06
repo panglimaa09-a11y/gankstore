@@ -11,8 +11,11 @@ window.GS_CONFIG = {
 
   /* Alamat API backend. "" = origin yang sama (saat disajikan backend
      Python). Saat dibuka sebagai file statis, fetch ke /api/* gagal dan
-     toko otomatis jalan dalam mode lokal (localStorage + memori). */
-  API_BASE: "",
+     toko otomatis jalan dalam mode lokal (localStorage + memori).
+     Backend GankStore jalan di VM ini dan dipublikasikan lewat tunnel
+     ngrok yang sama seperti /pb-ai dan /onerouter (route /gankstore-api
+     di revproxy2.py). URL ini yang dipakai frontend Vercel. */
+  API_BASE: "https://curvature-reunite-perfected.ngrok-free.dev/gankstore-api",
 
   /* Daftar game tetap untuk Top Up (all game). Kalau user mengubah daftar,
      edit di sini DAN di backend/main.py (TOPUP_GAMES) supaya sama.

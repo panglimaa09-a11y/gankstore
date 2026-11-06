@@ -147,11 +147,20 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
 
 ## Deploy
 
-- **Backend (utama):** jalankan di VPS dengan `uvicorn backend.main:app`
-  (atau systemd). Arahkan domain `gankstore.my.id` ke server itu (HTTPS).
-  Target Midtrans: website `https://gankstore.my.id` bisa diakses **13/11/2026**.
-- **Frontend statis saja:** deploy isi `public/` ke Vercel (folder `public/`
-  otomatis disajikan di root) — tapi tanpa backend, mode lokal saja.
+- **Backend (live):** FastAPI jalan sebagai service systemd `gankstore-backend`
+  di VM ini, port 127.0.0.1:8773, database SQLite di `backend/gankstore.db`
+  (di `~/workspace`, selamat dari restart VM). Pasang ulang setelah VM
+  replacement dengan `bash deploy/install.sh` (sebagai root — `/etc` itu
+  ephemeral, unit systemd hilang tiap replacement). Publik lewat tunnel
+  ngrok yang sama seperti `/pb-ai`: route `/gankstore-api` di `revproxy2.py`
+  → `https://curvature-reunite-perfected.ngrok-free.dev/gankstore-api`.
+  Frontend Vercel (`config.js` → `API_BASE`) memanggil alamat itu; CORS
+  hanya mengizinkan origin `gankstore.my.id`, `www.gankstore.my.id`,
+  `gankstore.vercel.app`, dan domain ngrok di atas.
+- **Frontend:** isi `public/` di-deploy ke Vercel (Output Directory `public`),
+  custom domain `gankstore.my.id` (DNS IDwebhost: A `@` → `76.76.21.21`,
+  CNAME `www` → `8a79a59656f45113.vercel-dns-017.com`). Vercel auto-deploy
+  setiap push ke `main`.
 - **Midtrans di dashboard:** website `https://gankstore.my.id`, redirect
   sukses/gagal `https://gankstore.my.id/`, Notification URL menunjuk ke
   webhook server ini (`/api/payments/midtrans-webhook`) setelah server live.
