@@ -136,13 +136,25 @@
           });
         });
     },
-    signInWithGoogle: function(){
+    /* Login Google LANGSUNG (GIS, seperti RekberSTORE) — BUKAN
+       hosted-OAuth: GIS dirender dari gankstore.my.id, token ID
+       diteruskan ke Supabase. Layar pilih akun Google tertulis
+       "Lanjutkan ke gankstore.my.id" (bukan URL Supabase).
+       Nonce: kirim RAW nonce ke sini; ke Google dikirim SHA-256
+       dari nonce itu (lihat app.js: googleNonceRaw/sha256Hex).
+       Supabase me-hash nonce ini sendiri lalu membandingkan dengan
+       claim nonce di token — bila keduanya tidak cocok, GoTrue
+       menolak ("Nonces mismatch"). */
+    signInWithIdToken: function(token, nonce){
       needClient();
-      try { sessionStorage.setItem("gs_after_oauth", location.hash || "#/"); } catch (e) {}
-      return client.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: location.origin + "/" }
-      }).then(function(res){ if (res.error) fail(res.error); return res.data; });
+      return client.auth.signInWithIdToken({ provider: "google", token: token, nonce: nonce })
+        .then(function(res){
+          if (res.error) fail(res.error);
+          setSessionCache(res.data.session);
+          return Supa.me().then(function(me){
+            return { token: res.data.session.access_token, id: res.data.user.id, name: me.name, email: me.email, is_admin: me.is_admin };
+          });
+        });
     },
     signOut: function(){
       if (!client) return Promise.resolve({ ok: true });
@@ -164,7 +176,7 @@
           .eq("id", uid).single().then(function(res){
             if (res.error) fail(res.error);
             _meCache = { id: res.data.id, name: res.data.name, email: res.data.email, is_admin: !!res.data.is_admin };
-            /* Kembali ke halaman sebelum OAuth (disimpan signInWithGoogle). */
+            /* Kembali ke halaman sebelum login Google (disimpan saat login). */
             try {
               var back = sessionStorage.getItem("gs_after_oauth");
               if (back) { sessionStorage.removeItem("gs_after_oauth"); location.hash = back; }

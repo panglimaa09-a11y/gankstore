@@ -83,7 +83,7 @@ function apiImpl(path, opts){
     });
   }
   if (base === "/api/auth/login" && method === "POST") return Supa.login(body.email, body.password);
-  if (base === "/api/auth/google" && method === "POST") return Promise.reject(new Error("Gunakan tombol Google (Supabase Auth)."));
+  if (base === "/api/auth/google" && method === "POST") return Promise.reject(new Error("Gunakan tombol Google."));
   if (base === "/api/auth/logout" && method === "POST") return Supa.signOut();
   if (base === "/api/auth/me" && method === "GET") return Supa.me();
 
@@ -728,16 +728,55 @@ function initServer(attempt){
       }
       document.getElementById("tabLogin").addEventListener("click",function(){showAuthTab("login");});
       document.getElementById("tabRegister").addEventListener("click",function(){showAuthTab("register");});
-      /* ---------- login Google via Supabase Auth ---------- */
-      /* Tidak ada lagi GIS, nonce, atau endpoint /api/auth/google.
-         Klik tombol -> Supabase redirect ke Google -> kembali ke
-         https://gankstore.my.id/ -> sesi terdeteksi otomatis. */
+      /* ---------- login Google LANGSUNG (GIS + signInWithIdToken) ---------- */
+      /* Seperti RekberSTORE: tombol Google dirender GIS dari
+         gankstore.my.id, token ID diteruskan ke Supabase — TANPA
+         redirect hosted-OAuth ke supabase.co, jadi layar pilih akun
+         Google tertulis "Lanjutkan ke gankstore.my.id".
+         Nonce (pola Supabase + GIS): rawNonce acak dibuat per
+         inisialisasi dan disimpan di sessionStorage; ke Google
+         dikirim SHA-256(rawNonce), ke Supabase dikirim rawNonce —
+         Supabase me-hash sendiri lalu membandingkan dengan claim
+         nonce di token. TIDAK ada lagi endpoint /api/auth/google. */
       function googleMsgShow(text,showRetry){var m=document.getElementById("googleMsg");if(m){m.textContent=text;m.hidden=false;}var b=document.getElementById("googleRetryBtn");if(b)b.hidden=!showRetry;}
       function googleMsgHide(){var m=document.getElementById("googleMsg");if(m)m.hidden=true;var b=document.getElementById("googleRetryBtn");if(b)b.hidden=true;}
 var _googleTries = 0;
 var _googleServerRetried = false;
+var _googleInitialized = false;
+function googleNonceRaw(){
+  /* Nonce mentah baru (32 byte acak -> hex) per inisialisasi. */
+  var bytes = new Uint8Array(32);
+  if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+  else { for (var i=0;i<32;i++) bytes[i]=Math.floor(Math.random()*256); }
+  var raw = Array.prototype.map.call(bytes,function(b){return ("0"+b.toString(16)).slice(-2);}).join("");
+  try { sessionStorage.setItem("gs_google_nonce", raw); } catch (e) {}
+  return raw;
+}
+function sha256Hex(str){
+  if (window.crypto && window.crypto.subtle && window.crypto.subtle.digest) {
+    var data = new TextEncoder().encode(str);
+    return window.crypto.subtle.digest("SHA-256", data).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join("");
+    });
+  }
+  return Promise.resolve(str);
+}
+function handleGoogleCredential(resp){
+  if (!resp || !resp.credential) { formError("loginError","Login Google gagal. Coba lagi."); return; }
+  var nonce = "";
+  try { nonce = sessionStorage.getItem("gs_google_nonce") || ""; } catch (e) {}
+  if (!nonce) { formError("loginError","Login Google gagal. Coba lagi."); return; }
+  try { sessionStorage.setItem("gs_after_oauth", location.hash || "#/"); } catch (e) {}
+  Supa.signInWithIdToken(resp.credential, nonce).then(function(r){
+    Server.user = { name: r.name, email: r.email, is_admin: !!r.is_admin };
+    afterLogin(Server.user); refreshServerData();
+  }).catch(function(){
+    formError("loginError","Login Google ditolak oleh server. Coba lagi atau pakai email + password.");
+  });
+}
 function initGoogleSignIn(){
   var wrap = document.getElementById("googleBtnWrap"); if (!wrap) return;
+  var GOOGLE_CLIENT_ID = (window.GS_CONFIG && window.GS_CONFIG.GOOGLE_CLIENT_ID) || "";
   if (!Server.enabled) {
     if (!_googleServerRetried) {
       _googleServerRetried = true;
@@ -751,29 +790,40 @@ function initGoogleSignIn(){
   _googleServerRetried = false;
   googleMsgHide();
   wrap.style.display = "";
-  wrap.innerHTML = "";
+  if (!GOOGLE_CLIENT_ID) {
+    wrap.style.display = "none";
+    googleMsgShow("Login Google belum terhubung — pakai email + password di bawah.", true);
+    return;
+  }
   if (!window.Supa || !Supa.ready) {
     wrap.style.display = "none";
     googleMsgShow("Login Google belum terhubung — pakai email + password di bawah.", true);
     return;
   }
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "btn btn-ghost";
-  btn.style.width = "100%";
-  btn.style.justifyContent = "center";
-  btn.style.marginTop = "10px";
-  btn.textContent = "Lanjutkan dengan Google";
-  btn.addEventListener("click", function(){
-    btn.disabled = true;
-    btn.textContent = "Membuka Google…";
-    Supa.signInWithGoogle().catch(function(){
-      btn.disabled = false;
-      btn.textContent = "Lanjutkan dengan Google";
-      googleMsgShow("Login Google gagal dibuka — pakai email + password di bawah.", true);
-    });
+  if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+    if (_googleTries < 10) { _googleTries++; setTimeout(initGoogleSignIn, 500); return; }
+    wrap.style.display = "none";
+    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
+    return;
+  }
+  if (_googleInitialized) return;
+  _googleInitialized = true;
+  var rawNonce = googleNonceRaw();
+  sha256Hex(rawNonce).then(function(hashedNonce){
+    try {
+      window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential, nonce: hashedNonce, ux_mode: "popup" });
+      var w = wrap.clientWidth || 320; if (w < 200) w = 200; if (w > 400) w = 400;
+      window.google.accounts.id.renderButton(wrap, { theme: "outline", size: "large", width: w, text: "continue_with" });
+    } catch (e) {
+      _googleInitialized = false;
+      wrap.style.display = "none";
+      googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
+    }
+  }).catch(function(){
+    _googleInitialized = false;
+    wrap.style.display = "none";
+    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
   });
-  wrap.appendChild(btn);
 }
       /* Tombol "Coba lagi" di pesan Google: sambung ulang ke server
          lalu coba inisialisasi Google lagi — tanpa reload halaman. */
@@ -781,7 +831,7 @@ function initGoogleSignIn(){
         var b=document.getElementById("googleRetryBtn");
         if(!b)return;
         b.addEventListener("click",function(){
-          _googleTries=0;_googleServerRetried=false;
+          _googleTries=0;_googleServerRetried=false;_googleInitialized=false;
           googleMsgHide();
           initServer().then(function(){initGoogleSignIn();});
         });
