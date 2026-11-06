@@ -272,6 +272,13 @@ function initServer(attempt){
             p.stockAvailable=Math.max(0,p.stockAvailable-1);p.stockDipesan++;
             p.status=pStatus(p);p.sold=(p.status==="terjual");
             analytics.orders.unshift(order);
+            /* Tandai unit yang diklaim server di memori lokal juga:
+               server mengklaim unit 'tersedia' dengan id terkecil —
+               sama seperti urutan lokal (listStockUnits order id asc).
+               Tanpa ini chip unit di Daftar Stok ketinggalan 'Tersedia'
+               padahal hitungan stok sudah berkurang. */
+            var claimed=false;
+            (p.units||[]).forEach(function(u){if(!claimed&&u.status==="tersedia"){u.status="dipesan";u.invoiceNo=order.invoiceNo;claimed=true;}});
             logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(order.fee)+"). Menunggu pembayaran via Midtrans.");
             showEventPopup(p,"pesan");
             showToast('Pesanan dibuat! Invoice '+order.invoiceNo+" — 1 unit stok otomatis ditandai DIPESAN.");
@@ -545,6 +552,13 @@ function initServer(attempt){
         if(r.page==="topup"&&window.TopUp)TopUp.renderTopup();
         if(r.page==="topup-game"&&window.TopUp)TopUp.renderTopupGame(r.game);
         if(r.page==="admin-toppup"&&window.TopUp)TopUp.renderTopupAdmin();
+        if(r.page==="admin-stok"&&Server.enabled&&isAdminUser()){
+          /* Stok bisa berubah dari luar sesi admin (pembeli lain / tab
+             lain) — muat ulang produk + pesanan + unit dari server setiap
+             kali halaman dibuka, supaya chip status unit, ringkasan stok,
+             dan daftar pesanan aktif selalu cocok dengan server. */
+          refreshServerData();
+        }
         window.scrollTo(0,0);
       }
       window.addEventListener("hashchange",applyRoute);
@@ -759,7 +773,7 @@ function initServer(attempt){
             unitsHTML='<div class="unit-list"><div class="stock-sec-title">Unit stok ('+units.length+')</div>'+units.map(function(u){
               var chip=u.status==="tersedia"?"Tersedia":u.status==="dipesan"?"Dipesan":"Terjual";
               var del=u.status==="tersedia"?'<button class="mini danger" type="button" data-delunit="'+u.id+'">Hapus</button>':"";
-              return '<div class="unit-row"><div class="unit-cred"><span class="unit-label">Username</span><span class="unit-value">'+esc(u.username)+'</span></div><div class="unit-cred"><span class="unit-label">Password</span><span class="unit-value unit-pass" data-pass="'+esc(u.password)+'" data-shown="0">••••••••</span><button class="mini unit-toggle" type="button" data-showpass="'+u.id+'">Lihat</button></div><span class="unit-chip '+u.status+'">'+chip+'</span>'+del+'</div>';
+              return '<div class="unit-row"><div class="unit-cred"><span class="unit-label">Username</span><span class="unit-value">'+esc(u.username)+'</span></div><div class="unit-cred"><span class="unit-label">Password</span><span class="unit-value unit-pass" data-pass="'+esc(u.password)+'" data-shown="0">••••••••</span><button class="mini unit-toggle" type="button" data-showpass="'+u.id+'">Lihat</button></div><div class="unit-foot"><span class="unit-chip '+u.status+'">'+chip+'</span>'+del+'</div></div>';
             }).join("")+'</div>';
           }
           var addHTML='<div class="add-stock"><div class="stock-sec-title">Tambah Stok</div><div class="add-stock-rows" data-rows="'+p.id+'"><div class="add-stock-row"><input type="text" placeholder="Username akun" maxlength="90" /><input type="text" placeholder="Password" maxlength="90" /></div></div><button class="mini" type="button" data-addrow="'+p.id+'">+ Tambah baris</button><button class="mini lunas" type="button" data-addstock="'+p.id+'">Tambah Stok</button></div>';
