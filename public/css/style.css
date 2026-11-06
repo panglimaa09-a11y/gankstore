@@ -327,3 +327,35 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 @media (max-width:650px){
   .promo-banner{border-radius:12px;margin-top:14px}
 }
+
+/* ---------- animasi halus (transform/opacity saja — ringan di HP) ---------- */
+/* Aturan: durasi interaksi 150-300ms, masuk halaman maks ~500ms.
+   Semua animasi berakhir di layout akhir yang sama persis (tidak ada
+   pergeseran setelah animasi), dan dimatikan bila user mengatur
+   prefers-reduced-motion. */
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Masuk halaman: banner, headline, paragraf, tombol, ilustrasi — berurutan halus */
+.page.active .promo-banner{animation:rise .45s ease both}
+.page.active .hero h1{animation:rise .45s .05s ease both}
+.page.active .hero p{animation:rise .45s .12s ease both}
+.page.active .hero-cta{animation:rise .45s .2s ease both}
+.page.active .hero-img{animation:rise .5s .1s ease both}
+.page.active .section-head{animation:rise .4s ease both}
+.page.active .grid .card{animation:rise .4s ease both}
+.page.active .empty{animation:rise .4s ease both}
+
+/* Tombol & kartu merespons saat ditekan — tanpa mengubah layout */
+.btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.bottomnav a,.topnav a{transition:transform .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease}
+.btn:active,.btn-dark:active,.btn-auth:active,.btn-pay:active,.btn-add:active,.btn-detail:active,.btn-buy:active,.mini:active,.btn-logout:active,.btn-google:active{transform:scale(.97)}
+.card{transition:transform .2s ease,box-shadow .2s ease}
+.card:active{transform:translateY(-1px) scale(.985)}
+.admin-menu-card,.cat-card{transition:transform .2s ease,border-color .2s ease}
+.admin-menu-card:active,.cat-card:active{transform:scale(.98)}
+.bottomnav a{transition:background-color .18s ease,color .18s ease}
+
+@media (prefers-reduced-motion: reduce){
+  .page.active .promo-banner,.page.active .hero h1,.page.active .hero p,.page.active .hero-cta,.page.active .hero-img,.page.active .section-head,.page.active .grid .card,.page.active .empty{animation:none}
+  .btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.bottomnav a,.topnav a,.card,.admin-menu-card,.cat-card{transition:none}
+  .btn:active,.btn-dark:active,.btn-auth:active,.btn-pay:active,.btn-add:active,.btn-detail:active,.btn-buy:active,.mini:active,.btn-logout:active,.btn-google:active,.card:active,.admin-menu-card:active,.cat-card:active{transform:none}
+}
