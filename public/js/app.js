@@ -274,12 +274,19 @@
       function validEmail(s){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);}
       function renderAuth(){
         var u=currentUser();
-        var link=document.getElementById("accountLink");
-        if(link)link.textContent=u?u.name.split(" ")[0]:"Masuk";
         var out=document.getElementById("authLoggedOut"),inn=document.getElementById("authLoggedIn");
         if(!out||!inn)return;
         out.hidden=!!u;inn.hidden=!u;
         if(u){document.getElementById("profileName").textContent=u.name;document.getElementById("profileEmail").textContent=u.email;document.getElementById("profileAvatar").textContent=u.name.charAt(0).toUpperCase();}
+        /* Modul AKUN di sidebar: tampilkan Masuk/Daftar bila logout,
+           Pesanan Saya + Keluar bila login. Tautan Panel Admin HANYA
+           untuk admin — user biasa tidak melihatnya sama sekali. */
+        var slo=document.getElementById("sideLoggedOut"),sli=document.getElementById("sideLoggedIn");
+        if(slo)slo.hidden=!!u;if(sli)sli.hidden=!u;
+        var sun=document.getElementById("sideUserName");
+        if(sun&&u)sun.textContent=u.name;
+        var sideAdmin=document.getElementById("sideAdminLink");
+        if(sideAdmin)sideAdmin.style.display=isAdminUser()?"":"none";
         /* Tombol Panel Admin HANYA untuk admin — user biasa tidak
            melihatnya sama sekali di halaman Akun. Pakai style.display,
            bukan atribut hidden: class .btn-dark mengatur display
@@ -300,6 +307,34 @@
         }
         else{location.hash="#/";if(getRoute().page==="beranda")applyRoute();}
       }
+
+      /* ---------- sidebar burger — satu-satunya navigasi utama ---------- */
+      var sidebar=document.getElementById("sidebar"),sideOverlay=document.getElementById("sideOverlay"),burgerBtn=document.getElementById("btnBurger");
+      var pendingAuthTab=null; /* "login" / "register": tab Akun yang dibuka dari sidebar */
+      function openSidebar(){
+        if(!sidebar)return;
+        sidebar.classList.add("open");sideOverlay.classList.add("open");
+        document.body.classList.add("sidebar-open");
+        burgerBtn.setAttribute("aria-expanded","true");sidebar.setAttribute("aria-hidden","false");
+      }
+      function closeSidebar(){
+        if(!sidebar)return;
+        sidebar.classList.remove("open");sideOverlay.classList.remove("open");
+        document.body.classList.remove("sidebar-open");
+        burgerBtn.setAttribute("aria-expanded","false");sidebar.setAttribute("aria-hidden","true");
+      }
+      if(burgerBtn)burgerBtn.addEventListener("click",openSidebar);
+      var btnSideClose=document.getElementById("btnSideClose");
+      if(btnSideClose)btnSideClose.addEventListener("click",closeSidebar);
+      if(sideOverlay)sideOverlay.addEventListener("click",closeSidebar);
+      document.addEventListener("keydown",function(ev){if(ev.key==="Escape")closeSidebar();});
+      if(sidebar)sidebar.querySelectorAll("a").forEach(function(a){
+        a.addEventListener("click",function(){
+          var tab=a.getAttribute("data-auth-tab");
+          if(tab)pendingAuthTab=tab;
+          closeSidebar();
+        });
+      });
 
       /* ---------- routing multi-halaman (admin = area terpisah, tiap tugas 1 halaman) ---------- */
       function isAdminPage(page){return page==="admin"||page.indexOf("admin-")===0;}
@@ -326,6 +361,7 @@
       }
       function applyRoute(){
         var r=getRoute();
+        closeSidebar(); /* ganti halaman = sidebar tertutup */
         if(isAdminPage(r.page)){
           if(!currentUser()){pendingAdmin=true;showToast("Masuk dulu untuk melanjutkan.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
           /* Sudah login tapi bukan admin: jangan tampilkan isi admin,
@@ -348,7 +384,11 @@
         if(r.page==="detail"){analytics.detailViews++;var dp=state.products.find(function(x){return x.id===r.id;});if(dp)logActivity("lihat",'Pengunjung melihat detail "'+dp.title+'" ('+formatIDR(dp.price)+").");renderReport();renderDetail(r.id);}
         if(r.page==="invoice")renderInvoice(r.invoiceNo);
         if(r.page==="sukses")renderSukses(r.invoiceNo);
-        if(r.page==="akun")renderAuth();
+        if(r.page==="akun"){
+          renderAuth();
+          /* Dibuka dari sidebar "Daftar": langsung buka tab Daftar. */
+          if(pendingAuthTab){var t=document.getElementById(pendingAuthTab==="register"?"tabRegister":"tabLogin");if(t)t.click();pendingAuthTab=null;}
+        }
         if(r.page==="bantuan")renderSupportPage();
         if(r.page==="admin-support")renderSupportAdmin();
         if(r.page==="topup"&&window.TopUp)TopUp.renderTopup();
@@ -645,10 +685,13 @@
         showToast("Akun berhasil dibuat. Selamat datang, "+name.split(" ")[0]+"!");
         afterLogin(nu);
       });
-      document.getElementById("btnLogout").addEventListener("click",function(){
+      function doLogout(){
         if(Server.enabled){api("/api/auth/logout",{method:"POST"}).catch(function(){});setToken(null);Server.user=null;}
         setSession(null);pendingAdmin=false;renderAuth();showToast("Kamu sudah keluar.");location.hash="#/";if(getRoute().page==="beranda")applyRoute();
-      });
+      }
+      document.getElementById("btnLogout").addEventListener("click",doLogout);
+      var btnSideLogout=document.getElementById("btnSideLogout");
+      if(btnSideLogout)btnSideLogout.addEventListener("click",doLogout);
 
       /* ---------- support: Jarvis — Support GankStore ---------- */
       var LS_SUPPORT="gankstore_support_messages";

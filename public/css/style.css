@@ -22,10 +22,39 @@ button{font:inherit;cursor:pointer} input,select,textarea{font:inherit;color:inh
 .topbar-in{display:flex;align-items:center;gap:16px;padding:12px 0}
 .brand{font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:23px;letter-spacing:.02em;text-decoration:none;color:var(--ink);white-space:nowrap}
 .brand b{color:var(--accent)}
-.topnav{display:flex;gap:4px;margin-left:auto;align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.topnav a{color:var(--ink-soft);text-decoration:none;font-weight:700;padding:9px 13px;border-radius:999px;font-size:15px}
-.topnav a:hover{color:var(--ink);background:var(--bg-sink)}
-.topnav a.active{background:var(--ink);color:var(--bg)}
+/* tombol burger — satu-satunya pemicu navigasi (sidebar) */
+.burger{margin-left:auto;border:1.5px solid var(--line);background:var(--bg-raise);color:var(--ink);border-radius:10px;padding:8px 13px;font-size:19px;line-height:1;font-weight:700}
+.burger:hover{border-color:var(--accent)}
+.burger:active{transform:scale(.96)}
+
+/* sidebar burger — drawer slide-in dari kiri, satu-satunya navigasi utama */
+.side-overlay{position:fixed;inset:0;background:rgba(10,18,13,.55);z-index:70;opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s ease}
+.side-overlay.open{opacity:1;visibility:visible}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:min(300px,84vw);max-width:300px;background:var(--bg-raise);color:var(--ink);z-index:80;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,0,0,.35);transform:translateX(-105%);transition:transform .25s ease;overflow-y:auto}
+.sidebar.open{transform:translateX(0)}
+body.sidebar-open{overflow:hidden}
+.side-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+.side-logo{height:34px;width:auto;max-width:170px;object-fit:contain;border-radius:6px}
+.side-close{border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:7px 12px;font-size:16px;line-height:1;font-weight:700}
+.side-close:hover{border-color:var(--accent)}
+.side-nav{padding:10px 12px 6px;display:flex;flex-direction:column;gap:18px}
+.side-group{display:flex;flex-direction:column;gap:2px}
+.side-title{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin:0 10px 6px}
+.side-link{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font-weight:700;font-size:15.5px;padding:11px 12px;border-radius:10px}
+.side-link:hover{background:var(--bg-sink)}
+.side-link.active{background:var(--ink);color:var(--bg)}
+.side-link.active .nav-maint{color:#1c1005}
+.side-ic{flex:none;width:22px;text-align:center;font-size:17px;line-height:1;color:var(--accent-strong)}
+.side-link.active .side-ic{color:var(--bg)}
+.side-user{font-weight:800;font-size:15.5px;padding:4px 12px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-logout{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:0;background:transparent;color:var(--danger);font-weight:700;font-size:15.5px;padding:11px 12px;border-radius:10px}
+.side-logout:hover{background:var(--bg-sink)}
+.side-foot{margin-top:auto;padding:14px 16px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.side-support{display:block;text-decoration:none;background:var(--bg-sink);border-radius:12px;padding:13px 14px}
+.side-support b{display:block;font-size:15.5px}
+.side-support span{display:block;color:var(--accent-strong);font-weight:800;font-size:14px;margin-top:2px}
+.side-wa{text-align:center;text-decoration:none;font-weight:700;font-size:14.5px;color:var(--wa)}
+@media (prefers-reduced-motion: reduce){.sidebar,.side-overlay{transition:none}}
 
 /* pages */
 .page{display:none;animation:fade .18s ease}
@@ -175,7 +204,7 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 
 /* admin shell — area terpisah total dari toko */
 .adminbar{display:none}
-body.admin-mode .topbar,body.admin-mode .bottomnav,body.admin-mode footer{display:none}
+body.admin-mode .topbar,body.admin-mode footer{display:none}
 body.admin-mode{padding-bottom:0;background:var(--bg-sink)}
 body.admin-mode .adminbar{display:block;position:sticky;top:0;z-index:50;background:var(--hero-bg);color:#eaf5e0;border-bottom:4px solid var(--accent)}
 .adminbar-in{display:flex;align-items:center;gap:14px;padding:13px 0;flex-wrap:wrap}
@@ -212,7 +241,6 @@ body.admin-mode .livebar{display:none}
 .ticker-track b{color:#a3e635}
 @media (prefers-reduced-motion: reduce){.ticker-track{animation:none}.live-dot{animation:none}}
 .sale-popups{position:fixed;left:16px;bottom:16px;z-index:95;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
-@media (max-width:860px){.sale-popups{bottom:88px}}
 .sale-popup{display:flex;gap:12px;align-items:center;background:var(--bg-raise);border:1.5px solid var(--accent);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;animation:popin .35s cubic-bezier(.2,.9,.3,1.2)}
 .sale-popup.hide{opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
 @keyframes popin{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
@@ -279,11 +307,9 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 .toast{position:fixed;left:50%;bottom:86px;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);font-weight:600;padding:12px 20px;border-radius:10px;z-index:90;opacity:0;transition:transform .25s ease,opacity .25s ease;max-width:calc(100vw - 32px);text-align:center;font-size:15px}
 .toast.show{transform:translate(-50%,0);opacity:1}
 
-/* bottom nav mobile */
-.bottomnav{display:none}
+/* bottom nav dihapus — navigasi hanya lewat sidebar burger */
 @media (max-width:860px){
   html,body{overflow-x:hidden}
-  body{padding-bottom:72px}
   .hero-in{grid-template-columns:1fr;padding:28px 0 32px;gap:20px}
   .hero h1{font-size:27px;line-height:1.28}
   .hero p{font-size:15.5px;margin:12px 0 20px}
@@ -295,13 +321,7 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
   .stats{grid-template-columns:repeat(2,1fr)}
   .cat-grid{grid-template-columns:repeat(2,1fr)}
   .steps,.two-col,.detail-layout{grid-template-columns:1fr}
-  .topnav a{display:none}
-  .bottomnav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--bg-raise);border-top:1px solid var(--line);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
-  .bottomnav a{text-decoration:none;color:var(--ink-faint);font-size:12px;font-weight:800;text-align:center;padding:7px 2px;border-radius:10px;display:flex;flex-direction:column;gap:2px;align-items:center}
-  .bottomnav a span{font-size:19px;line-height:1}
-  .bottomnav a.active{background:var(--bg-sink);color:var(--ink)}
-  .toast{bottom:86px}
-  footer{padding-bottom:20px}
+  .toast{bottom:24px}
 }
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}.card,.toast{transition:none}.card:hover{transform:none}}
 
@@ -353,17 +373,16 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 .page.active .empty{animation:rise .4s ease both}
 
 /* Tombol & kartu merespons saat ditekan — tanpa mengubah layout */
-.btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.bottomnav a,.topnav a{transition:transform .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease}
+.btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.side-link,.side-logout{transition:transform .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease,opacity .18s ease}
 .btn:active,.btn-dark:active,.btn-auth:active,.btn-pay:active,.btn-add:active,.btn-detail:active,.btn-buy:active,.mini:active,.btn-logout:active,.btn-google:active{transform:scale(.97)}
 .card{transition:transform .2s ease,box-shadow .2s ease}
 .card:active{transform:translateY(-1px) scale(.985)}
 .admin-menu-card,.cat-card{transition:transform .2s ease,border-color .2s ease}
 .admin-menu-card:active,.cat-card:active{transform:scale(.98)}
-.bottomnav a{transition:background-color .18s ease,color .18s ease}
 
 @media (prefers-reduced-motion: reduce){
   .page.active .promo-banner,.page.active .hero h1,.page.active .hero p,.page.active .hero-cta,.page.active .hero-img,.page.active .section-head,.page.active .grid .card,.page.active .empty{animation:none}
-  .btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.bottomnav a,.topnav a,.card,.admin-menu-card,.cat-card{transition:none}
+  .btn,.btn-dark,.btn-auth,.btn-pay,.btn-add,.btn-detail,.btn-buy,.mini,.btn-logout,.btn-google,.link-more,.side-link,.side-logout,.card,.admin-menu-card,.cat-card{transition:none}
   .btn:active,.btn-dark:active,.btn-auth:active,.btn-pay:active,.btn-add:active,.btn-detail:active,.btn-buy:active,.mini:active,.btn-logout:active,.btn-google:active,.card:active,.admin-menu-card:active,.cat-card:active{transform:none}
 }
 

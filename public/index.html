@@ -20,15 +20,51 @@
     <header class="topbar">
       <div class="wrap topbar-in">
         <a class="brand" href="#/"><img class="brand-logo" src="brand/gankstore-logo.png" alt="GankStore" /></a>
-        <nav class="topnav" aria-label="Navigasi utama">
-          <a href="#/" data-nav="beranda">Beranda</a>
-          <a href="#/katalog" data-nav="katalog">Katalog</a>
-          <a href="#/cara-beli" data-nav="cara-beli">Cara Beli</a>
-          <a href="#/topup" data-nav="topup">Top Up <span class="nav-maint">Maintenance</span></a>
-          <a href="#/akun" data-nav="akun" id="accountLink">Masuk</a>
-        </nav>
+        <button class="burger" type="button" id="btnBurger" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar">☰</button>
       </div>
     </header>
+
+    <!-- ============ SIDEBAR BURGER — satu-satunya navigasi utama ============ -->
+    <div class="side-overlay" id="sideOverlay"></div>
+    <aside class="sidebar" id="sidebar" aria-label="Menu toko" aria-hidden="true">
+      <div class="side-head">
+        <img class="side-logo" src="brand/gankstore-logo.png" alt="GankStore" />
+        <button class="side-close" type="button" id="btnSideClose" aria-label="Tutup menu">✕</button>
+      </div>
+      <nav class="side-nav">
+        <div class="side-group">
+          <h2 class="side-title">Toko</h2>
+          <a class="side-link" href="#/" data-nav="beranda"><span class="side-ic">⌂</span>Beranda</a>
+          <a class="side-link" href="#/katalog" data-nav="katalog"><span class="side-ic">▦</span>Katalog</a>
+          <a class="side-link" href="#/cara-beli" data-nav="cara-beli"><span class="side-ic">?</span>Cara Beli</a>
+        </div>
+        <div class="side-group">
+          <h2 class="side-title">Layanan</h2>
+          <a class="side-link" href="#/topup" data-nav="topup"><span class="side-ic">◆</span>Top Up <span class="nav-maint">Maintenance</span></a>
+          <a class="side-link" href="#/bantuan" data-nav="bantuan"><span class="side-ic">✉</span>Bantuan</a>
+        </div>
+        <div class="side-group">
+          <h2 class="side-title">Akun</h2>
+          <div id="sideLoggedOut">
+            <a class="side-link" href="#/akun" data-nav="akun"><span class="side-ic">◉</span>Masuk</a>
+            <a class="side-link" href="#/akun" data-auth-tab="register"><span class="side-ic">＋</span>Daftar</a>
+          </div>
+          <div id="sideLoggedIn" hidden>
+            <div class="side-user" id="sideUserName"></div>
+            <a class="side-link" href="#/akun" data-nav="akun"><span class="side-ic">▤</span>Pesanan Saya</a>
+            <a class="side-link" href="#/admin" id="sideAdminLink" style="display:none"><span class="side-ic">⚙</span>Buka Panel Admin</a>
+            <button class="side-logout" type="button" id="btnSideLogout">Keluar</button>
+          </div>
+        </div>
+      </nav>
+      <div class="side-foot">
+        <a class="side-support" href="#/bantuan">
+          <b>Butuh bantuan?</b>
+          <span>Hubungi Support →</span>
+        </a>
+        <a class="side-wa" href="https://wa.me/6289681992892" target="_blank" rel="noopener">WhatsApp 0896 8199 2892</a>
+      </div>
+    </aside>
 
     <!-- ============ LIVE TICKER BERJALAN ============ -->
     <div class="livebar" aria-label="Info live toko">
@@ -624,16 +660,8 @@
     <footer>
       <div class="wrap">
         <span><img class="footer-logo" src="brand/gankstore-logo.png" alt="GankStore" /> — toko akun Point Blank, semua akun milik penjual sendiri.</span>
-        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up <span class="nav-maint">Maintenance</span></a> · <a href="#/bantuan">Bantuan</a> · <a href="#/akun">Akun</a></span>
       </div>
     </footer>
-
-    <nav class="bottomnav" aria-label="Navigasi bawah">
-      <a href="#/" data-nav="beranda"><span>⌂</span>Beranda</a>
-      <a href="#/katalog" data-nav="katalog"><span>▦</span>Katalog</a>
-      <a href="#/cara-beli" data-nav="cara-beli"><span>?</span>Cara Beli</a>
-      <a href="#/akun" data-nav="akun"><span>◉</span>Akun</a>
-    </nav>
 
     <div class="sale-popups" id="salePopups" aria-live="polite"></div>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
