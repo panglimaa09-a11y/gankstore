@@ -279,13 +279,16 @@
         out.hidden=!!u;inn.hidden=!u;
         if(u){document.getElementById("profileName").textContent=u.name;document.getElementById("profileEmail").textContent=u.email;document.getElementById("profileAvatar").textContent=u.name.charAt(0).toUpperCase();}
         /* Modul AKUN di sidebar: tampilkan Masuk/Daftar bila logout,
-           Pesanan Saya + Keluar bila login. Tautan Panel Admin HANYA
-           untuk admin — user biasa tidak melihatnya sama sekali. */
+           Pesanan Saya + Keluar bila login. Modul ADMIN (terpisah,
+           di bawah) HANYA untuk admin — user biasa tidak melihatnya
+           sama sekali. Pakai style.display, bukan atribut hidden:
+           .side-group mengatur display flex dan itu mengalahkan
+           aturan [hidden] browser. */
         var slo=document.getElementById("sideLoggedOut"),sli=document.getElementById("sideLoggedIn");
         if(slo)slo.hidden=!!u;if(sli)sli.hidden=!u;
         var sun=document.getElementById("sideUserName");
         if(sun&&u)sun.textContent=u.name;
-        var sideAdmin=document.getElementById("sideAdminLink");
+        var sideAdmin=document.getElementById("sideAdminGroup");
         if(sideAdmin)sideAdmin.style.display=isAdminUser()?"":"none";
         /* Tombol Panel Admin HANYA untuk admin — user biasa tidak
            melihatnya sama sekali di halaman Akun. Pakai style.display,

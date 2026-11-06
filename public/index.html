@@ -44,7 +44,7 @@
           <a class="side-link" href="#/bantuan" data-nav="bantuan"><span class="side-ic">✉</span>Bantuan</a>
         </div>
         <div class="side-group">
-          <h2 class="side-title">Akun</h2>
+          <h2 class="side-title">Akun Saya</h2>
           <div id="sideLoggedOut">
             <a class="side-link" href="#/akun" data-nav="akun"><span class="side-ic">◉</span>Masuk</a>
             <a class="side-link" href="#/akun" data-auth-tab="register"><span class="side-ic">＋</span>Daftar</a>
@@ -52,9 +52,18 @@
           <div id="sideLoggedIn" hidden>
             <div class="side-user" id="sideUserName"></div>
             <a class="side-link" href="#/akun" data-nav="akun"><span class="side-ic">▤</span>Pesanan Saya</a>
-            <a class="side-link" href="#/admin" id="sideAdminLink" style="display:none"><span class="side-ic">⚙</span>Buka Panel Admin</a>
             <button class="side-logout" type="button" id="btnSideLogout">Keluar</button>
           </div>
+        </div>
+        <div class="side-group side-group-admin" id="sideAdminGroup" style="display:none">
+          <h2 class="side-title">Admin</h2>
+          <a class="side-link" href="#/admin" data-anav="admin"><span class="side-ic">⌂</span>Dashboard</a>
+          <a class="side-link" href="#/admin/tambah" data-anav="admin-tambah"><span class="side-ic">＋</span>Tambah Akun</a>
+          <a class="side-link" href="#/admin/stok" data-anav="admin-stok"><span class="side-ic">▤</span>Daftar Stok</a>
+          <a class="side-link" href="#/admin/laporan" data-anav="admin-laporan"><span class="side-ic">◉</span>Statistik &amp; Live</a>
+          <a class="side-link" href="#/admin/support" data-anav="admin-support"><span class="side-ic">✉</span>Pesan Support</a>
+          <a class="side-link" href="#/admin/topup" data-anav="admin-toppup"><span class="side-ic">◆</span>Kelola Top Up</a>
+          <a class="side-link" href="#/admin/pengaturan" data-anav="admin-pengaturan"><span class="side-ic">⚙</span>Pengaturan</a>
         </div>
       </nav>
       <div class="side-foot">

@@ -39,6 +39,7 @@ body.sidebar-open{overflow:hidden}
 .side-close:hover{border-color:var(--accent)}
 .side-nav{padding:10px 12px 6px;display:flex;flex-direction:column;gap:18px}
 .side-group{display:flex;flex-direction:column;gap:2px}
+.side-group-admin{border-top:1px solid var(--line);padding-top:14px}
 .side-title{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin:0 10px 6px}
 .side-link{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--ink);font-weight:700;font-size:15.5px;padding:11px 12px;border-radius:10px}
 .side-link:hover{background:var(--bg-sink)}
