@@ -25,17 +25,17 @@ function midtransPayBlock(o){
   if (!Server.enabled) {
     return '<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>' + note + '</p></div>' +
       '<button class="btn-pay" type="button" disabled>Bayar via Midtrans</button>' +
-      '<p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah — admin mengonfirmasi pembayaran dan statusnya berubah jadi Lunas.</p>';
+      '<p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
   }
   if (!Server.payments.configured) {
     return '<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>' + note + '</p></div>' +
       '<button class="btn-pay" type="button" disabled>Bayar via Midtrans</button>' +
-      '<p class="pay-note">Pembayaran online masih disiapkan. Setelah aktif, tombol bayar di sini bisa dipakai — untuk sekarang admin mengonfirmasi pembayaran secara manual.</p>';
+      '<p class="pay-note">Pembayaran online masih disiapkan. Setelah aktif, tombol bayar di sini bisa dipakai — untuk sekarang pembayaran dikonfirmasi secara manual.</p>';
   }
   var mode = Server.payments.is_production ? "Production (live)" : "Sandbox (mode tes — bukan pembayaran asli)";
   return '<div class="pay-method"><b>Metode pembayaran: Midtrans (' + mode + ')</b><p>' + note + '</p></div>' +
     '<button class="btn-pay" type="button" id="btnSnapPay">Bayar via Midtrans</button>' +
-    '<p class="pay-note">Checkout Midtrans Snap akan terbuka. Setelah bayar, status invoice berubah otomatis begitu webhook Midtrans diterima server — atau admin mengonfirmasi manual dari Panel Admin.</p>';
+    '<p class="pay-note">Checkout Midtrans Snap akan terbuka. Setelah bayar, status invoice berubah otomatis begitu webhook Midtrans diterima server — atau dikonfirmasi manual oleh toko.</p>';
 }
 
 function loadSnapJs(cb){

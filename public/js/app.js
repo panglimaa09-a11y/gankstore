@@ -103,7 +103,7 @@
         /* Ticker SELALU tampil. Saat stok/pesanan/penjualan masih kosong,
            tampilkan teks bermakna tanpa angka palsu — jangan deretan nol. */
         var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
-        t.innerHTML=empty?"<span>Toko buka — akun Point Blank stok sendiri &nbsp;◆&nbsp; Pembayaran aman via Midtrans &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
+        t.innerHTML=empty?"<span>Toko buka — akun Point Blank siap main &nbsp;◆&nbsp; Pembayaran aman via Midtrans &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
       }
       function showEventPopup(p,kind){
         var box=document.getElementById("salePopups");if(!box)return;
@@ -171,18 +171,18 @@
         var payBlock="";
         if(st==="terjual"){
           if(o.kind==="topup"){
-            payBlock='<div class="pay-method"><b>Top up selesai ✔</b><p>Admin sudah mengonfirmasi pembayaran dan memproses top up ini. Cek '+esc(o.amount||"")+' '+esc(o.currency||"")+' untuk '+esc(o.game)+' di User ID <strong>'+esc(o.userId||"-")+'</strong>'+(o.serverId?" (Server / Zone ID "+esc(o.serverId)+")":"")+'.</p></div>';
+            payBlock='<div class="pay-method"><b>Top up selesai ✔</b><p>Pembayaran sudah dikonfirmasi dan top up ini sudah diproses. Cek '+esc(o.amount||"")+' '+esc(o.currency||"")+' untuk '+esc(o.game)+' di User ID <strong>'+esc(o.userId||"-")+'</strong>'+(o.serverId?" (Server / Zone ID "+esc(o.serverId)+")":"")+'.</p></div>';
           }else if(o.credPending){
             payBlock='<div class="pay-method"><b>Pembayaran lunas ✔ — data akunmu siap</b><p>Email &amp; password akun ini ditampilkan <strong>satu kali</strong> di halaman sukses. Siapkan tempat menyimpannya sebelum membuka — setelah ditampilkan, data otomatis dihapus dari toko dan tidak bisa dilihat lagi.</p></div><a class="btn-pay" href="#/sukses/'+esc(o.invoiceNo)+'" style="display:block;text-align:center;text-decoration:none">Lihat Data Akun (satu kali)</a>';
           }else if(o.credRevealed){
             payBlock='<div class="pay-method"><b>Pembayaran lunas ✔</b><p>Data login akun ini <strong>sudah ditampilkan satu kali</strong> di halaman sukses dan sudah dihapus dari data toko, jadi tidak bisa ditampilkan lagi. Segera amankan akun dengan password barumu.</p></div>';
           }else{
-            payBlock='<div class="pay-method"><b>Pembayaran lunas ✔</b><p>Admin sudah mengonfirmasi pembayaranmu. Akun ini tidak menyimpan email &amp; password di toko, jadi data login diserahkan admin secara terpisah.</p></div>';
+            payBlock='<div class="pay-method"><b>Pembayaran lunas ✔</b><p>Pembayaranmu sudah dikonfirmasi lunas. Akun ini tidak menyimpan email &amp; password di toko, jadi data login diserahkan toko secara terpisah.</p></div>';
           }
         }else if(st==="dibatalkan"){
-          payBlock='<div class="pay-method"><b>Pesanan dibatalkan</b><p>Pesanan ini dibatalkan oleh admin dan akunnya sudah tersedia lagi di katalog. Kamu bisa membuat pesanan baru dari halaman Katalog.</p></div>';
+          payBlock='<div class="pay-method"><b>Pesanan dibatalkan</b><p>Pesanan ini dibatalkan dan akunnya sudah tersedia lagi di katalog. Kamu bisa membuat pesanan baru dari halaman Katalog.</p></div>';
         }else{
-          payBlock=(typeof midtransPayBlock==="function")?midtransPayBlock(o):'<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — admin mengonfirmasi pembayaran dan statusnya berubah jadi Lunas.</p>';
+          payBlock=(typeof midtransPayBlock==="function")?midtransPayBlock(o):'<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
         }
         wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Akun")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>'+(o.kind==="topup"?"Harga paket":"Harga akun")+'</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
         var sp=document.getElementById("btnSnapPay");
@@ -193,15 +193,15 @@
         var o=findOrder(invNo);
         if(!o){wrap.innerHTML='<div class="empty"><h3>Pesanan tidak ditemukan</h3><p>Cek daftar pesananmu di halaman Akun.</p><a class="btn-dark" href="#/akun">Ke Pesanan Saya</a></div>';return;}
         if(o.status!=="terjual"){
-          wrap.innerHTML='<div class="empty"><h3>Pembayaran belum lunas</h3><p>Data akun baru diserahkan setelah pembayaran invoice '+esc(o.invoiceNo)+' dikonfirmasi lunas oleh admin. Status pesananmu sekarang: <strong>'+orderStatusLabel(o)+'.</strong></p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Buka Invoice</a></div>';return;
+          wrap.innerHTML='<div class="empty"><h3>Pembayaran belum lunas</h3><p>Data akun baru diserahkan setelah pembayaran invoice '+esc(o.invoiceNo)+' dikonfirmasi lunas. Status pesananmu sekarang: <strong>'+orderStatusLabel(o)+'.</strong></p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Buka Invoice</a></div>';return;
         }
         if(o.kind==="topup"){
-          wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.title)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Invoice '+esc(o.invoiceNo)+' · Lunas · '+esc(o.game)+'</div></div><span class="inv-status lunas">Selesai</span></div><div class="cred-box"><p style="margin:0 0 10px"><b>Top up selesai diproses admin.</b></p><p style="margin:0">Cek '+esc(o.amount||"")+' '+esc(o.currency||"")+' untuk '+esc(o.game)+' di User ID <strong>'+esc(o.userId||"-")+'</strong>'+(o.serverId?" (Server / Zone ID "+esc(o.serverId)+")":"")+'. Kalau belum masuk, hubungi admin dengan nomor invoice '+esc(o.invoiceNo)+'.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn-detail" href="#/topup" style="flex:1">Top Up Lagi</a><a class="btn-detail" href="#/invoice/'+esc(o.invoiceNo)+'" style="flex:1">Kembali ke Invoice</a></div></div>';
+          wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.title)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Invoice '+esc(o.invoiceNo)+' · Lunas · '+esc(o.game)+'</div></div><span class="inv-status lunas">Selesai</span></div><div class="cred-box"><p style="margin:0 0 10px"><b>Top up selesai diproses.</b></p><p style="margin:0">Cek '+esc(o.amount||"")+' '+esc(o.currency||"")+' untuk '+esc(o.game)+' di User ID <strong>'+esc(o.userId||"-")+'</strong>'+(o.serverId?" (Server / Zone ID "+esc(o.serverId)+")":"")+'. Kalau belum masuk, hubungi kami dengan nomor invoice '+esc(o.invoiceNo)+'.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn-detail" href="#/topup" style="flex:1">Top Up Lagi</a><a class="btn-detail" href="#/invoice/'+esc(o.invoiceNo)+'" style="flex:1">Kembali ke Invoice</a></div></div>';
           return;
         }
         if(Server.enabled&&o.credPending&&!o.credEmail){
           wrap.innerHTML='<div class="empty"><h3>Memuat data akun…</h3><p>Mengambil data login satu kali dari server.</p></div>';
-          api("/api/orders/"+encodeURIComponent(invNo)+"/credentials").then(function(c){if(c&&c.email){o.credEmail=c.email;o.credPass=c.password;renderSukses(invNo);}else{wrap.innerHTML='<div class="empty"><h3>Data akun tidak tersedia</h3><p>Server tidak mengembalikan data login untuk invoice ini. Hubungi admin dengan nomor invoice '+esc(invNo)+'.</p></div>';}});
+          api("/api/orders/"+encodeURIComponent(invNo)+"/credentials").then(function(c){if(c&&c.email){o.credEmail=c.email;o.credPass=c.password;renderSukses(invNo);}else{wrap.innerHTML='<div class="empty"><h3>Data akun tidak tersedia</h3><p>Server tidak mengembalikan data login untuk invoice ini. Hubungi kami dengan nomor invoice '+esc(invNo)+'.</p></div>';}});
           return;
         }
         if(o.credPending&&o.credEmail){
@@ -211,7 +211,7 @@
           var prod=state.products.find(function(x){return x.id===o.id;});
           if(prod){prod.credEmail="";prod.credPass="";prod.credWiped=true;}
           logActivity("lunas",'Data login "'+o.title+'" ditampilkan satu kali ke pembeli di halaman sukses lalu dihapus dari data stok.');
-          wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.title)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Invoice '+esc(o.invoiceNo)+' · Lunas · '+esc(o.game)+'</div></div><span class="inv-status lunas">Data Akun</span></div><div class="cred-box"><div class="cred-row"><span>Email akun</span><code>'+esc(ce)+'</code></div><div class="cred-row"><span>Password akun</span><code>'+esc(cpw)+'</code></div><button class="btn-pay" type="button" id="btnCopyCred" style="margin-top:14px">Salin Email &amp; Password</button><p class="cred-warn">⚠ Ini satu-satunya penampilan data ini. Data sudah dihapus dari stok toko — kalau halaman ini ditutup atau dimuat ulang, email &amp; password di atas <strong>tidak bisa ditampilkan lagi</strong>. Salin sekarang, lalu login dan ganti password akunnya.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/invoice/'+esc(o.invoiceNo)+'" style="flex:1">Kembali ke Invoice</a></div></div>';
+          wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.title)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Invoice '+esc(o.invoiceNo)+' · Lunas · '+esc(o.game)+'</div></div><span class="inv-status lunas">Data Akun</span></div><div class="cred-box"><div class="cred-row"><span>Email akun</span><code>'+esc(ce)+'</code></div><div class="cred-row"><span>Password akun</span><code>'+esc(cpw)+'</code></div><button class="btn-pay" type="button" id="btnCopyCred" style="margin-top:14px">Salin Email &amp; Password</button><p class="cred-warn">⚠ Ini satu-satunya penampilan data ini. Data sudah dihapus dari toko — kalau halaman ini ditutup atau dimuat ulang, email &amp; password di atas <strong>tidak bisa ditampilkan lagi</strong>. Salin sekarang, lalu login dan ganti password akunnya.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/invoice/'+esc(o.invoiceNo)+'" style="flex:1">Kembali ke Invoice</a></div></div>';
           var bc=document.getElementById("btnCopyCred");
           if(bc)bc.addEventListener("click",function(){
             var text="Akun: "+o.title+"\nEmail: "+ce+"\nPassword: "+cpw;
@@ -221,9 +221,9 @@
           return;
         }
         if(o.credRevealed){
-          wrap.innerHTML='<div class="empty"><h3>Data akun sudah pernah ditampilkan</h3><p>Email &amp; password akun ini sudah ditampilkan satu kali dan otomatis dihapus dari data toko, jadi tidak bisa ditampilkan atau dipakai lagi dari sini. Kalau kamu belum sempat menyimpannya, hubungi admin dengan nomor invoice '+esc(o.invoiceNo)+'.</p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Kembali ke Invoice</a></div>';return;
+          wrap.innerHTML='<div class="empty"><h3>Data akun sudah pernah ditampilkan</h3><p>Email &amp; password akun ini sudah ditampilkan satu kali dan otomatis dihapus dari data toko, jadi tidak bisa ditampilkan atau dipakai lagi dari sini. Kalau kamu belum sempat menyimpannya, hubungi kami dengan nomor invoice '+esc(o.invoiceNo)+'.</p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Kembali ke Invoice</a></div>';return;
         }
-        wrap.innerHTML='<div class="empty"><h3>Pembayaran lunas</h3><p>Akun ini tidak menyimpan email &amp; password di toko, jadi data login diserahkan admin secara terpisah. Tunjukkan nomor invoice '+esc(o.invoiceNo)+' ke admin.</p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Kembali ke Invoice</a></div>';
+        wrap.innerHTML='<div class="empty"><h3>Pembayaran lunas</h3><p>Akun ini tidak menyimpan email &amp; password di toko, jadi data login diserahkan toko secara terpisah. Tunjukkan nomor invoice '+esc(o.invoiceNo)+' ke toko.</p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Kembali ke Invoice</a></div>';
       }
       function renderReport(){
         renderTicker();renderFeed();
@@ -657,7 +657,7 @@
       function renderSupportPage(){
         var note=document.getElementById("supportNote");if(!note)return;
         note.textContent=Server.enabled
-          ?"Pesanmu tersimpan di server toko dan dibaca admin."
+          ?"Pesanmu tersimpan dan dibaca tim toko."
           :"Pesanmu tersimpan di perangkat ini. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.";
       }
       document.getElementById("supportForm").addEventListener("submit",function(ev){
@@ -667,11 +667,11 @@
         var topic=document.getElementById("sTopic").value;
         var message=document.getElementById("sMessage").value.trim();
         if(!name){formError("supportError","Nama belum diisi.");return;}
-        if(!contact){formError("supportError","Email / WhatsApp belum diisi — admin butuh ini untuk membalasmu.");return;}
+        if(!contact){formError("supportError","Email / WhatsApp belum diisi — kami butuh ini untuk membalasmu.");return;}
         if(message.length<3){formError("supportError","Pesan terlalu pendek. Tulis masalahmu, sertakan nomor invoice bila ada.");return;}
         var done=function(local){
           ev.target.reset();renderSupportPage();
-          showToast(local?"Pesan tersimpan di perangkat ini. Untuk respon tercepat, hubungi via WhatsApp.":"Pesan terkirim ke admin. Jarvis — Support GankStore akan menindaklanjutinya.");
+          showToast(local?"Pesan tersimpan di perangkat ini. Untuk respon tercepat, hubungi via WhatsApp.":"Pesan terkirim. Jarvis — Support GankStore akan menindaklanjutinya.");
         };
         if(Server.enabled){
           api("/api/support",{method:"POST",body:{name:name,contact:contact,topic:topic,message:message}}).then(function(){done(false);}).catch(function(){showToast("Gagal mengirim ke server. Coba lagi, atau hubungi langsung via WhatsApp.");});
