@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="GankStore — toko akun Point Blank dan top up all game. Stok milik sendiri, invoice di toko, bayar via Midtrans." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>GankStore - Toko Akun Point Blank</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/hero.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap topbar-in">
+        <a class="brand" href="#/">GANK<b>STORE</b></a>
+        <nav class="topnav" aria-label="Navigasi utama">
+          <a href="#/" data-nav="beranda">Beranda</a>
+          <a href="#/katalog" data-nav="katalog">Katalog</a>
+          <a href="#/cara-beli" data-nav="cara-beli">Cara Beli</a>
+          <a href="#/topup" data-nav="topup">Top Up</a>
+          <a href="#/akun" data-nav="akun" id="accountLink">Masuk</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ============ LIVE TICKER BERJALAN ============ -->
+    <div class="livebar" aria-label="Info live toko">
+      <div class="wrap livebar-in">
+        <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+        <div class="ticker-viewport"><div class="ticker-track" id="tickerTrack"></div></div>
+      </div>
+    </div>
+
+    <!-- ============ ADMIN SHELL — header khusus admin, terpisah dari toko ============ -->
+    <div class="adminbar" id="adminBar" aria-label="Panel Admin">
+      <div class="wrap">
+        <div class="adminbar-in">
+          <a class="abrand" href="#/admin">GANK<b>STORE</b><small>Panel Admin</small></a>
+          <a class="back-store" href="#/">← Kembali ke Toko</a>
+        </div>
+        <nav class="adminnav" aria-label="Menu admin">
+          <a href="#/admin" data-anav="admin">Dashboard</a>
+          <a href="#/admin/tambah" data-anav="admin-tambah">+ Tambah Akun</a>
+          <a href="#/admin/stok" data-anav="admin-stok">Daftar Stok</a>
+          <a href="#/admin/laporan" data-anav="admin-laporan">Statistik &amp; Live</a>
+          <a href="#/admin/topup" data-anav="admin-toppup">Top Up</a>
+          <a href="#/admin/pengaturan" data-anav="admin-pengaturan">Pengaturan Toko</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ HALAMAN BERANDA ============ -->
+    <section class="page" data-page="beranda">
+      <div class="hero">
+        <div class="wrap hero-in">
+          <div>
+            <h1>Akun Point Blank <span class="lime">siap main</span>, langsung dari stok sendiri.</h1>
+            <p>GankStore sekarang fokus jualan akun Point Blank saja. Pilih akunnya — cek rank, senjata, dan char-nya — lalu pesan langsung di toko ini, bayar lewat Midtrans, data akun langsung diserahkan.</p>
+            <div class="hero-cta">
+              <a class="btn btn-lime" href="#/katalog">Lihat Katalog</a>
+              <a class="btn btn-ghost" href="#/cara-beli">Cara Beli</a>
+            </div>
+            <div class="hero-points"><span>Khusus Point Blank</span><span>Stok milik sendiri</span><span>Bayar via Midtrans</span><span>Invoice langsung di toko</span></div>
+          </div>
+          <div class="hero-img" role="img" aria-label="Ilustrasi setup gaming dengan layar berisi pilihan karakter game"></div>
+        </div>
+      </div>
+
+      <main class="wrap">
+        <div class="stats" id="homeStats"></div>
+
+        <div class="section-head">
+          <div><h2>Akun Terbaru</h2><p>Stok Point Blank paling baru yang dipajang di toko.</p></div>
+          <a class="link-more" href="#/katalog">Buka katalog lengkap →</a>
+        </div>
+        <div class="grid" id="homeGrid"></div>
+        <div class="empty" id="homeEmpty" hidden>
+          <h3>Rak masih kosong</h3>
+          <p>Belum ada akun yang dipajang. Tambahkan stok pertama lewat Panel Admin, akunnya langsung tampil di beranda dan katalog.</p>
+          <a class="btn-dark" href="#/admin/tambah">Tambah Stok Pertama</a>
+        </div>
+
+        <div id="homeSalesSection" hidden>
+          <div class="section-head">
+            <div><h2>Penjualan &amp; Pesanan Terakhir</h2><p>Aktivitas pembelian terbaru di toko ini — diperbarui langsung saat ada yang pesan atau lunas.</p></div>
+            <a class="link-more" href="#/katalog">Lihat stok tersedia →</a>
+          </div>
+          <div class="sales-rows" id="homeSalesRows"></div>
+        </div>
+
+        <div class="cta-banner">
+          <div><h3>Butuh top up game?</h3><p>Top up diamond, UC, Genesis Crystal, dan lainnya untuk 10 game — pilih game, pilih paket, isi User ID, bayar di invoice yang sama.</p></div>
+          <a class="btn btn-lime" href="#/topup">Buka Top Up</a>
+        </div>
+        <div class="cta-banner">
+          <div><h3>Bingung pilih akun?</h3><p>Buka halaman Cara Beli — ada langkah, tips aman, dan tanya-jawabnya.</p></div>
+          <a class="btn btn-lime" href="#/cara-beli">Baca Cara Beli</a>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN KATALOG ============ -->
+    <section class="page" data-page="katalog">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">GankStore / Katalog</div>
+          <h1>Katalog Akun Point Blank</h1>
+          <p>Semua akun Point Blank yang dipajang ada di halaman katalog ini. Cari berdasarkan rank atau senjata, lalu buka halaman detail akunnya sebelum beli.</p>
+        </div>
+
+        <div class="catalog-head"><span class="catalog-count" id="catalogCount"></span></div>
+        <div class="toolbar">
+          <label class="search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+            <input type="search" id="searchInput" placeholder="Cari akun, rank, atau senjata…" aria-label="Cari akun" />
+          </label>
+          <select class="sortsel" id="sortSelect" aria-label="Urutkan katalog">
+            <option value="baru">Paling baru</option><option value="murah">Harga termurah</option><option value="mahal">Harga termahal</option>
+          </select>
+          <select class="sortsel" id="statusSelect" aria-label="Filter status">
+            <option value="semua">Semua status</option><option value="tersedia">Tersedia saja</option><option value="dipesan">Sedang dipesan</option><option value="terjual">Sudah terjual</option>
+          </select>
+        </div>
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="emptyState" hidden>
+          <h3 id="emptyTitle">Rak masih kosong</h3>
+          <p id="emptyText">Belum ada akun yang dipajang.</p>
+          <a class="btn-dark" id="btnEmptyAdmin" href="#/admin/tambah">Tambah Stok Pertama</a>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN DETAIL AKUN ============ -->
+    <section class="page" data-page="detail">
+      <main class="wrap">
+        <a class="back-link" href="#/katalog">← Kembali ke Katalog</a>
+        <div id="detailWrap"></div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN CARA BELI ============ -->
+    <section class="page" data-page="cara-beli">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">GankStore / Cara Beli</div>
+          <h1>Cara Beli</h1>
+          <p>Semua transaksi selesai di dalam toko ini — tanpa aplikasi lain. Pilih akun, buat pesanan, invoice langsung terbit, lalu bayar lewat Midtrans. Ikuti tiga langkah ini.</p>
+        </div>
+
+        <div class="steps">
+          <article class="step-card"><span class="step-num">01</span><h3>Pilih akun di Katalog</h3><p>Telusuri halaman Katalog, lalu buka halaman Detail Akun untuk melihat rank, level, server, dan isi akun Point Blank-nya secara lengkap.</p></article>
+          <article class="step-card"><span class="step-num">02</span><h3>Klik Beli Sekarang, invoice terbit</h3><p>Tekan tombol Beli Sekarang — akunnya <strong>otomatis ditandai Dipesan</strong> atas namamu dan kamu langsung dibawa ke halaman Invoice di toko ini. Invoice berisi nomor invoice, harga akun, biaya admin, dan total bayar.</p></article>
+          <article class="step-card"><span class="step-num">03</span><h3>Bayar via Midtrans &amp; terima data akun</h3><p>Bayar total di invoice lewat Midtrans (QRIS, e-wallet, atau virtual account). Setelah pembayaran dikonfirmasi lunas oleh admin, status invoice berubah jadi Lunas dan data login akun diserahkan ke kamu. Segera ganti password dan amankan akun setelah diterima.</p></article>
+        </div>
+
+        <div class="two-col">
+          <div class="info-box">
+            <h3>Yang perlu dicek sebelum bayar</h3>
+            <ul>
+              <li>Rank, level, dan server sudah sesuai yang kamu cari.</li>
+              <li>Isi akun (senjata, char, item) sesuai daftar di halaman detail.</li>
+              <li>Status akun masih “Tersedia”, bukan “Terjual”.</li>
+              <li>Total di invoice sudah benar: harga akun + biaya admin 10%.</li>
+            </ul>
+          </div>
+          <div class="info-box">
+            <h3>Biaya admin &amp; pembayaran</h3>
+            <ul>
+              <li>Biaya admin = 10% dari harga akun. Contoh: akun Rp1.000, biaya adminnya Rp100, total bayar Rp1.100 — dan seterusnya mengikuti harga akun.</li>
+              <li>Biaya admin selalu tampil sebagai baris terpisah di invoice, tidak disembunyikan.</li>
+              <li>Pembayaran diproses lewat Midtrans: QRIS, e-wallet, dan virtual account bank.</li>
+              <li>Simpan nomor invoice-mu — itu bukti pesananmu di toko ini.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="info-box">
+            <h3>Cara Top Up (All Game)</h3>
+            <ul>
+              <li>Buka halaman <a href="#/topup" style="font-weight:700">Top Up</a>, pilih game-nya.</li>
+              <li>Pilih paket (diamond / UC / Genesis Crystal / dll), isi User ID — plus Server / Zone ID bila gamenya butuh.</li>
+              <li>Klik Buat Pesanan &amp; Invoice — totalnya harga paket + biaya admin 10%.</li>
+              <li>Bayar invoice lewat Midtrans, lalu admin memproses top up ke User ID-mu dan menandai Selesai.</li>
+            </ul>
+          </div>
+          <div class="info-box">
+            <h3>Jujur soal top up</h3>
+            <ul>
+              <li>Top up diproses <strong>manual oleh admin</strong> setelah pembayaran lunas — belum ada pengiriman otomatis ke akun game.</li>
+              <li>Pastikan User ID benar. Salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi.</li>
+              <li>Status pesanan top up bisa dicek di Pesanan Saya, sama seperti pembelian akun.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 style="font-size:24px;margin:26px 0 14px">Tanya Jawab</h2>
+        <details><summary>Apakah akunnya stok milik penjual sendiri?</summary><p>Ya. GankStore adalah toko dengan stok milik penjual sendiri, dan saat ini fokus khusus menjual akun Point Blank — bukan marketplace dari banyak penjual.</p></details>
+        <details><summary>Bagaimana cara membayarnya?</summary><p>Klik Beli Sekarang pada akun yang dipilih, invoice langsung terbit di toko ini. Bayar totalnya (harga akun + biaya admin 10%) lewat Midtrans dengan QRIS, e-wallet, atau virtual account.</p></details>
+        <details><summary>Berapa biaya adminnya?</summary><p>Biaya admin adalah 10% dari harga akun, dibulatkan ke rupiah terdekat. Contoh: harga Rp100.000, biaya admin Rp10.000, total bayar Rp110.000. Rinciannya selalu tertulis di invoice sebelum kamu membayar.</p></details>
+        <details><summary>Akun yang saya mau sudah terjual, bagaimana?</summary><p>Akun berlabel TERJUAL sudah tidak bisa dibeli. Cek akun lain yang tersedia di Katalog.</p></details>
+        <details><summary>Kapan data akun saya terima?</summary><p>Setelah pembayaranmu dikonfirmasi lunas, admin menandai pesanan sebagai Terjual dan status invoice-mu berubah jadi Lunas. Di invoice itu muncul tombol ke halaman sukses, tempat email &amp; password akun ditampilkan <strong>satu kali</strong> — salin dan simpan saat itu juga, karena setelah ditampilkan data tersebut otomatis dihapus dari toko dan tidak bisa dilihat lagi.</p></details>
+
+        <div class="cta-banner">
+          <div><h3>Sudah paham? Langsung ke katalog.</h3><p>Pilih akunnya di halaman Katalog, buka detailnya, lalu klik Beli Sekarang — invoice langsung terbit.</p></div>
+          <a class="btn btn-lime" href="#/katalog">Buka Katalog</a>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN DASHBOARD (terpisah) ============ -->
+    <section class="page" data-page="admin">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Dashboard</div>
+          <h1>Dashboard Admin</h1>
+          <p>Area khusus penjual — terpisah total dari halaman toko. Setiap tugas admin punya halamannya sendiri di menu Panel Admin di atas: tambah akun, daftar stok, dan pengaturan toko tidak lagi ditumpuk jadi satu.</p>
+        </div>
+        <div class="stats" id="adminStats"></div>
+        <div class="admin-dash-grid">
+          <a class="admin-menu-card" href="#/admin/tambah"><span class="amc-icon">＋</span><b>Tambah Akun</b><span>Pajang akun Point Blank baru ke katalog: rank, senjata, harga, foto.</span><span class="arr">Buka halaman Tambah Akun →</span></a>
+          <a class="admin-menu-card" href="#/admin/stok"><span class="amc-icon">▦</span><b>Daftar Stok</b><span>Lihat semua stok, konfirmasi pesanan yang lunas, pajang lagi, atau hapus akun.</span><span class="arr">Buka halaman Daftar Stok →</span></a>
+          <a class="admin-menu-card" href="#/admin/laporan"><span class="amc-icon">◉</span><b>Statistik &amp; Live Tracking</b><span>Pengunjung, stok, penjualan, pesanan masuk, dan aktivitas toko secara langsung.</span><span class="arr">Buka halaman Statistik &amp; Live →</span></a>
+          <a class="admin-menu-card" href="#/admin/topup"><span class="amc-icon">◆</span><b>Paket Top Up</b><span>Tambah / edit / hapus paket top up per game dan proses pesanan top up yang masuk.</span><span class="arr">Buka halaman Paket Top Up →</span></a>
+          <a class="admin-menu-card" href="#/admin/pengaturan"><span class="amc-icon">⚙</span><b>Pengaturan Toko</b><span>Metode pembayaran Midtrans dan aturan biaya admin 10% yang berlaku di semua invoice.</span><span class="arr">Buka halaman Pengaturan →</span></a>
+        </div>
+        <p class="scope-note">Versi server (Python): stok, pesanan, dan paket top up tersimpan di database server dan tetap ada setelah halaman ditutup.</p>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN TAMBAH AKUN (terpisah) ============ -->
+    <section class="page" data-page="admin-tambah">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Tambah Akun</div>
+          <h1>Tambah Akun Point Blank</h1>
+          <p>Halaman khusus memajang akun Point Blank baru. Habis disimpan, akun pindah ke halaman Daftar Stok dan langsung tampil di katalog toko.</p>
+        </div>
+        <div class="auth-wrap" style="max-width:640px;margin:0">
+          <form class="panel" id="addForm" style="margin-top:20px">
+            <h3>Detail Akun yang Dipajang</h3>
+            <div class="field"><label for="fGame">Game</label><select id="fGame" required></select></div>
+            <div class="field"><label for="fTitle">Judul listing</label><input id="fTitle" type="text" placeholder="cth. Akun PB Major, Senjata Sultan Full Item" required maxlength="90" /></div>
+            <div class="field-row">
+              <div class="field"><label for="fRank">Rank / Pangkat</label><input id="fRank" type="text" placeholder="cth. Major / Hero" maxlength="40" /></div>
+              <div class="field"><label for="fLevel">Level</label><input id="fLevel" type="text" placeholder="cth. Level 50" maxlength="40" /></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="fPrice">Harga (Rp)</label><input id="fPrice" type="number" min="0" step="1000" placeholder="cth. 450000" required /></div>
+              <div class="field"><label for="fServer">Server / Region</label><input id="fServer" type="text" placeholder="cth. Indonesia" maxlength="40" /></div>
+            </div>
+            <div class="field"><label for="fSpecs">Isi akun (pisahkan dengan koma)</label><input id="fSpecs" type="text" placeholder="cth. Kriss S.V, AUG A3, KAR98k, 10 char" maxlength="160" /></div>
+            <div class="field"><label for="fDesc">Deskripsi</label><textarea id="fDesc" rows="3" placeholder="Detail tambahan: riwayat akun, bind, garansi, dsb." maxlength="600"></textarea></div>
+            <div class="field-row">
+              <div class="field"><label for="fCredEmail">Email akun game (wajib, khusus admin)</label><input id="fCredEmail" type="email" placeholder="cth. akunpb01@email.com" maxlength="90" required /></div>
+              <div class="field"><label for="fCredPass">Password akun game (wajib, khusus admin)</label><input id="fCredPass" type="text" placeholder="Password login akun ini" maxlength="90" required /></div>
+            </div>
+            <p class="hint" style="font-size:13.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:10px 13px;font-weight:600;margin:-4px 0 14px">🔒 Email &amp; password ini harus sesuai dengan judul akun di atas. Keduanya disembunyikan dari pembeli dan hanya terlihat oleh Admin di Daftar Stok. Begitu akun laku dan kamu klik Konfirmasi Lunas, email &amp; password otomatis ditampilkan <strong>satu kali</strong> ke pembeli di halaman sukses, lalu <strong>otomatis dihapus</strong> dari data stok.</p>
+            <div class="field">
+              <label for="fPhoto">Foto akun (screenshot profil / koleksi)</label>
+              <input id="fPhoto" type="file" accept="image/*" />
+              <div class="photo-preview" id="photoPreview"><img id="photoPreviewImg" alt="Pratinjau foto akun" /></div>
+            </div>
+            <button class="btn-add" type="submit">+ Pajang di Katalog</button>
+          </form>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN DAFTAR STOK (terpisah) ============ -->
+    <section class="page" data-page="admin-stok">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Daftar Stok</div>
+          <h1>Daftar Stok</h1>
+          <p>Semua akun yang dipajang, di halamannya sendiri. Akun yang diklik Beli Sekarang oleh pembeli otomatis berstatus <strong>Dipesan</strong> — kamu tinggal klik <strong>Konfirmasi Lunas</strong> setelah pembayaran diterima, statusnya langsung jadi Terjual dan email &amp; password akunnya otomatis diserahkan satu kali ke pembeli lalu dihapus dari stok. Pesanan juga bisa dibatalkan kalau pembeli tidak jadi. Baris 🔒 di tiap stok adalah email &amp; password akun — hanya terlihat di area admin ini, tidak pernah tampil ke pembeli sebelum lunas.</p>
+        </div>
+        <div class="panel" style="margin-top:20px">
+          <div class="stock-page-list" id="stockList"></div>
+        </div>
+        <a class="btn-dark" href="#/admin/tambah" style="margin-top:18px">+ Tambah Akun Baru</a>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN PENGATURAN TOKO (terpisah) ============ -->
+    <section class="page" data-page="admin-pengaturan">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Pengaturan Toko</div>
+          <h1>Pengaturan Toko</h1>
+          <p>Halaman khusus pengaturan pembayaran. Semua pesanan dibayar pembeli lewat invoice di dalam toko ini — tidak ada checkout keluar ke aplikasi lain.</p>
+        </div>
+        <div class="auth-wrap" style="max-width:640px;margin:0">
+          <div class="panel" style="margin-top:20px">
+            <h3>Pembayaran &amp; Biaya Admin</h3>
+            <div class="inv-rows">
+              <div class="inv-row"><span>Metode pembayaran</span><b>Midtrans Snap — QRIS, e-wallet, virtual account</b></div>
+              <div class="inv-row"><span>Biaya admin</span><b>10% dari harga akun</b></div>
+              <div class="inv-row"><span>Contoh</span><b>Akun Rp1.000 → admin Rp100 → total Rp1.100</b></div>
+              <div class="inv-row"><span>Total invoice</span><b>Harga akun + biaya admin</b></div>
+              <div class="inv-row"><span>Status gateway Midtrans</span><b id="midtransStatus">Memeriksa…</b></div>
+            </div>
+            <p class="pay-note">Pembayaran lewat Midtrans Snap. Di versi server, tombol Bayar di invoice aktif bila MIDTRANS_SERVER_KEY terpasang di .env server (mode Sandbox dulu; Production menunggu KYC Midtrans disetujui). Selama belum terhubung, pesanan tetap tercatat sebagai invoice berstatus Menunggu Pembayaran dan kamu konfirmasi lunas manual dari Daftar Stok.</p>
+            <p class="scope-note">Biaya admin 10% otomatis dihitung di setiap invoice (akun dan top up), dibulatkan ke rupiah terdekat.</p>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN STATISTIK & LIVE TRACKING (terpisah) ============ -->
+    <section class="page" data-page="admin-laporan">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Statistik &amp; Live</div>
+          <h1>Statistik &amp; Live Tracking</h1>
+          <p>Angka toko dari database server (versi Python): kunjungan, stok, pesanan, dan penjualan — plus aliran aktivitasnya secara langsung.</p>
+        </div>
+        <div class="stats" id="reportStats"></div>
+        <div class="report-grid">
+          <div class="panel">
+            <h3><span class="live-dot" style="display:inline-block;background:#dc2626;margin-right:8px"></span>Live Tracking — Aktivitas Terakhir</h3>
+            <ul class="feed-list" id="activityFeed"></ul>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:18px">
+            <div class="panel">
+              <h3>Alur Pembelian Sesi Ini</h3>
+              <div id="funnelBox"></div>
+              <p class="hint" style="color:var(--ink-faint);font-size:13px;margin:10px 0 0">Klik Beli otomatis mencatat pesanan berstatus Dipesan. Penjualan terhitung setelah kamu klik Konfirmasi Lunas di Daftar Stok.</p>
+            </div>
+            <div class="panel">
+              <h3>Penjualan &amp; Pesanan</h3>
+              <div class="sales-rows" id="reportSalesRows"></div>
+            </div>
+          </div>
+        </div>
+        <p class="scope-note">Versi server: penghitung dan laporan dihitung dari database server, jadi mencakup semua perangkat. Di versi statis lama, angka hanya dari browser perangkat ini.</p>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN TOP UP ALL GAME (terpisah dari katalog akun) ============ -->
+    <section class="page" data-page="topup">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">GankStore / Top Up</div>
+          <h1>Top Up All Game</h1>
+          <p>Top up diamond, UC, Genesis Crystal, dan mata uang game lainnya untuk 10 game. Pilih game, pilih paket, isi User ID — invoice terbit di toko ini, sama seperti beli akun.</p>
+        </div>
+        <div class="grid topup-grid" id="topupGrid"></div>
+        <div class="empty" id="topupEmpty" hidden>
+          <h3>Belum ada paket top up</h3>
+          <p>Katalog top up masih kosong. Paket asli ditambahkan admin lewat Panel Admin — Top Up.</p>
+          <a class="btn-dark" href="#/admin/topup">Kelola Paket Top Up</a>
+        </div>
+        <div class="info-box" style="margin-top:22px">
+          <h3>Jujur soal top up</h3>
+          <ul>
+            <li>Top up <strong>diproses manual oleh admin</strong> setelah pembayaran lunas — belum ada pengiriman diamond / UC otomatis ke akun game, karena belum ada supplier / provider top up.</li>
+            <li>Admin memproses ke User ID yang kamu isi, lalu menandai pesanan Selesai. Statusnya bisa dicek di Pesanan Saya.</li>
+            <li>Biaya admin 10% berlaku sama seperti pembelian akun dan selalu tertulis di invoice.</li>
+          </ul>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN TOP UP PER GAME ============ -->
+    <section class="page" data-page="topup-game">
+      <main class="wrap">
+        <a class="back-link" href="#/topup">← Kembali ke Top Up</a>
+        <div class="page-head" style="padding-top:6px">
+          <div class="breadcrumb">GankStore / Top Up</div>
+          <h1 id="topupGameTitle">Top Up</h1>
+          <p id="topupGameDesc"></p>
+        </div>
+        <div class="grid" id="topupPackages"></div>
+        <div class="empty" id="topupPkgEmpty" hidden>
+          <h3>Belum ada paket untuk game ini</h3>
+          <p>Admin belum menambahkan paket top up untuk game ini. Cek game lain atau kembali lagi nanti.</p>
+          <a class="btn-dark" href="#/topup">Pilih Game Lain</a>
+        </div>
+        <div class="auth-wrap" style="max-width:640px;margin:0">
+          <form class="panel" id="topupForm" style="margin-top:20px">
+            <h3>Form Order Top Up</h3>
+            <div class="field"><label>Paket dipilih</label><div id="topupSelected"><span>Belum ada paket dipilih — klik salah satu paket di atas.</span></div></div>
+            <div class="field"><label for="tuUserId">User ID / ID Akun Game</label><input id="tuUserId" type="text" placeholder="cth. 12345678" maxlength="40" required /></div>
+            <div class="field" id="tuServerField" hidden><label for="tuServerId">Server / Zone ID</label><input id="tuServerId" type="text" placeholder="cth. 2001" maxlength="40" /></div>
+            <div class="inv-rows" id="topupPriceBox"></div>
+            <button class="btn-add" type="submit">Buat Pesanan &amp; Invoice</button>
+            <p class="hint" style="font-size:13.5px;color:var(--ink-soft);font-weight:600;margin:12px 0 0">Top up diproses manual oleh admin setelah pembayaran lunas. Pastikan User ID benar — salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi.</p>
+          </form>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ ADMIN: HALAMAN PAKET TOP UP (terpisah) ============ -->
+    <section class="page" data-page="admin-toppup">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">Panel Admin / Top Up</div>
+          <h1>Paket Top Up</h1>
+          <p>Kelola paket top up per game dan proses pesanan top up yang masuk. Katalog top up mulai kosong — paket asli diisi admin di sini, jangan isi harga palsu.</p>
+        </div>
+        <div class="auth-wrap" style="max-width:640px;margin:0">
+          <form class="panel" id="topupPkgForm" style="margin-top:20px">
+            <h3 id="topupPkgFormTitle">Tambah Paket Top Up</h3>
+            <input type="hidden" id="tpEditId" value="" />
+            <div class="field"><label for="tpGame">Game</label><select id="tpGame" required></select></div>
+            <div class="field"><label for="tpName">Nama paket</label><input id="tpName" type="text" placeholder="cth. 86 Diamond" maxlength="60" required /></div>
+            <div class="field-row">
+              <div class="field"><label for="tpAmount">Jumlah mata uang</label><input id="tpAmount" type="number" min="1" step="1" placeholder="cth. 86" required /></div>
+              <div class="field"><label for="tpPrice">Harga (Rp)</label><input id="tpPrice" type="number" min="0" step="1000" placeholder="cth. 25000" required /></div>
+            </div>
+            <p class="hint" id="tpCurrencyHint" style="font-size:13.5px;color:var(--ink-soft);font-weight:600;margin:-4px 0 14px"></p>
+            <button class="btn-add" type="submit" id="tpSubmitBtn">+ Simpan Paket</button>
+            <button class="btn-detail" type="button" id="tpCancelEdit" hidden>Batalkan Edit</button>
+          </form>
+        </div>
+        <div class="panel" style="margin-top:20px">
+          <h3>Daftar Paket Top Up</h3>
+          <div class="stock-page-list" id="topupPkgList"></div>
+        </div>
+        <div class="panel" style="margin-top:20px">
+          <h3>Pesanan Top Up Masuk</h3>
+          <div class="sales-rows" id="topupOrderList"></div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN INVOICE / CHECKOUT IN-APP ============ -->
+    <section class="page" data-page="invoice">
+      <main class="wrap">
+        <a class="back-link" href="#/katalog">← Kembali ke Katalog</a>
+        <div class="page-head" style="padding-top:6px">
+          <div class="breadcrumb">GankStore / Invoice</div>
+          <h1>Invoice Pesanan</h1>
+          <p>Pesananmu tercatat di toko ini. Bayar total invoice lewat Midtrans — setelah admin mengonfirmasi pembayaranmu lunas, status di halaman ini otomatis berubah jadi Lunas dan data akun diserahkan ke kamu.</p>
+        </div>
+        <div id="invoiceWrap"></div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN SUKSES — PENYERAHAN DATA AKUN SATU KALI ============ -->
+    <section class="page" data-page="sukses">
+      <main class="wrap">
+        <div class="page-head">
+          <div class="breadcrumb">GankStore / Pembelian Berhasil</div>
+          <h1>Pembelian Berhasil 🎉</h1>
+          <p>Pembayaranmu sudah lunas. Data login akunmu ditampilkan <strong>satu kali</strong> di halaman ini — salin dan simpan sekarang, lalu segera ganti password akunnya. Begitu kamu meninggalkan halaman ini, data tersebut otomatis terhapus dari toko dan tidak bisa ditampilkan lagi.</p>
+        </div>
+        <div id="successWrap"></div>
+      </main>
+    </section>
+
+    <!-- ============ HALAMAN AKUN / MASUK ============ -->
+    <section class="page" data-page="akun">
+      <main class="wrap">
+        <div class="auth-wrap">
+          <div id="authLoggedOut">
+            <div class="auth-head">
+              <h1>Masuk ke GankStore</h1>
+              <p>Masuk untuk membuka Panel Admin dan mengelola stok toko. Belum punya akun? Daftar dulu, langsung bisa dipakai.</p>
+            </div>
+            <div class="panel auth-card">
+              <button class="btn-google" type="button" id="btnGoogle">
+                <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+                Lanjutkan dengan Google
+              </button>
+              <p class="auth-msg" id="googleMsg" hidden>Login Google belum aktif di toko ini — verifikasi Google butuh Client ID + server. Sementara pakai email + password di bawah, langsung bisa dites.</p>
+              <div class="auth-divider"><span>atau pakai email</span></div>
+              <div class="auth-tabs" role="tablist" aria-label="Pilih masuk atau daftar">
+                <button type="button" class="auth-tab on" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
+                <button type="button" class="auth-tab" id="tabRegister" role="tab" aria-selected="false">Daftar</button>
+              </div>
+
+              <form id="loginForm" novalidate>
+                <div class="form-error" id="loginError" role="alert"></div>
+                <div class="field"><label for="liEmail">Email</label><input id="liEmail" type="email" autocomplete="email" placeholder="cth. nama@email.com" required /></div>
+                <div class="field"><label for="liPass">Password</label><input id="liPass" type="password" autocomplete="current-password" placeholder="Password akunmu" required /></div>
+                <button class="btn-auth" type="submit">Masuk</button>
+              </form>
+
+              <form id="registerForm" novalidate hidden>
+                <div class="form-error" id="registerError" role="alert"></div>
+                <div class="field"><label for="rgName">Nama</label><input id="rgName" type="text" autocomplete="name" placeholder="cth. Bayu" maxlength="40" required /></div>
+                <div class="field"><label for="rgEmail">Email</label><input id="rgEmail" type="email" autocomplete="email" placeholder="cth. nama@email.com" required /></div>
+                <div class="field"><label for="rgPass">Password</label><input id="rgPass" type="password" autocomplete="new-password" placeholder="Minimal 6 karakter" required /></div>
+                <div class="field"><label for="rgPass2">Ulangi password</label><input id="rgPass2" type="password" autocomplete="new-password" placeholder="Ketik ulang password" required /></div>
+                <button class="btn-auth" type="submit">Daftar Akun</button>
+              </form>
+
+              <p class="scope-note">Versi server: akunmu tersimpan di database server GankStore, jadi tetap bisa dipakai dari perangkat lain. (Versi statis lama menyimpan akun hanya di browser perangkat ini.)</p>
+            </div>
+          </div>
+
+          <div id="authLoggedIn" hidden>
+            <div class="auth-head">
+              <h1>Akun Saya</h1>
+              <p>Kamu sudah masuk. Dari sini bisa langsung membuka Panel Admin untuk mengelola stok.</p>
+            </div>
+            <div class="panel auth-card">
+              <div class="profile-head">
+                <div class="avatar" id="profileAvatar">?</div>
+                <div><b id="profileName">—</b><span id="profileEmail">—</span></div>
+              </div>
+              <div class="profile-actions">
+                <a class="btn-dark" href="#/admin" style="text-align:center">Buka Panel Admin</a>
+                <a class="btn-detail" href="#/katalog">Lihat Katalog</a>
+                <button class="btn-logout" type="button" id="btnLogout">Keluar</button>
+              </div>
+            </div>
+            <div class="panel auth-card">
+              <h3 style="font-size:18px;margin-bottom:6px">Pesanan Saya</h3>
+              <p style="color:var(--ink-soft);margin:0;font-size:14.5px">Invoice dari pembelianmu di sesi ini. Klik untuk membuka invoice-nya.</p>
+              <div class="order-rows" id="myOrders"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <footer>
+      <div class="wrap">
+        <span><strong>GankStore</strong> — toko akun Point Blank, semua akun adalah stok milik penjual sendiri.</span>
+        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up</a> · <a href="#/akun">Akun</a></span>
+      </div>
+    </footer>
+
+    <nav class="bottomnav" aria-label="Navigasi bawah">
+      <a href="#/" data-nav="beranda"><span>⌂</span>Beranda</a>
+      <a href="#/katalog" data-nav="katalog"><span>▦</span>Katalog</a>
+      <a href="#/cara-beli" data-nav="cara-beli"><span>?</span>Cara Beli</a>
+      <a href="#/akun" data-nav="akun"><span>◉</span>Akun</a>
+    </nav>
+
+    <div class="sale-popups" id="salePopups" aria-live="polite"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/topup.js"></script>
+    <script src="js/payments.js"></script>
+  </body>
+</html>

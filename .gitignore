@@ -1,0 +1,7 @@
+# Rahasia & data lokal — jangan masuk repo
+.env
+backend/gankstore.db
+__pycache__/
+*.pyc
+.venv/
+venv/
