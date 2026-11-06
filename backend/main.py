@@ -36,16 +36,25 @@ store.init_db()
 
 # Daftar game tetap untuk Top Up — HARUS sama dengan public/js/config.js.
 TOPUP_GAMES = [
-    {"name": "Mobile Legends", "currency": "Diamond", "needsServer": True, "serverLabel": "Server / Zone ID"},
-    {"name": "Free Fire", "currency": "Diamond", "needsServer": False, "serverLabel": ""},
-    {"name": "PUBG Mobile", "currency": "UC", "needsServer": False, "serverLabel": ""},
-    {"name": "Honor of Kings", "currency": "Token", "needsServer": True, "serverLabel": "Server ID"},
-    {"name": "Genshin Impact", "currency": "Genesis Crystal", "needsServer": True, "serverLabel": "Server"},
-    {"name": "Roblox", "currency": "Robux", "needsServer": False, "serverLabel": ""},
-    {"name": "Point Blank", "currency": "PB Cash", "needsServer": False, "serverLabel": ""},
-    {"name": "Valorant", "currency": "Points", "needsServer": False, "serverLabel": ""},
-    {"name": "Call of Duty: Mobile", "currency": "CP", "needsServer": False, "serverLabel": ""},
-    {"name": "EA Sports FC Mobile", "currency": "FC Points", "needsServer": False, "serverLabel": ""},
+    {"name": "Mobile Legends", "currency": "Diamond", "needsServer": True, "serverLabel": "Server / Zone ID", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "Free Fire", "currency": "Diamond", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "PUBG Mobile", "currency": "UC", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 5123456789"},
+    {"name": "Honor of Kings", "currency": "Token", "needsServer": True, "serverLabel": "Server ID", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "Genshin Impact", "currency": "Genesis Crystal", "needsServer": True, "serverLabel": "Server", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 800123456"},
+    {"name": "Roblox", "currency": "Robux", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. nama_roblox"},
+    {"name": "Point Blank", "currency": "PB Cash", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "Valorant", "currency": "Points", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. nama#1234"},
+    {"name": "Call of Duty: Mobile", "currency": "CP", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "EA Sports FC Mobile", "currency": "FC Points", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    # Produk digital lain (dari banner promo). Kategori KOSONG yang bisa
+    # diisi admin seperti paket top up game — JANGAN isi harga/paket palsu.
+    # Pulsa/PPOB/e-wallet masih diproses MANUAL dan butuh supplier PPOB
+    # (belum ada); jangan klaim otomatis.
+    {"name": "Voucher Digital", "currency": "Voucher", "needsServer": False, "serverLabel": "", "idLabel": "ID / Email penerima", "idPlaceholder": "cth. nama@email.com"},
+    {"name": "Pulsa & Paket Data", "currency": "Pulsa", "needsServer": False, "serverLabel": "", "idLabel": "Nomor HP", "idPlaceholder": "cth. 081234567890"},
+    {"name": "E-Wallet & PPOB", "currency": "Saldo", "needsServer": False, "serverLabel": "", "idLabel": "Nomor akun / ID pelanggan", "idPlaceholder": "cth. 081234567890"},
+    {"name": "Item Game", "currency": "Item", "needsServer": False, "serverLabel": "", "idLabel": "User ID / ID Akun Game", "idPlaceholder": "cth. 12345678"},
+    {"name": "Produk Digital Lainnya", "currency": "Produk", "needsServer": False, "serverLabel": "", "idLabel": "ID / keterangan penerima", "idPlaceholder": "cth. ID atau email penerima"},
 ]
 TOPUP_GAME_MAP = {g["name"]: g for g in TOPUP_GAMES}
 

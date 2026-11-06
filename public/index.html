@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="GankStore — toko akun Point Blank dan top up all game. Stok milik sendiri, invoice di toko, bayar via Midtrans." />
     <meta name="color-scheme" content="light dark" />
-    <link rel="icon" href="data:," />
+    <meta name="theme-color" content="#070b14" />
+    <link rel="icon" type="image/png" href="icon.png" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <link rel="manifest" href="manifest.json" />
     <title>GankStore - Toko Akun Point Blank</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +19,7 @@
   <body>
     <header class="topbar">
       <div class="wrap topbar-in">
-        <a class="brand" href="#/">GANK<b>STORE</b></a>
+        <a class="brand" href="#/"><img class="brand-logo" src="brand/gankstore-logo.png" alt="GankStore" /></a>
         <nav class="topnav" aria-label="Navigasi utama">
           <a href="#/" data-nav="beranda">Beranda</a>
           <a href="#/katalog" data-nav="katalog">Katalog</a>
@@ -55,9 +58,13 @@
 
     <!-- ============ HALAMAN BERANDA ============ -->
     <section class="page" data-page="beranda">
+      <div class="wrap">
+        <a href="#/topup"><img class="promo-banner" src="brand/gankstore-banner.png" alt="GankStore — Top Up Game &amp; Produk Digital. Lebih Murah, Cepat, dan Aman! Top Up Sekarang!" /></a>
+      </div>
       <div class="hero">
         <div class="wrap hero-in">
           <div>
+            <img class="hero-logo" src="brand/gankstore-logo.png" alt="GankStore — Marketplace Digital &amp; Top Up Game" />
             <h1>Akun Point Blank <span class="lime">siap main</span>, langsung dari stok sendiri.</h1>
             <p>GankStore sekarang fokus jualan akun Point Blank saja. Pilih akunnya — cek rank, senjata, dan char-nya — lalu pesan langsung di toko ini, bayar lewat Midtrans, data akun langsung diserahkan.</p>
             <div class="hero-cta">
@@ -346,8 +353,8 @@
       <main class="wrap">
         <div class="page-head">
           <div class="breadcrumb">GankStore / Top Up</div>
-          <h1>Top Up All Game</h1>
-          <p>Top up diamond, UC, Genesis Crystal, dan mata uang game lainnya untuk 10 game. Pilih game, pilih paket, isi User ID — invoice terbit di toko ini, sama seperti beli akun.</p>
+          <h1>Top Up &amp; Produk Digital</h1>
+          <p>Top up diamond, UC, Genesis Crystal, dan mata uang game lainnya untuk 10 game — plus Voucher Digital, Pulsa &amp; Paket Data, E-Wallet &amp; PPOB, Item Game, dan Produk Digital Lainnya. Pilih kategori, pilih paket, isi identitas — invoice terbit di toko ini, sama seperti beli akun.</p>
         </div>
         <div class="grid topup-grid" id="topupGrid"></div>
         <div class="empty" id="topupEmpty" hidden>
@@ -359,6 +366,7 @@
           <h3>Jujur soal top up</h3>
           <ul>
             <li>Top up <strong>diproses manual oleh admin</strong> setelah pembayaran lunas — belum ada pengiriman diamond / UC otomatis ke akun game, karena belum ada supplier / provider top up.</li>
+            <li>Kategori baru (Voucher Digital, Pulsa &amp; Paket Data, E-Wallet &amp; PPOB, Item Game, Produk Digital Lainnya) strukturnya sudah ada dan bisa diisi admin — tapi pulsa/PPOB/e-wallet <strong>belum bisa diproses otomatis</strong> karena belum ada supplier PPOB. Sampai ada supplier, semuanya diproses manual oleh admin setelah lunas.</li>
             <li>Admin memproses ke User ID yang kamu isi, lalu menandai pesanan Selesai. Statusnya bisa dicek di Pesanan Saya.</li>
             <li>Biaya admin 10% berlaku sama seperti pembelian akun dan selalu tertulis di invoice.</li>
           </ul>
@@ -460,6 +468,7 @@
         <div class="auth-wrap">
           <div id="authLoggedOut">
             <div class="auth-head">
+              <img class="auth-logo" src="brand/gankstore-logo.png" alt="GankStore" />
               <h1>Masuk ke GankStore</h1>
               <p>Masuk untuk membuka Panel Admin dan mengelola stok toko. Belum punya akun? Daftar dulu, langsung bisa dipakai.</p>
             </div>
@@ -523,7 +532,7 @@
 
     <footer>
       <div class="wrap">
-        <span><strong>GankStore</strong> — toko akun Point Blank, semua akun adalah stok milik penjual sendiri.</span>
+        <span><img class="footer-logo" src="brand/gankstore-logo.png" alt="GankStore" /> — toko akun Point Blank, semua akun adalah stok milik penjual sendiri.</span>
         <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up</a> · <a href="#/akun">Akun</a></span>
       </div>
     </footer>

@@ -1,0 +1,19 @@
+{
+  "name": "GankStore",
+  "short_name": "GankStore",
+  "description": "GankStore — Marketplace Digital & Top Up Game. Toko akun Point Blank dan top up all game.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070b14",
+  "theme_color": "#070b14",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

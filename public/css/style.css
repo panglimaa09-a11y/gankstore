@@ -300,3 +300,28 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 .pkg-card{cursor:pointer;border:2px solid var(--line)}
 .pkg-card.selected{border-color:var(--accent);box-shadow:var(--shadow)}
 .pkg-price{font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:20px}
+
+/* ---------- logo & ikon brand ---------- */
+/* Logo utama (image-5, horizontal 2172x724, latar hitam): tampil sebagai
+   badge hitam, ukurannya DIBATASI di CSS — jangan biarkan tampil ukuran asli
+   (pelajaran RekberStore: logo header raksasa karena tidak dibatasi). */
+.brand{display:inline-flex;align-items:center}
+.brand-logo{height:40px;width:auto;max-width:180px;object-fit:contain;display:block;border-radius:6px}
+.hero-logo{height:auto;width:min(320px,72vw);max-height:96px;object-fit:contain;display:block;margin-bottom:16px;border-radius:8px}
+.auth-logo{height:44px;width:auto;max-width:230px;object-fit:contain;display:block;margin:0 auto 12px;border-radius:6px}
+.footer-logo{height:28px;width:auto;vertical-align:middle;margin-right:4px;border-radius:4px;display:inline-block}
+@media (max-width:650px){
+  .brand-logo{height:32px;max-width:150px}
+  .hero-logo{width:min(260px,72vw);max-height:80px}
+  .auth-logo{height:38px;max-width:200px}
+}
+
+/* ---------- banner promo ---------- */
+/* Banner promo (image-6, 1774x887, ~2:1): lebar penuh container, tinggi
+   mengikuti lebar (height:auto) — di HP mengecil sendiri, di laptop
+   mentok lebar konten 1180px. Jangan pakai height tetap / object-fit cover
+   di sini, supaya teks banner tidak terpotong. */
+.promo-banner{width:100%;height:auto;display:block;border-radius:16px;margin:20px 0 4px;border:1px solid var(--line)}
+@media (max-width:650px){
+  .promo-banner{border-radius:12px;margin-top:14px}
+}

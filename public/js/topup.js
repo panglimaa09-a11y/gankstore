@@ -65,7 +65,11 @@ var TopUp = (function(){
     var t = document.getElementById("topupGameTitle");
     if (t) t.textContent = "Top Up " + game;
     var d = document.getElementById("topupGameDesc");
-    if (d) d.textContent = "Paket " + cfg.currency + " untuk " + game + ". Pilih paket, isi User ID" + (cfg.needsServer ? " dan " + cfg.serverLabel : "") + ", lalu buat pesanan — invoice terbit di toko ini.";
+    if (d) d.textContent = "Paket " + cfg.currency + " untuk " + game + ". Pilih paket, isi " + (cfg.idLabel || "User ID") + (cfg.needsServer ? " dan " + cfg.serverLabel : "") + ", lalu buat pesanan — invoice terbit di toko ini.";
+    var idLbl = document.querySelector('label[for="tuUserId"]');
+    if (idLbl) idLbl.textContent = cfg.idLabel || "User ID / ID Akun Game";
+    var idInp = document.getElementById("tuUserId");
+    if (idInp && cfg.idPlaceholder) idInp.placeholder = cfg.idPlaceholder;
     var box = document.getElementById("topupPackages");
     var pkgs = packagesFor(game);
     if (box) {
@@ -298,7 +302,7 @@ var TopUp = (function(){
     var userId = document.getElementById("tuUserId").value.trim();
     var cfg = gameCfg(currentGame);
     var serverId = document.getElementById("tuServerId").value.trim();
-    if (!userId) { showToast("User ID / ID akun game wajib diisi."); return; }
+    if (!userId) { showToast((cfg.idLabel || "User ID") + " wajib diisi."); return; }
     if (cfg.needsServer && !serverId) { showToast(cfg.serverLabel + " wajib diisi untuk " + cfg.name + "."); return; }
     trackTopupBuy(selectedPkg, userId, serverId).then(function(o){
       if (o) { ev.target.reset(); selectedPkg = null; updateTopupPrice(); location.hash = "#/invoice/" + encodeURIComponent(o.invoiceNo); }

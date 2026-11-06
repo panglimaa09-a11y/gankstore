@@ -36,6 +36,13 @@ gankstore/
 ├── .gitignore
 ├── public/                 # frontend statis (juga disajikan backend di /)
 │   ├── index.html          # struktur HTML saja — tanpa CSS/JS inline besar
+│   ├── icon.png            # IKON APLIKASI (kotak, neon cyan-ungu) — favicon + PWA
+│   ├── logo.png            # alias logo utama (horizontal)
+│   ├── banner.png          # alias banner promo (hero Beranda)
+│   ├── manifest.json       # manifest PWA (name GankStore, standalone)
+│   ├── brand/
+│   │   ├── gankstore-logo.png    # LOGO UTAMA (horizontal, tagline Marketplace Digital & Top Up Game)
+│   │   └── gankstore-banner.png  # BANNER PROMOSI (hero Beranda, 1774x887)
 │   ├── css/
 │   │   ├── style.css       # semua CSS toko + top up
 │   │   └── hero.css        # gambar hero (base64, file terpisah, di-cache)
@@ -50,6 +57,34 @@ gankstore/
     ├── midtrans.py         # Snap token + verifikasi signature webhook
     └── __init__.py
 ```
+
+## Aset brand (logo, ikon, banner)
+
+| Aset | File di repo | Dipakai di |
+|---|---|---|
+| **Logo utama** (horizontal, G + mahkota + keranjang, tagline "Marketplace Digital & Top Up Game") | `public/brand/gankstore-logo.png` (+ alias `public/logo.png`) | Header (tinggi 40px desktop / 32px HP — dibatasi di CSS, jangan tampil ukuran asli), hero, halaman login, footer |
+| **Ikon aplikasi** (kotak, neon cyan-ungu) | `public/icon.png` | Favicon, `apple-touch-icon`, manifest PWA |
+| **Banner promosi** ("Top Up Game & Produk Digital — Lebih Murah, Cepat, dan Aman!") | `public/brand/gankstore-banner.png` (+ alias `public/banner.png`) | Hero banner Beranda (lebar penuh, tinggi mengikuti lebar, tidak terpotong di HP) |
+
+> **Catatan pengiriman file PNG:** file `*.png` di atas adalah biner dan
+> TIDAK bisa dikirim lewat `push-files` (hanya menerima UTF-8). Kalau di
+> remote belum ada, upload lewat **GitHub web UI** (Add file → Upload files)
+> — jangan klaim sudah ter-push sebelum ukurannya terverifikasi sama dengan
+> file aslinya. File teks (HTML/CSS/JS/manifest) tetap bisa lewat push-files.
+
+## Kategori Top Up & Produk Digital
+
+Selain 10 game (Mobile Legends, Free Fire, PUBG Mobile, Honor of Kings,
+Genshin Impact, Roblox, Point Blank, Valorant, Call of Duty: Mobile,
+EA Sports FC Mobile), ada 5 kategori produk digital lain: **Voucher
+Digital, Pulsa & Paket Data, E-Wallet & PPOB, Item Game, Produk Digital
+Lainnya**. Semuanya **mulai KOSONG** dan bisa diisi admin lewat Panel Admin
+→ Paket Top Up (pilih kategorinya di form yang sama).
+
+> **Jujur:** pulsa/PPOB/e-wallet **belum bisa diproses otomatis** — butuh
+> supplier PPOB dan belum ada. Sampai ada supplier, semua pesanan kategori
+> ini diproses **manual oleh admin** setelah pembayaran lunas, sama seperti
+> top up game. Jangan klaim otomatis di mana pun.
 
 ## Cara jalanin lokal
 

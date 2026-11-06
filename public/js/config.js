@@ -15,18 +15,30 @@ window.GS_CONFIG = {
   API_BASE: "",
 
   /* Daftar game tetap untuk Top Up (all game). Kalau user mengubah daftar,
-     edit di sini DAN di backend/main.py (TOPUP_GAMES) supaya sama. */
+     edit di sini DAN di backend/main.py (TOPUP_GAMES) supaya sama.
+     idLabel/idPlaceholder: label kolom identitas di form order per
+     kategori (User ID untuk game, nomor HP untuk pulsa, dst). */
   TOPUP_GAMES: [
-    { name: "Mobile Legends",     currency: "Diamond",         needsServer: true,  serverLabel: "Server / Zone ID" },
-    { name: "Free Fire",          currency: "Diamond",         needsServer: false, serverLabel: "" },
-    { name: "PUBG Mobile",        currency: "UC",              needsServer: false, serverLabel: "" },
-    { name: "Honor of Kings",     currency: "Token",           needsServer: true,  serverLabel: "Server ID" },
-    { name: "Genshin Impact",     currency: "Genesis Crystal", needsServer: true,  serverLabel: "Server" },
-    { name: "Roblox",             currency: "Robux",           needsServer: false, serverLabel: "" },
-    { name: "Point Blank",        currency: "PB Cash",         needsServer: false, serverLabel: "" },
-    { name: "Valorant",           currency: "Points",          needsServer: false, serverLabel: "" },
-    { name: "Call of Duty: Mobile", currency: "CP",            needsServer: false, serverLabel: "" },
-    { name: "EA Sports FC Mobile", currency: "FC Points",      needsServer: false, serverLabel: "" }
+    { name: "Mobile Legends",     currency: "Diamond",         needsServer: true,  serverLabel: "Server / Zone ID", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "Free Fire",          currency: "Diamond",         needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "PUBG Mobile",        currency: "UC",              needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 5123456789" },
+    { name: "Honor of Kings",     currency: "Token",           needsServer: true,  serverLabel: "Server ID", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "Genshin Impact",     currency: "Genesis Crystal", needsServer: true,  serverLabel: "Server", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 800123456" },
+    { name: "Roblox",             currency: "Robux",           needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. nama_roblox" },
+    { name: "Point Blank",        currency: "PB Cash",         needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "Valorant",           currency: "Points",          needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. nama#1234" },
+    { name: "Call of Duty: Mobile", currency: "CP",            needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "EA Sports FC Mobile", currency: "FC Points",      needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+
+    /* Produk digital lain (dari banner promo). Kategori KOSONG yang bisa
+       diisi admin seperti paket top up game — JANGAN isi harga/paket palsu.
+       Pulsa/PPOB/e-wallet masih diproses MANUAL dan butuh supplier PPOB
+       (belum ada); jangan klaim otomatis. */
+    { name: "Voucher Digital",       currency: "Voucher", needsServer: false, serverLabel: "", idLabel: "ID / Email penerima", idPlaceholder: "cth. nama@email.com" },
+    { name: "Pulsa & Paket Data",    currency: "Pulsa",   needsServer: false, serverLabel: "", idLabel: "Nomor HP", idPlaceholder: "cth. 081234567890" },
+    { name: "E-Wallet & PPOB",       currency: "Saldo",   needsServer: false, serverLabel: "", idLabel: "Nomor akun / ID pelanggan", idPlaceholder: "cth. 081234567890" },
+    { name: "Item Game",             currency: "Item",    needsServer: false, serverLabel: "", idLabel: "User ID / ID Akun Game", idPlaceholder: "cth. 12345678" },
+    { name: "Produk Digital Lainnya", currency: "Produk", needsServer: false, serverLabel: "", idLabel: "ID / keterangan penerima", idPlaceholder: "cth. ID atau email penerima" }
   ],
 
   /* Akun demo pembeli untuk review Midtrans (dibuat di server bila
