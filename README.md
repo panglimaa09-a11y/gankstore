@@ -107,9 +107,14 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
 ## Fitur
 
 - **Katalog akun Point Blank** — stok milik sendiri, cari/urut/filter status.
-- **Login email + password** — daftar/masuk; Panel Admin terkunci di balik
-  login. Versi pertama: semua user yang login bisa membuka Panel Admin
-  (sama seperti versi statis) — peran admin khusus belum ada.
+- **Login email + password** — daftar/masuk; Panel Admin **disembunyikan
+  dari user biasa**: tombol "Buka Panel Admin" di halaman Akun hanya
+  tampil bila yang login adalah admin, route `#/admin*` mengarahkan
+  non-admin (dan yang belum login) ke `#/akun`, dan endpoint admin di
+  server menolak non-admin dengan 403. Admin ditentukan dari env
+  `GS_ADMIN_EMAIL`; bila env kosong, admin **sementara** adalah akun
+  demo `demo@gankstore.my.id` — ganti ke email Tuan + ganti password
+  demo sebelum toko dibuka untuk umum (lihat "Peran admin" di bawah).
 - **Order + invoice in-app** — klik Beli Sekarang → akun otomatis DIPESAN →
   invoice `INV-…` dengan **biaya admin 10%** (Rp1.000 → admin Rp100 →
   total Rp1.100). Admin **Konfirmasi Lunas** → TERJUAL; **Batalkan Pesanan**
@@ -141,9 +146,30 @@ tampil, tapi data tidak tersimpan permanen dan pembayaran Midtrans mati.
 - **Pembayaran asli belum bisa** sampai KYC Midtrans disetujui. Yang jalan
   sekarang: Sandbox (tes) + konfirmasi lunas manual oleh admin.
 - **Akun demo untuk review Midtrans:** `demo@gankstore.my.id` — dibuat
-  otomatis di server bila `GS_SEED_DEMO=1` (default). Ini akun **pembeli**,
-  bukan admin. Password dari env `GS_DEMO_PASSWORD` (contoh: `Demo1234`).
-  Ganti password itu sebelum toko dibuka untuk umum, atau set `GS_SEED_DEMO=0`.
+  otomatis di server bila `GS_SEED_DEMO=1` (default). Password dari env
+  `GS_DEMO_PASSWORD` (contoh: `Demo1234`). Ganti password itu sebelum
+  toko dibuka untuk umum, atau set `GS_SEED_DEMO=0`.
+
+## Peran admin (Panel Admin disembunyikan dari user biasa)
+
+- Admin toko ditentukan dari env **`GS_ADMIN_EMAIL`** (lihat
+  `.env.example`). Bila env itu **kosong**, server memakai
+  `demo@gankstore.my.id` sebagai admin **SEMENTARA** supaya toko tetap
+  bisa dikelola — ini sengaja, bukan lupa: akun demo itu juga dipakai
+  reviewer Midtrans. **Sebelum toko dibuka untuk umum: isi
+  `GS_ADMIN_EMAIL` dengan email Tuan, ganti password demo, lalu restart
+  server** (`systemctl restart gankstore-backend`). Begitu env diisi
+  email lain, akun demo otomatis kehilangan peran admin. Samakan juga
+  `ADMIN_EMAIL` di `public/js/config.js` supaya mode lokal/statis ikut
+  aturan yang sama.
+- Yang dijaga: tombol "Buka Panel Admin" di halaman Akun hanya tampil
+  untuk admin; route `#/admin*` mengarahkan non-admin ke `#/akun`;
+  endpoint admin (`POST/DELETE /api/products`, `relist`, konfirmasi
+  lunas, batalkan, `POST/PUT/DELETE /api/topup/packages`, `/api/stats`)
+  menolak non-admin dengan **403**; daftar produk untuk non-admin tidak
+  menyertakan kredensial akun game; daftar pesanan non-admin hanya
+  pesanannya sendiri (tanpa kredensial); kredensial sekali pakai hanya
+  boleh diambil admin atau pembeli pesanan itu sendiri.
 
 ## Deploy
 

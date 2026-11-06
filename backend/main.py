@@ -12,9 +12,12 @@ Aturan keamanan versi pertama:
 - Server Key Midtrans hanya dari env, tidak pernah dikirim ke browser.
 - Kredensial akun game (email/password) hanya dikembalikan ke user yang
   login, dan hanya SATU KALI lewat /credentials — setelah itu dihapus.
-- Semua user yang login bisa membuka Panel Admin (sama seperti versi
-  statis). Peran admin khusus (role) belum ada — TODO sebelum toko
-  dibuka untuk umum.
+- Peran admin: hanya user dengan is_admin=1 (atau email = GS_ADMIN_EMAIL,
+  fallback sementara demo@gankstore.my.id) yang boleh membuka Panel Admin
+  dan memanggil endpoint admin (tambah/hapus stok & paket, konfirmasi
+  lunas, batalkan, statistik). User biasa yang login mendapat 403 di
+  endpoint itu dan tidak melihat tombol Panel Admin di frontend.
+  Daftar produk untuk non-admin TIDAK menyertakan kredensial akun game.
 """
 import os
 import re
@@ -36,15 +39,22 @@ app = FastAPI(title="GankStore API", version="1.0.0")
 # CORS: frontend live di Vercel (gankstore.my.id) memanggil backend ini
 # lewat tunnel ngrok (/gankstore-api) — origin berbeda, jadi browser
 # memblokir fetch tanpa header CORS. Hanya origin toko yang diizinkan.
+# GS_CORS_ORIGINS (dipisah koma) menambah origin lain bila perlu,
+# mis. origin staging/pengujian lokal — default kosong.
+_CORS_ORIGINS = [
+    "https://gankstore.my.id",
+    "https://www.gankstore.my.id",
+    "https://gankstore.vercel.app",
+    "https://curvature-reunite-perfected.ngrok-free.dev",
+    "http://127.0.0.1:8773",
+] + [
+    o.strip()
+    for o in os.environ.get("GS_CORS_ORIGINS", "").split(",")
+    if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://gankstore.my.id",
-        "https://www.gankstore.my.id",
-        "https://gankstore.vercel.app",
-        "https://curvature-reunite-perfected.ngrok-free.dev",
-        "http://127.0.0.1:8773",
-    ],
+    allow_origins=_CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
@@ -130,7 +140,12 @@ class SnapTokenIn(BaseModel):
 # ---------- auth ----------
 
 def _public_user(user):
-    return {"id": user["id"], "name": user["name"], "email": user["email"]}
+    return {
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "is_admin": store.is_admin_user(user),
+    }
 
 
 def _bearer(authorization: str = Header(default="")):
@@ -144,6 +159,28 @@ def require_user(token: str = Depends(_bearer)):
     if not user:
         raise HTTPException(status_code=401, detail="Login dulu.")
     return user
+
+
+def require_admin(user: dict = Depends(require_user)):
+    """Hanya admin toko — user biasa yang login ditolak 403, bukan 401."""
+    if not store.is_admin_user(user):
+        raise HTTPException(
+            status_code=403, detail="Hanya admin toko yang boleh melakukan ini."
+        )
+    return user
+
+
+def _order_view(order, user):
+    """Satu pesanan untuk dikirim ke browser: non-admin hanya melihat
+    pesanannya sendiri dan TIDAK PERNAH menerima kredensial akun game
+    (nilai email/password dihapus; flag cred_pending tetap ada supaya
+    halaman sukses pembeli tahu harus memanggil /credentials)."""
+    d = store.order_to_dict(order)
+    if store.is_admin_user(user):
+        return d
+    d.pop("cred_email", None)
+    d.pop("cred_pass", None)
+    return d
 
 
 def optional_user(token: str = Depends(_bearer)):
@@ -174,7 +211,7 @@ def payments_config():
 
 
 @app.get("/api/stats")
-def get_stats(user: dict = Depends(require_user)):
+def get_stats(user: dict = Depends(require_admin)):
     return store.stats()
 
 
@@ -222,11 +259,16 @@ def me(user: dict = Depends(require_user)):
 @app.get("/api/products")
 def list_products(user: dict = Depends(optional_user)):
     rows = store.list_products()
-    return [store.product_to_dict(r, include_creds=bool(user)) for r in rows]
+    # Kredensial akun game hanya untuk admin — user biasa (dan tamu)
+    # hanya melihat stok tanpa email/password akunnya.
+    return [
+        store.product_to_dict(r, include_creds=store.is_admin_user(user))
+        for r in rows
+    ]
 
 
 @app.post("/api/products")
-def add_product(body: ProductIn, user: dict = Depends(require_user)):
+def add_product(body: ProductIn, user: dict = Depends(require_admin)):
     if body.credEmail and not EMAIL_RE.match(body.credEmail):
         raise HTTPException(
             status_code=400,
@@ -242,7 +284,7 @@ def add_product(body: ProductIn, user: dict = Depends(require_user)):
 
 
 @app.delete("/api/products/{product_id}")
-def remove_product(product_id: int, user: dict = Depends(require_user)):
+def remove_product(product_id: int, user: dict = Depends(require_admin)):
     product = store.get_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
@@ -255,7 +297,7 @@ def remove_product(product_id: int, user: dict = Depends(require_user)):
 
 
 @app.post("/api/products/{product_id}/relist")
-def relist_product(product_id: int, user: dict = Depends(require_user)):
+def relist_product(product_id: int, user: dict = Depends(require_admin)):
     product = store.get_product(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
@@ -267,7 +309,15 @@ def relist_product(product_id: int, user: dict = Depends(require_user)):
 
 @app.get("/api/orders")
 def list_orders(kind: str = "", user: dict = Depends(require_user)):
-    return [store.order_to_dict(r) for r in store.list_orders(kind or None)]
+    rows = store.list_orders(kind or None)
+    if store.is_admin_user(user):
+        return [store.order_to_dict(r) for r in rows]
+    # User biasa hanya melihat pesanannya sendiri, tanpa kredensial.
+    return [
+        _order_view(r, user)
+        for r in rows
+        if (r.get("buyer_email") or "") == user["email"]
+    ]
 
 
 @app.post("/api/orders")
@@ -305,7 +355,7 @@ def create_account_order(body: OrderIn, user: dict = Depends(optional_user)):
 
 
 @app.post("/api/orders/{invoice_no}/confirm")
-def confirm_order(invoice_no: str, user: dict = Depends(require_user)):
+def confirm_order(invoice_no: str, user: dict = Depends(require_admin)):
     order = store.get_order(invoice_no)
     if not order:
         raise HTTPException(status_code=404, detail="Invoice tidak ditemukan.")
@@ -333,7 +383,7 @@ def confirm_order(invoice_no: str, user: dict = Depends(require_user)):
 
 
 @app.post("/api/orders/{invoice_no}/cancel")
-def cancel_order(invoice_no: str, user: dict = Depends(require_user)):
+def cancel_order(invoice_no: str, user: dict = Depends(require_admin)):
     order = store.get_order(invoice_no)
     if not order:
         raise HTTPException(status_code=404, detail="Invoice tidak ditemukan.")
@@ -359,9 +409,15 @@ def get_credentials(invoice_no: str, user: dict = Depends(require_user)):
         raise HTTPException(status_code=409, detail="Pesanan belum lunas.")
     if order["kind"] != "akun":
         raise HTTPException(status_code=409, detail="Pesanan ini bukan pembelian akun.")
-    if order.get("buyer_email") and order["buyer_email"] != user["email"]:
-        # v1: semua user login dianggap admin — izinkan, tapi catat.
-        pass
+    # Kredensial hanya boleh diambil admin, atau pembeli pesanan itu
+    # sendiri. User lain yang login ditolak — sebelumnya endpoint ini
+    # terbuka untuk semua user login.
+    if not store.is_admin_user(user):
+        if not order.get("buyer_email") or order["buyer_email"] != user["email"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Data akun ini hanya untuk pembeli pesanan ini.",
+            )
     creds = store.reveal_order_credentials(invoice_no)
     if not creds:
         raise HTTPException(
@@ -384,7 +440,7 @@ def list_packages(game: str = ""):
 
 
 @app.post("/api/topup/packages")
-def add_package(body: PackageIn, user: dict = Depends(require_user)):
+def add_package(body: PackageIn, user: dict = Depends(require_admin)):
     cfg = TOPUP_GAME_MAP.get(body.game)
     if not cfg:
         raise HTTPException(status_code=400, detail="Game tidak ada di daftar top up.")
@@ -401,7 +457,7 @@ def add_package(body: PackageIn, user: dict = Depends(require_user)):
 
 
 @app.put("/api/topup/packages/{package_id}")
-def edit_package(package_id: int, body: PackageIn, user: dict = Depends(require_user)):
+def edit_package(package_id: int, body: PackageIn, user: dict = Depends(require_admin)):
     if not store.get_package(package_id):
         raise HTTPException(status_code=404, detail="Paket tidak ditemukan.")
     cfg = TOPUP_GAME_MAP.get(body.game)
@@ -420,7 +476,7 @@ def edit_package(package_id: int, body: PackageIn, user: dict = Depends(require_
 
 
 @app.delete("/api/topup/packages/{package_id}")
-def remove_package(package_id: int, user: dict = Depends(require_user)):
+def remove_package(package_id: int, user: dict = Depends(require_admin)):
     if not store.get_package(package_id):
         raise HTTPException(status_code=404, detail="Paket tidak ditemukan.")
     active = [

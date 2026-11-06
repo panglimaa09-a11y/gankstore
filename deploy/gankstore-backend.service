@@ -8,6 +8,9 @@ User=root
 WorkingDirectory=/home/hatch/workspace/gankstore-fullstack
 Environment=GANKSTORE_DB=/home/hatch/workspace/gankstore-fullstack/backend/gankstore.db
 Environment=GS_SEED_DEMO=1
+# Admin toko: isi GS_ADMIN_EMAIL dengan email Tuan bila sudah siap
+# (kosong = demo@gankstore.my.id jadi admin SEMENTARA, lihat README).
+# Environment=GS_ADMIN_EMAIL=
 ExecStart=/home/hatch/workspace/gankstore-fullstack/.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8773
 Restart=always
 RestartSec=5

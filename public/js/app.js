@@ -56,7 +56,7 @@
             if(window.TopUp&&TopUp.setPackages)TopUp.setPackages((res[2]||[]).map(serverPackageToLocal));
             var acts=res[3]||[];
             if(acts.length){analytics.activity=acts.map(function(a){return{time:a.time,tag:a.tag,text:a.text};});}
-            if(res[4]&&res[4].email){Server.user={name:res[4].name,email:res[4].email};}
+            if(res[4]&&res[4].email){Server.user={name:res[4].name,email:res[4].email,is_admin:!!res[4].is_admin};}
             if(res[5]){Server.payments=res[5];}
           });
         }).catch(function(){Server.enabled=false;});
@@ -263,6 +263,15 @@
         if(Server.enabled)return Server.user;
         try{var em=localStorage.getItem(LS_SESSION);if(!em)return null;var us=loadUsers();for(var i=0;i<us.length;i++){if(us[i].email===em)return us[i];}}catch(e){}return null;
       }
+      /* Hanya admin yang boleh melihat Panel Admin. Mode server: flag
+         is_admin dari /api/auth/me (ditentukan server dari GS_ADMIN_EMAIL,
+         fallback sementara demo@gankstore.my.id). Mode lokal: bandingkan
+         email dengan ADMIN_EMAIL di config.js. */
+      function isAdminUser(){
+        var u=currentUser();if(!u)return false;
+        if(Server.enabled)return !!(Server.user&&Server.user.is_admin);
+        return String(u.email||"").toLowerCase()===(window.GS_CONFIG.ADMIN_EMAIL||"demo@gankstore.my.id").toLowerCase();
+      }
       function setSession(email){try{if(email)localStorage.setItem(LS_SESSION,email);else localStorage.removeItem(LS_SESSION);}catch(e){}}
       function hashPw(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0;i<s.length;i++){var ch=s.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677);}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (h2>>>0).toString(16)+"-"+(h1>>>0).toString(16);}
       function validEmail(s){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);}
@@ -274,11 +283,24 @@
         if(!out||!inn)return;
         out.hidden=!!u;inn.hidden=!u;
         if(u){document.getElementById("profileName").textContent=u.name;document.getElementById("profileEmail").textContent=u.email;document.getElementById("profileAvatar").textContent=u.name.charAt(0).toUpperCase();}
+        /* Tombol Panel Admin HANYA untuk admin — user biasa tidak
+           melihatnya sama sekali di halaman Akun. Pakai style.display,
+           bukan atribut hidden: class .btn-dark mengatur display
+           inline-block dan itu mengalahkan aturan [hidden] browser,
+           jadi hidden saja tidak menyembunyikan tombolnya. */
+        var btnAdmin=document.getElementById("btnOpenAdmin");
+        if(btnAdmin)btnAdmin.style.display=isAdminUser()?"":"none";
+        var note=document.getElementById("authHeadNote");
+        if(note)note.textContent=isAdminUser()?"Kamu sudah masuk sebagai admin toko. Dari sini bisa langsung membuka Panel Admin untuk mengelola stok.":"Kamu sudah masuk. Pesananmu ada di bawah — klik invoice-nya untuk melihat status dan data akunmu.";
       }
       function afterLogin(u){
         renderAuth();
         showToast("Selamat datang, "+u.name.split(" ")[0]+"!");
-        if(pendingAdmin){pendingAdmin=false;location.hash="#/admin";if(isAdminPage(getRoute().page))applyRoute();}
+        if(pendingAdmin){
+          pendingAdmin=false;
+          if(isAdminUser()){location.hash="#/admin";if(isAdminPage(getRoute().page))applyRoute();}
+          else{showToast("Akun ini bukan admin toko, jadi Panel Admin tidak bisa dibuka.");location.hash="#/";}
+        }
         else{location.hash="#/";if(getRoute().page==="beranda")applyRoute();}
       }
 
@@ -305,7 +327,13 @@
       }
       function applyRoute(){
         var r=getRoute();
-        if(isAdminPage(r.page)&&!currentUser()){pendingAdmin=true;showToast("Masuk dulu untuk membuka Panel Admin.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
+        if(isAdminPage(r.page)){
+          if(!currentUser()){pendingAdmin=true;showToast("Masuk dulu untuk membuka Panel Admin.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
+          /* Sudah login tapi bukan admin: jangan tampilkan isi admin,
+             arahkan ke Akun. (pendingAdmin TIDAK diset — kalau diset,
+             setelah login non-admin akan diarahkan balik ke #/admin.) */
+          if(!isAdminUser()){showToast("Panel Admin hanya untuk admin toko.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
+        }
         var nowMs=Date.now();
         if(analytics.lastRoute!==r.page||nowMs-analytics.lastRouteAt>1200){
           analytics.lastRoute=r.page;analytics.lastRouteAt=nowMs;analytics.pageViews++;
@@ -380,7 +408,7 @@
         grid.innerHTML="";list.forEach(function(p){grid.appendChild(buildCard(p));});
         if(list.length===0){
           emptyState.hidden=false;
-          if(state.products.length===0){emptyTitle.textContent="Rak masih kosong";emptyText.textContent="Belum ada akun Point Blank yang dipajang. Stok pertama ditambahkan lewat Panel Admin — isi rank, senjata, harga, dan foto akunnya, lalu akun langsung tampil di sini.";document.getElementById("btnEmptyAdmin").style.display="";}
+          if(state.products.length===0){emptyTitle.textContent="Rak masih kosong";emptyText.textContent="Belum ada akun Point Blank yang dipajang. Stok pertama ditambahkan lewat Panel Admin — isi rank, senjata, harga, dan foto akunnya, lalu akun langsung tampil di sini.";document.getElementById("btnEmptyAdmin").style.display=isAdminUser()?"":"none";}
           else{emptyTitle.textContent="Tidak ada yang cocok";emptyText.textContent="Tidak ada akun yang cocok dengan pencarian atau filter saat ini. Coba kata kunci lain.";document.getElementById("btnEmptyAdmin").style.display="none";}
         }else emptyState.hidden=true;
         renderAdminDash();
@@ -448,6 +476,7 @@
 
       function renderAdminDash(){
         var box=document.getElementById("adminStats");if(!box)return;
+        if(!isAdminUser()){box.innerHTML="";return;}
         box.innerHTML=
           '<div class="stat"><b>'+state.products.length+'</b><span>Total stok dipajang</span></div>'+
           '<div class="stat"><b>'+countBy("tersedia")+'</b><span>Tersedia</span></div>'+
@@ -461,6 +490,7 @@
 
       function renderStockList(){
         var box=document.getElementById("stockList");if(!box)return;box.innerHTML="";
+        if(!isAdminUser())return;
         if(!state.products.length){box.innerHTML='<p class="stock-empty">Belum ada stok. Tambahkan akun pertama lewat halaman <a href="#/admin/tambah" style="font-weight:800;color:var(--accent-strong)">Tambah Akun</a>.</p>';return;}
         state.products.slice().sort(function(a,b){return b.id-a.id;}).forEach(function(p){
           var item=document.createElement("div");item.className="stock-item";var st=pStatus(p);
@@ -569,7 +599,7 @@
         if(!pass){formError("loginError","Password belum diisi.");return;}
         if(Server.enabled){
           api("/api/auth/login",{method:"POST",body:{email:email,password:pass}}).then(function(r){
-            setToken(r.token);Server.user={name:r.name,email:r.email};
+            setToken(r.token);Server.user={name:r.name,email:r.email,is_admin:!!r.is_admin};
             ev.target.reset();afterLogin(Server.user);refreshServerData();
           }).catch(function(){formError("loginError","Email atau password salah, atau server tidak bisa dihubungi.");});
           return;
@@ -592,7 +622,7 @@
         if(pass!==pass2){formError("registerError","Ulangi password tidak sama dengan password.");return;}
         if(Server.enabled){
           api("/api/auth/register",{method:"POST",body:{name:name,email:email,password:pass}}).then(function(r){
-            setToken(r.token);Server.user={name:r.name,email:r.email};
+            setToken(r.token);Server.user={name:r.name,email:r.email,is_admin:!!r.is_admin};
             ev.target.reset();
             showToast("Akun berhasil dibuat. Selamat datang, "+name.split(" ")[0]+"!");
             afterLogin(Server.user);refreshServerData();

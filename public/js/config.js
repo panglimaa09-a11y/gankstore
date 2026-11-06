@@ -47,5 +47,12 @@ window.GS_CONFIG = {
   /* Akun demo pembeli untuk review Midtrans (dibuat di server bila
      GS_SEED_DEMO=1). Bukan akun admin. Password-nya hanya ada di env
      server (GS_DEMO_PASSWORD), bukan di file ini. */
-  DEMO_ACCOUNT_EMAIL: "demo@gankstore.my.id"
+  DEMO_ACCOUNT_EMAIL: "demo@gankstore.my.id",
+
+  /* Email admin toko — dipakai mode lokal (statis, tanpa backend) untuk
+     menentukan siapa yang boleh melihat Panel Admin. HARUS sama dengan
+     GS_ADMIN_EMAIL di server (bila env itu kosong, server memakai
+     demo@gankstore.my.id sebagai admin SEMENTARA — lihat README).
+     Kalau GS_ADMIN_EMAIL diganti ke email Tuan, ubah juga nilai di sini. */
+  ADMIN_EMAIL: "demo@gankstore.my.id"
 };

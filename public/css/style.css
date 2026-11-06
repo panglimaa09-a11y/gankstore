@@ -8,6 +8,10 @@
   :root{ --bg:#0a120d; --bg-raise:#121e15; --bg-sink:#0e1811; --ink:#e8f2e4; --ink-soft:#a9bda9; --ink-faint:#71856f; --line:#24382a; --accent:#a3e635; --accent-strong:#bef264; --accent-ink:#14230a; --amber:#fbbf24; --amber-bg:#2a2110; --danger:#f87171; --wa:#22c55e; --wa-ink:#0a1f10; --chip-on:#a3e635; --chip-on-ink:#14230a; --shadow:0 10px 30px rgba(0,0,0,.45); }
 }
 *{box-sizing:border-box} html{scroll-behavior:smooth}
+/* Atribut hidden harus selalu menyembunyikan, walau elemennya punya
+   class yang mengatur display (mis. .btn-dark -> inline-block). Tanpa
+   ini, el.hidden=true tidak berpengaruh secara visual. */
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;font-size:16px;line-height:1.55;padding-bottom:0}
 h1,h2,h3,.display{font-family:"Chakra Petch","Archivo",sans-serif;line-height:1.15;margin:0}
 button{font:inherit;cursor:pointer} input,select,textarea{font:inherit;color:inherit} img{max-width:100%;display:block} a{color:inherit}

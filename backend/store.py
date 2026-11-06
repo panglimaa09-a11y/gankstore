@@ -50,6 +50,7 @@ def init_db():
                     email TEXT NOT NULL UNIQUE,
                     pass_hash TEXT NOT NULL,
                     salt TEXT NOT NULL,
+                    is_admin INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS sessions (
@@ -125,9 +126,63 @@ def init_db():
                 """
             )
             conn.commit()
+            # Migrasi aman untuk DB lama (dibuat sebelum kolom is_admin ada):
+            # tambah kolomnya bila belum ada, tanpa menghapus data.
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+            if "is_admin" not in cols:
+                conn.execute(
+                    "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0"
+                )
+                conn.commit()
         finally:
             conn.close()
     seed_demo_user()
+    _sync_admin_flags()
+
+
+def _admin_email():
+    """Email admin toko dari env GS_ADMIN_EMAIL.
+
+    Bila env belum diisi, fallback SEMENTARA ke akun demo
+    (demo@gankstore.my.id) supaya toko tetap bisa dikelola — ganti ke
+    email Tuan (GS_ADMIN_EMAIL) + ganti password demo sebelum toko
+    dibuka untuk umum. Lihat README bagian "Peran admin"."""
+    return os.environ.get("GS_ADMIN_EMAIL", "").strip().lower() or "demo@gankstore.my.id"
+
+
+def is_admin_user(user):
+    """True bila user ini admin: flag is_admin di DB, atau emailnya sama
+    dengan GS_ADMIN_EMAIL (fallback: demo@gankstore.my.id)."""
+    if not user:
+        return False
+    if user.get("is_admin"):
+        return True
+    return str(user.get("email", "")).lower() == _admin_email()
+
+
+def _sync_admin_flags():
+    """Samakan flag is_admin di DB dengan email admin saat ini.
+
+    Dipanggil tiap server start, jadi mengganti GS_ADMIN_EMAIL lalu
+    restart server langsung memindahkan peran admin — akun demo
+    kehilangan peran admin begitu GS_ADMIN_EMAIL diisi email lain."""
+    admin_email = _admin_email()
+    with _lock:
+        conn = _connect()
+        try:
+            conn.execute(
+                "UPDATE users SET is_admin = 1 WHERE lower(email) = ?",
+                (admin_email,),
+            )
+            if os.environ.get("GS_ADMIN_EMAIL", "").strip():
+                conn.execute(
+                    "UPDATE users SET is_admin = 0 WHERE lower(email) = ?"
+                    " AND lower(email) != ?",
+                    ("demo@gankstore.my.id", admin_email),
+                )
+            conn.commit()
+        finally:
+            conn.close()
 
 
 # ---------- password & sesi ----------
