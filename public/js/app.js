@@ -64,7 +64,6 @@
 
       function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
       function formatIDR(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
-      function initials(game){return game.split(/\s+/).slice(0,2).map(function(w){return w.charAt(0);}).join("").toUpperCase();}
       function showToast(msg){toastEl.textContent=msg;toastEl.classList.add("show");if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2600);}
 
       /* ---------- statistik, live tracking, pesanan otomatis ---------- */
@@ -81,7 +80,7 @@
       }
       function renderFeed(){
         var box=document.getElementById("activityFeed");if(!box)return;
-        if(!analytics.activity.length){box.innerHTML='<li><span class="feed-time">—</span><span>Belum ada aktivitas tercatat di sesi ini.</span></li>';return;}
+        if(!analytics.activity.length){box.innerHTML='<li><span class="feed-time">—</span><span>Belum ada aktivitas.</span></li>';return;}
         var tagLabel={kunjung:"Kunjungan",lihat:"Lihat",beli:"Klik Beli",pesan:"Dipesan",lunas:"Terjual",stok:"Stok",batal:"Batal"};
         box.innerHTML=analytics.activity.map(function(a){
           var cls=a.tag==="lunas"?"sale":(a.tag==="beli"||a.tag==="pesan")?"buy":"";
@@ -94,26 +93,24 @@
           parts.push(o.status==="terjual"?("<b>TERJUAL:</b> "+esc(o.title)+" — "+formatIDR(o.price)):("<b>DIPESAN:</b> "+esc(o.title)+" — "+formatIDR(o.price)));
         });
         parts.push("Tersedia: <b>"+countBy("tersedia")+" akun</b>");
-        parts.push("Terjual: <b>"+countBy("terjual")+" akun</b>");
-        parts.push("Total penjualan: <b>"+formatIDR(totalRevenue())+"</b>");
+        if(countBy("terjual")>0)parts.push("Terjual: <b>"+countBy("terjual")+" akun</b>");
+        if(totalRevenue()>0)parts.push("Total penjualan: <b>"+formatIDR(totalRevenue())+"</b>");
         return parts.join(" &nbsp;◆&nbsp; ");
       }
       function renderTicker(){
         var bar=document.querySelector(".livebar");if(!bar)return;
-        /* Bila belum ada penjualan/pesanan/stok sama sekali, ticker
-           disembunyikan sekalian — jangan tampilkan baris angka 0. */
-        var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
-        bar.style.display=empty?"none":"";
-        if(empty)return;
         var t=document.getElementById("tickerTrack");if(!t)return;
-        t.innerHTML="<span>"+tickerText()+"</span>";
+        /* Ticker SELALU tampil. Saat stok/pesanan/penjualan masih kosong,
+           tampilkan teks bermakna tanpa angka palsu — jangan deretan nol. */
+        var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
+        t.innerHTML=empty?"<span>Toko buka — akun Point Blank stok sendiri &nbsp;◆&nbsp; Pembayaran aman via Midtrans &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
       }
       function showEventPopup(p,kind){
         var box=document.getElementById("salePopups");if(!box)return;
         while(box.children.length>=2)box.removeChild(box.firstChild);
         var el=document.createElement("div");el.className="sale-popup";
         var isSale=kind==="lunas";
-        el.innerHTML='<div class="sp-thumb">'+(p.photo?'<img src="'+p.photo+'" alt="" />':esc(initials(p.game)))+'</div><div class="sp-body"><div class="sp-tag">'+(isSale?"Baru saja terjual":"Baru saja dipesan")+'</div><div class="sp-title">'+esc(p.title)+'</div><div class="sp-meta">'+formatIDR(p.price)+" · "+timeStr()+"</div></div><button class=\"sp-close\" type=\"button\" aria-label=\"Tutup pop-up\">×</button>";
+        el.innerHTML='<div class="sp-thumb">'+(p.photo?'<img src="'+p.photo+'" alt="" />':'<img src="icon.png" alt="GankStore" />')+'</div><div class="sp-body"><div class="sp-tag">'+(isSale?"Baru saja terjual":"Baru saja dipesan")+'</div><div class="sp-title">'+esc(p.title)+'</div><div class="sp-meta">'+formatIDR(p.price)+" · "+timeStr()+"</div></div><button class=\"sp-close\" type=\"button\" aria-label=\"Tutup pop-up\">×</button>";
         box.appendChild(el);
         var kill=function(){el.classList.add("hide");setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},320);};
         el.querySelector(".sp-close").addEventListener("click",kill);
@@ -142,7 +139,7 @@
         setStatus(p,"dipesan");
         var u=currentUser();
         var fee=adminFee(p.price);
-        var order={id:p.id,invoiceNo:makeInvoiceNo(),title:p.title,price:p.price,fee:fee,total:Number(p.price||0)+fee,photo:p.photo,game:p.game,rank:p.rank||"",time:timeStr(),status:"dipesan",buyerName:u?u.name:"Pembeli tamu",buyerEmail:u?u.email:""};
+        var order={id:p.id,invoiceNo:makeInvoiceNo(),title:p.title,price:p.price,fee:fee,total:Number(p.price||0)+fee,photo:p.photo,game:p.game,rank:p.rank||"",time:timeStr(),status:"dipesan",buyerName:u?u.name:"Pembeli",buyerEmail:u?u.email:""};
         analytics.orders.unshift(order);
         logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(fee)+"). Menunggu pembayaran via Midtrans.");
         showEventPopup(p,"pesan");
@@ -152,23 +149,23 @@
       }
       function orderStatusLabel(o){return o.status==="terjual"?"Terjual · Lunas":o.status==="dibatalkan"?"Dibatalkan":"Dipesan · menunggu pembayaran";}
       function salesRowsHTML(){
-        if(!analytics.orders.length)return '<p class="stock-empty">Belum ada pesanan atau penjualan di sesi ini. Pesanan dan invoice-nya muncul otomatis begitu pembeli klik Beli Sekarang.</p>';
+        if(!analytics.orders.length)return '<p class="stock-empty">Belum ada pesanan atau penjualan.</p>';
         return analytics.orders.map(function(o){
-          return '<div class="sales-row"><div class="sr-thumb">'+(o.photo?'<img src="'+o.photo+'" alt="" />':esc(initials(o.game||"Point Blank")))+'</div><div class="sr-body"><b>'+esc(o.title)+'</b><span>'+esc(o.invoiceNo)+" · "+orderStatusLabel(o)+" · "+o.time+'</span></div><div class="sr-price">'+formatIDR(o.total!=null?o.total:o.price)+"</div></div>";
+          return '<div class="sales-row"><div class="sr-thumb">'+(o.photo?'<img src="'+o.photo+'" alt="" />':'<img src="icon.png" alt="GankStore" />')+'</div><div class="sr-body"><b>'+esc(o.title)+'</b><span>'+esc(o.invoiceNo)+" · "+orderStatusLabel(o)+" · "+o.time+'</span></div><div class="sr-price">'+formatIDR(o.total!=null?o.total:o.price)+"</div></div>";
         }).join("");
       }
       function renderMyOrders(){
         var box=document.getElementById("myOrders");if(!box)return;
         var myOrders=(Server.enabled&&currentUser())?analytics.orders.filter(function(o){return o.buyerEmail===currentUser().email;}):analytics.orders;
-        if(!myOrders.length){box.innerHTML='<p class="stock-empty">Belum ada pesanan di sesi ini. Klik Beli Sekarang di akun yang kamu mau, invoice-nya muncul di sini.</p>';return;}
+        if(!myOrders.length){box.innerHTML='<p class="stock-empty">Belum ada pesanan. Klik Beli Sekarang di akun yang kamu mau.</p>';return;}
         box.innerHTML=myOrders.map(function(o){
-          return '<a class="order-row" href="#/invoice/'+esc(o.invoiceNo)+'"><div class="sr-thumb" style="width:52px;height:40px;border-radius:6px;flex:none;overflow:hidden;background:var(--hero-bg);display:flex;align-items:center;justify-content:center;color:#a3e635;font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:12px">'+(o.photo?'<img src="'+o.photo+'" alt="" style="width:100%;height:100%;object-fit:cover" />':esc(initials(o.game||"Point Blank")))+'</div><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px">'+esc(o.title)+'</b><span style="font-size:13px;color:var(--ink-faint);font-weight:600">'+esc(o.invoiceNo)+" · "+orderStatusLabel(o)+'</span></div><div class="sr-price" style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;color:var(--accent-strong);flex:none">'+formatIDR(o.total!=null?o.total:o.price)+"</div></a>";
+          return '<a class="order-row" href="#/invoice/'+esc(o.invoiceNo)+'"><div class="sr-thumb" style="width:52px;height:40px;border-radius:6px;flex:none;overflow:hidden;background:var(--hero-bg);display:flex;align-items:center;justify-content:center;color:#a3e635;font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:12px">'+(o.photo?'<img src="'+o.photo+'" alt="" style="width:100%;height:100%;object-fit:cover" />':'<img src="icon.png" alt="GankStore" style="width:100%;height:100%;object-fit:cover" />')+'</div><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px">'+esc(o.title)+'</b><span style="font-size:13px;color:var(--ink-faint);font-weight:600">'+esc(o.invoiceNo)+" · "+orderStatusLabel(o)+'</span></div><div class="sr-price" style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;color:var(--accent-strong);flex:none">'+formatIDR(o.total!=null?o.total:o.price)+"</div></a>";
         }).join("");
       }
       function renderInvoice(invNo){
         var wrap=document.getElementById("invoiceWrap");if(!wrap)return;
         var o=findOrder(invNo);
-        if(!o){wrap.innerHTML='<div class="empty"><h3>Invoice tidak ditemukan</h3><p>Invoice ini tidak ada di sesi perangkat ini — pesanan hanya tersimpan selama halaman terbuka. Buat pesanan baru dari katalog.</p><a class="btn-dark" href="#/katalog">Kembali ke Katalog</a></div>';return;}
+        if(!o){wrap.innerHTML='<div class="empty"><h3>Invoice tidak ditemukan</h3><p>Buat pesanan baru dari katalog.</p><a class="btn-dark" href="#/katalog">Kembali ke Katalog</a></div>';return;}
         var st=o.status;
         var statusChip=st==="terjual"?'<span class="inv-status lunas">Lunas</span>':st==="dibatalkan"?'<span class="inv-status batal">Dibatalkan</span>':'<span class="inv-status">Menunggu Pembayaran</span>';
         var payBlock="";
@@ -185,7 +182,7 @@
         }else if(st==="dibatalkan"){
           payBlock='<div class="pay-method"><b>Pesanan dibatalkan</b><p>Pesanan ini dibatalkan oleh admin dan akunnya sudah tersedia lagi di katalog. Kamu bisa membuat pesanan baru dari halaman Katalog.</p></div>';
         }else{
-          payBlock=(typeof midtransPayBlock==="function")?midtransPayBlock(o):'<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online aktif di versi server Python bila MIDTRANS_SERVER_KEY terpasang. Invoice ini tetap sah sebagai catatan pesananmu — admin mengonfirmasi pembayaran dan status invoice ini berubah jadi Lunas dari Panel Admin.</p>';
+          payBlock=(typeof midtransPayBlock==="function")?midtransPayBlock(o):'<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — admin mengonfirmasi pembayaran dan statusnya berubah jadi Lunas.</p>';
         }
         wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Akun")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>'+(o.kind==="topup"?"Harga paket":"Harga akun")+'</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
         var sp=document.getElementById("btnSnapPay");
@@ -194,7 +191,7 @@
       function renderSukses(invNo){
         var wrap=document.getElementById("successWrap");if(!wrap)return;
         var o=findOrder(invNo);
-        if(!o){wrap.innerHTML='<div class="empty"><h3>Pesanan tidak ditemukan</h3><p>Invoice ini tidak ada di sesi perangkat ini. Cek daftar pesananmu di halaman Akun.</p><a class="btn-dark" href="#/akun">Ke Pesanan Saya</a></div>';return;}
+        if(!o){wrap.innerHTML='<div class="empty"><h3>Pesanan tidak ditemukan</h3><p>Cek daftar pesananmu di halaman Akun.</p><a class="btn-dark" href="#/akun">Ke Pesanan Saya</a></div>';return;}
         if(o.status!=="terjual"){
           wrap.innerHTML='<div class="empty"><h3>Pembayaran belum lunas</h3><p>Data akun baru diserahkan setelah pembayaran invoice '+esc(o.invoiceNo)+' dikonfirmasi lunas oleh admin. Status pesananmu sekarang: <strong>'+orderStatusLabel(o)+'.</strong></p><a class="btn-dark" href="#/invoice/'+esc(o.invoiceNo)+'">Buka Invoice</a></div>';return;
         }
@@ -233,7 +230,7 @@
         var rs=document.getElementById("reportStats");
         if(rs){
           rs.innerHTML=
-            '<div class="stat"><b>'+analytics.pageViews+'</b><span>Kunjungan halaman sesi ini</span></div>'+
+            '<div class="stat"><b>'+analytics.pageViews+'</b><span>Kunjungan halaman</span></div>'+
             '<div class="stat"><b>'+analytics.detailViews+'</b><span>Kali lihat detail akun</span></div>'+
             '<div class="stat"><b>'+analytics.buyClicks+'</b><span>Klik Beli Sekarang (pesanan dibuat)</span></div>'+
             '<div class="stat"><b>'+countBy("dipesan")+'</b><span>Akun sedang dipesan</span></div>'+
@@ -299,7 +296,7 @@
         if(pendingAdmin){
           pendingAdmin=false;
           if(isAdminUser()){location.hash="#/admin";if(isAdminPage(getRoute().page))applyRoute();}
-          else{showToast("Akun ini bukan admin toko, jadi Panel Admin tidak bisa dibuka.");location.hash="#/";}
+          else{showToast("Akun ini tidak bisa membuka halaman itu.");location.hash="#/";}
         }
         else{location.hash="#/";if(getRoute().page==="beranda")applyRoute();}
       }
@@ -330,11 +327,11 @@
       function applyRoute(){
         var r=getRoute();
         if(isAdminPage(r.page)){
-          if(!currentUser()){pendingAdmin=true;showToast("Masuk dulu untuk membuka Panel Admin.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
+          if(!currentUser()){pendingAdmin=true;showToast("Masuk dulu untuk melanjutkan.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
           /* Sudah login tapi bukan admin: jangan tampilkan isi admin,
              arahkan ke Akun. (pendingAdmin TIDAK diset — kalau diset,
              setelah login non-admin akan diarahkan balik ke #/admin.) */
-          if(!isAdminUser()){showToast("Panel Admin hanya untuk admin toko.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
+          if(!isAdminUser()){showToast("Kamu tidak punya akses ke halaman itu.");location.hash="#/akun";if(getRoute().page==="akun")applyRoute();return;}
         }
         var nowMs=Date.now();
         if(analytics.lastRoute!==r.page||nowMs-analytics.lastRouteAt>1200){
@@ -363,7 +360,7 @@
 
       function specsHTML(p){var parts=[];if(p.rank)parts.push(p.rank);if(p.level)parts.push(p.level);if(p.server)parts.push("Server "+p.server);(p.specs||[]).forEach(function(s){parts.push(s);});return parts.map(function(s){return "<span>"+esc(s)+"</span>";}).join("");}
       function cardHTML(p){
-        var media=p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<div class="glyph">'+esc(p.game)+"</div>";
+        var media=p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />';
         var st=pStatus(p);
         var buyBtn=st==="terjual"?'<span class="btn-buy disabled">Terjual</span>':st==="dipesan"?'<span class="btn-buy disabled">Dipesan</span>':'<button class="btn-buy" type="button" data-buy="'+p.id+'">Beli Sekarang</button>';
         var badge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':"";
@@ -408,11 +405,18 @@
       function render(){
         renderChips();renderHome();
         var list=visibleProducts();
-        catalogCount.textContent=state.products.length?state.products.length+" akun dipajang · "+countBy("tersedia")+" tersedia · "+countBy("dipesan")+" dipesan · "+countBy("terjual")+" terjual":"";
+        var ccParts=[];
+        if(state.products.length){
+          ccParts.push(state.products.length+" akun dipajang");
+          if(countBy("tersedia"))ccParts.push(countBy("tersedia")+" tersedia");
+          if(countBy("dipesan"))ccParts.push(countBy("dipesan")+" dipesan");
+          if(countBy("terjual"))ccParts.push(countBy("terjual")+" terjual");
+        }
+        catalogCount.textContent=ccParts.join(" · ");
         grid.innerHTML="";list.forEach(function(p){grid.appendChild(buildCard(p));});
         if(list.length===0){
           emptyState.hidden=false;
-          if(state.products.length===0){emptyTitle.textContent="Rak masih kosong";emptyText.textContent="Belum ada akun Point Blank yang dipajang. Stok pertama ditambahkan lewat Panel Admin — isi rank, senjata, harga, dan foto akunnya, lalu akun langsung tampil di sini.";document.getElementById("btnEmptyAdmin").style.display=isAdminUser()?"":"none";}
+          if(state.products.length===0){emptyTitle.textContent="Rak masih kosong";emptyText.textContent=isAdminUser()?"Belum ada akun Point Blank yang dipajang. Tambahkan stok pertama lewat Tambah Akun — isi rank, senjata, harga, dan foto akunnya.":"Belum ada akun dipajang. Cek lagi nanti.";document.getElementById("btnEmptyAdmin").style.display=isAdminUser()?"":"none";}
           else{emptyTitle.textContent="Tidak ada yang cocok";emptyText.textContent="Tidak ada akun yang cocok dengan pencarian atau filter saat ini. Coba kata kunci lain.";document.getElementById("btnEmptyAdmin").style.display="none";}
         }else emptyState.hidden=true;
         renderAdminDash();
@@ -432,7 +436,7 @@
         var buyHTML=st==="terjual"?'<span class="btn-buy disabled">Sudah Terjual</span>':st==="dipesan"?'<span class="btn-buy disabled">Sedang Dipesan Pembeli Lain</span>':'<button class="btn-buy" type="button" id="detailBuyNow">Beli Sekarang</button>';
         var stLabel=st==="terjual"?" · Terjual":st==="dipesan"?" · Dipesan":" · Tersedia";
         var stBadge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':"";
-        wrap.innerHTML='<div class="detail-layout"><div class="detail-media">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<div class="glyph">'+esc(p.game)+"</div>")+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Tidak ada deskripsi tambahan. Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin 10% ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Begitu tombol Beli Sekarang diklik, akun ini otomatis ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit di toko ini. Setelah pembayaran dikonfirmasi lunas, email &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses invoice-mu.'+(st==="tersedia"?' Langkah lengkapnya ada di halaman <a href="#/cara-beli" style="font-weight:700">Cara Beli</a>.':"")+'</p></div></div>';
+        wrap.innerHTML='<div class="detail-layout"><div class="detail-media">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />')+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin 10% ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Klik Beli Sekarang — akun ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit. Setelah lunas dikonfirmasi, email &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses.</p></div></div>';
         var db=document.getElementById("detailBuyNow");if(db)db.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});
         var cp=document.getElementById("detailCopy");if(cp)cp.addEventListener("click",function(){
           var text=p.title+" — "+p.game+"\n"+(p.rank?"Rank: "+p.rank+"\n":"")+(p.level?"Level: "+p.level+"\n":"")+(p.server?"Server: "+p.server+"\n":"")+((p.specs||[]).length?"Isi akun: "+p.specs.join(", ")+"\n":"")+"Harga: "+formatIDR(p.price);
@@ -486,9 +490,9 @@
           '<div class="stat"><b>'+countBy("tersedia")+'</b><span>Tersedia</span></div>'+
           '<div class="stat"><b>'+countBy("dipesan")+'</b><span>Dipesan — menunggu lunas</span></div>'+
           '<div class="stat"><b>'+countBy("terjual")+'</b><span>Sudah terjual</span></div>'+
-          '<div class="stat"><b>'+analytics.pageViews+'</b><span>Kunjungan sesi ini — <a href="#/admin/laporan" style="color:var(--accent-strong);font-weight:800">detail di Statistik &amp; Live</a></span></div>'+
+          '<div class="stat"><b>'+analytics.pageViews+'</b><span>Kunjungan — <a href="#/admin/laporan" style="color:var(--accent-strong);font-weight:800">detail di Statistik &amp; Live</a></span></div>'+
           '<div class="stat"><b>'+formatIDR(totalRevenue())+'</b><span>Total penjualan</span></div>'+
-          '<div class="stat"><b>'+analytics.orders.length+'</b><span>Pesanan masuk sesi ini</span></div>'+
+          '<div class="stat"><b>'+analytics.orders.length+'</b><span>Pesanan masuk</span></div>'+
           '<div class="stat"><b>Midtrans</b><span>Pembayaran invoice · biaya admin 10% — <a href="#/admin/pengaturan" style="color:var(--accent-strong);font-weight:800">detail di Pengaturan</a></span></div>';
       }
 
@@ -508,7 +512,7 @@
           else if(p.credWiped&&st==="terjual")credLine='<span class="admin-cred">🔒 Email &amp; password sudah dipindah ke invoice pembeli dan dihapus dari stok.</span>';
           else if(p.credWiped)credLine='<span class="admin-cred" style="color:var(--danger)">⚠ Kredensial kosong (sudah terhapus saat penjualan sebelumnya) — hapus &amp; tambah ulang stok dengan email &amp; password baru.</span>';
           else credLine='<span class="admin-cred">🔒 Tidak ada kredensial tersimpan untuk akun ini.</span>';
-          item.innerHTML='<div class="thumb">'+(p.photo?'<img src="'+p.photo+'" alt="" />':esc(initials(p.game)))+'</div><div class="meta"><b>'+esc(p.title)+"</b><span>"+esc(p.game)+" · "+formatIDR(p.price)+stTxt+"</span>"+credLine+'</div><div class="acts">'+acts+'<button class="mini danger" type="button" data-del="'+p.id+'">Hapus</button></div>';
+          item.innerHTML='<div class="thumb">'+(p.photo?'<img src="'+p.photo+'" alt="" />':'<img src="icon.png" alt="GankStore" />')+'</div><div class="meta"><b>'+esc(p.title)+"</b><span>"+esc(p.game)+" · "+formatIDR(p.price)+stTxt+"</span>"+credLine+'</div><div class="acts">'+acts+'<button class="mini danger" type="button" data-del="'+p.id+'">Hapus</button></div>';
           box.appendChild(item);
         });
         function findOrderFor(p){var found=null;analytics.orders.forEach(function(o){if(o.id===p.id&&o.status==="dipesan")found=o;});return found;}
@@ -654,7 +658,7 @@
         var note=document.getElementById("supportNote");if(!note)return;
         note.textContent=Server.enabled
           ?"Pesanmu tersimpan di server toko dan dibaca admin."
-          :"Mode lokal (backend tidak terhubung): pesanmu tersimpan di perangkat ini. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.";
+          :"Pesanmu tersimpan di perangkat ini. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.";
       }
       document.getElementById("supportForm").addEventListener("submit",function(ev){
         ev.preventDefault();clearError("supportError");
@@ -707,6 +711,6 @@
 
       if(!location.hash) location.hash="#/";
       initServer().then(function(){
-        logActivity("kunjung","Sesi toko dimulai — live tracking aktif di perangkat ini.");
+        logActivity("kunjung","Sesi toko dimulai.");
         render();renderAuth();applyRoute();
       });

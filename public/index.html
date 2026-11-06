@@ -24,7 +24,7 @@
           <a href="#/" data-nav="beranda">Beranda</a>
           <a href="#/katalog" data-nav="katalog">Katalog</a>
           <a href="#/cara-beli" data-nav="cara-beli">Cara Beli</a>
-          <a href="#/topup" data-nav="topup">Top Up</a>
+          <a href="#/topup" data-nav="topup">Top Up <span class="nav-maint">Maintenance</span></a>
           <a href="#/akun" data-nav="akun" id="accountLink">Masuk</a>
         </nav>
       </div>
@@ -60,7 +60,7 @@
     <!-- ============ HALAMAN BERANDA ============ -->
     <section class="page" data-page="beranda">
       <div class="wrap">
-        <a href="#/topup"><img class="promo-banner" src="brand/gankstore-banner.png" alt="GankStore — Top Up Game &amp; Produk Digital. Lebih Murah, Cepat, dan Aman! Top Up Sekarang!" /></a>
+        <a href="#/topup" class="banner-link"><span class="banner-maint">Top Up sedang maintenance</span><img class="promo-banner" src="brand/gankstore-banner.png" alt="GankStore — Top Up Game &amp; Produk Digital. Lebih Murah, Cepat, dan Aman! Top Up Sekarang!" /></a>
       </div>
       <div class="hero">
         <div class="wrap hero-in">
@@ -91,7 +91,7 @@
 
         <div id="homeSalesSection" hidden>
           <div class="section-head">
-            <div><h2>Penjualan &amp; Pesanan Terakhir</h2><p>Aktivitas pembelian terbaru di toko ini — diperbarui langsung saat ada yang pesan atau lunas.</p></div>
+            <div><h2>Penjualan &amp; Pesanan Terakhir</h2></div>
             <a class="link-more" href="#/katalog">Lihat stok tersedia →</a>
           </div>
           <div class="sales-rows" id="homeSalesRows"></div>
@@ -107,7 +107,7 @@
         <div class="page-head">
           <div class="breadcrumb">GankStore / Katalog</div>
           <h1>Katalog Akun Point Blank</h1>
-          <p>Semua akun Point Blank yang dipajang ada di halaman katalog ini. Cari berdasarkan rank atau senjata, lalu buka halaman detail akunnya sebelum beli.</p>
+          <p>Cari berdasarkan rank atau senjata, lalu buka detailnya sebelum beli.</p>
         </div>
 
         <div class="catalog-head"><span class="catalog-count" id="catalogCount"></span></div>
@@ -146,13 +146,13 @@
         <div class="page-head">
           <div class="breadcrumb">GankStore / Cara Beli</div>
           <h1>Cara Beli</h1>
-          <p>Semua transaksi selesai di dalam toko ini — tanpa aplikasi lain. Pilih akun, buat pesanan, invoice langsung terbit, lalu bayar lewat Midtrans. Ikuti tiga langkah ini.</p>
+          <p>Pilih akun, buat pesanan, invoice terbit, lalu bayar. Ikuti tiga langkah ini.</p>
         </div>
 
         <div class="steps">
-          <article class="step-card"><span class="step-num">01</span><h3>Pilih akun di Katalog</h3><p>Telusuri halaman Katalog, lalu buka halaman Detail Akun untuk melihat rank, level, server, dan isi akun Point Blank-nya secara lengkap.</p></article>
-          <article class="step-card"><span class="step-num">02</span><h3>Klik Beli Sekarang, invoice terbit</h3><p>Tekan tombol Beli Sekarang — akunnya <strong>otomatis ditandai Dipesan</strong> atas namamu dan kamu langsung dibawa ke halaman Invoice di toko ini. Invoice berisi nomor invoice, harga akun, biaya admin, dan total bayar.</p></article>
-          <article class="step-card"><span class="step-num">03</span><h3>Bayar via Midtrans &amp; terima data akun</h3><p>Bayar total di invoice lewat Midtrans (QRIS, e-wallet, atau virtual account). Setelah pembayaran dikonfirmasi lunas oleh admin, status invoice berubah jadi Lunas dan data login akun diserahkan ke kamu. Segera ganti password dan amankan akun setelah diterima.</p></article>
+          <article class="step-card"><span class="step-num">01</span><h3>Pilih akun di Katalog</h3><p>Buka halaman Detail Akun untuk melihat rank, level, server, dan isi akunnya.</p></article>
+          <article class="step-card"><span class="step-num">02</span><h3>Klik Beli Sekarang, invoice terbit</h3><p>Akun otomatis ditandai <strong>Dipesan</strong> atas namamu dan kamu langsung dibawa ke halaman Invoice — berisi harga akun, biaya admin, dan total bayar.</p></article>
+          <article class="step-card"><span class="step-num">03</span><h3>Bayar via Midtrans &amp; terima data akun</h3><p>Bayar total invoice lewat Midtrans (QRIS, e-wallet, atau virtual account). Setelah admin mengonfirmasi lunas, data login akun diserahkan ke kamu — segera ganti passwordnya.</p></article>
         </div>
 
         <div class="two-col">
@@ -168,30 +168,25 @@
           <div class="info-box">
             <h3>Biaya admin &amp; pembayaran</h3>
             <ul>
-              <li>Biaya admin = 10% dari harga akun. Contoh: akun Rp1.000, biaya adminnya Rp100, total bayar Rp1.100 — dan seterusnya mengikuti harga akun.</li>
-              <li>Biaya admin selalu tampil sebagai baris terpisah di invoice, tidak disembunyikan.</li>
+              <li>Biaya admin = 10% dari harga akun. Contoh: akun Rp1.000, biaya adminnya Rp100, total bayar Rp1.100.</li>
               <li>Pembayaran diproses lewat Midtrans: QRIS, e-wallet, dan virtual account bank.</li>
-              <li>Simpan nomor invoice-mu — itu bukti pesananmu di toko ini.</li>
             </ul>
           </div>
         </div>
 
         <div class="two-col">
           <div class="info-box">
-            <h3>Cara Top Up (All Game)</h3>
+            <h3>Top Up (All Game)</h3>
             <ul>
-              <li>Buka halaman <a href="#/topup" style="font-weight:700">Top Up</a>, pilih game-nya.</li>
-              <li>Pilih paket (diamond / UC / Genesis Crystal / dll), isi User ID — plus Server / Zone ID bila gamenya butuh.</li>
-              <li>Klik Buat Pesanan &amp; Invoice — totalnya harga paket + biaya admin 10%.</li>
-              <li>Bayar invoice lewat Midtrans, lalu admin memproses top up ke User ID-mu dan menandai Selesai.</li>
+              <li><strong>Saat ini Top Up sedang maintenance</strong> — order top up belum bisa dibuat. Akun Point Blank tetap bisa dibeli seperti biasa.</li>
+              <li>Setelah dibuka lagi, top up diproses manual oleh admin setelah lunas. Pastikan User ID benar — salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi.</li>
             </ul>
           </div>
           <div class="info-box">
-            <h3>Jujur soal top up</h3>
+            <h3>Biaya admin top up</h3>
             <ul>
-              <li>Top up diproses <strong>manual oleh admin</strong> setelah pembayaran lunas — belum ada pengiriman otomatis ke akun game.</li>
-              <li>Pastikan User ID benar. Salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi.</li>
-              <li>Status pesanan top up bisa dicek di Pesanan Saya, sama seperti pembelian akun.</li>
+              <li>Sama seperti pembelian akun: 10% dari harga paket, selalu tertulis di invoice.</li>
+              <li>Status pesanan top up bisa dicek di Pesanan Saya.</li>
             </ul>
           </div>
         </div>
@@ -201,7 +196,7 @@
         <details><summary>Bagaimana cara membayarnya?</summary><p>Klik Beli Sekarang pada akun yang dipilih, invoice langsung terbit di toko ini. Bayar totalnya (harga akun + biaya admin 10%) lewat Midtrans dengan QRIS, e-wallet, atau virtual account.</p></details>
         <details><summary>Berapa biaya adminnya?</summary><p>Biaya admin adalah 10% dari harga akun, dibulatkan ke rupiah terdekat. Contoh: harga Rp100.000, biaya admin Rp10.000, total bayar Rp110.000. Rinciannya selalu tertulis di invoice sebelum kamu membayar.</p></details>
         <details><summary>Akun yang saya mau sudah terjual, bagaimana?</summary><p>Akun berlabel TERJUAL sudah tidak bisa dibeli. Cek akun lain yang tersedia di Katalog.</p></details>
-        <details><summary>Kapan data akun saya terima?</summary><p>Setelah pembayaranmu dikonfirmasi lunas, admin menandai pesanan sebagai Terjual dan status invoice-mu berubah jadi Lunas. Di invoice itu muncul tombol ke halaman sukses, tempat email &amp; password akun ditampilkan <strong>satu kali</strong> — salin dan simpan saat itu juga, karena setelah ditampilkan data tersebut otomatis dihapus dari toko dan tidak bisa dilihat lagi.</p></details>
+        <details><summary>Kapan data akun saya terima?</summary><p>Setelah pembayaranmu dikonfirmasi lunas, admin menandai pesanan sebagai Terjual dan status invoice-mu berubah jadi Lunas. Di invoice itu muncul tombol ke halaman sukses, tempat email &amp; password akun ditampilkan <strong>satu kali</strong> — salin dan simpan saat itu juga.</p></details>
 
         <div class="cta-banner">
           <div><h3>Sudah paham? Langsung ke katalog.</h3><p>Pilih akunnya di halaman Katalog, buka detailnya, lalu klik Beli Sekarang — invoice langsung terbit.</p></div>
@@ -229,7 +224,7 @@
 
         <div class="support-contacts">
           <a class="btn btn-lime" href="https://wa.me/6289681992892" target="_blank" rel="noopener">Chat WhatsApp — 0896 8199 2892</a>
-          <span class="support-alt">Telegram: Admin GankStore &nbsp;·&nbsp; Jam layanan: setiap hari, mengikuti jam kerja admin — respon tercepat lewat WhatsApp.</span>
+          <span class="support-alt">Telegram: Admin GankStore &nbsp;·&nbsp; Respon tercepat lewat WhatsApp.</span>
         </div>
 
         <div class="two-col">
@@ -271,16 +266,15 @@
         </div>
 
         <h2 style="font-size:24px;margin:26px 0 14px">Tanya Jawab</h2>
-        <details><summary>Apakah saya sudah bisa bayar asli lewat Midtrans?</summary><p>Belum. Pembayaran Midtrans Production masih menunggu aktivasi KYC oleh Midtrans. Yang jalan saat ini: mode Sandbox untuk tes, dan Konfirmasi Lunas manual oleh admin setelah kamu membayar dan memberitahu admin. Jangan transfer ke siapa pun di luar invoice toko ini.</p></details>
-        <details><summary>Invoice saya masih "Menunggu Pembayaran", apa artinya?</summary><p>Artinya pesananmu tercatat dan akunnya ditandai Dipesan atas namamu, tapi pembayaranmu belum dikonfirmasi lunas oleh admin. Setelah lunas dikonfirmasi, status berubah jadi Lunas.</p></details>
-        <details><summary>Top up saya belum masuk, bagaimana?</summary><p>Top up diproses manual oleh admin setelah pembayaran lunas. Cek status di Pesanan Saya, dan pastikan User ID yang kamu isi sudah benar — salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi. Kalau sudah lewat dari perkiraan, kirim pesan lewat form di bawah dengan nomor invoice-mu.</p></details>
-        <details><summary>Saya tidak sempat menyimpan email &amp; password akun, bagaimana?</summary><p>Data akun memang hanya ditampilkan satu kali lalu otomatis dihapus dari toko, jadi tidak bisa ditampilkan lagi dari halaman sukses. Kirim pesan lewat form di bawah dengan nomor invoice-mu — admin akan menindaklanjutinya.</p></details>
-        <details><summary>Akun yang saya mau sudah terjual, bagaimana?</summary><p>Akun berlabel TERJUAL sudah tidak bisa dibeli. Cek akun lain yang tersedia di Katalog.</p></details>
+        <details><summary>Apakah saya sudah bisa bayar asli lewat Midtrans?</summary><p>Belum — pembayaran online masih disiapkan. Yang jalan saat ini: Konfirmasi Lunas manual oleh admin setelah kamu membayar dan memberitahu admin. Jangan transfer ke siapa pun di luar invoice toko ini.</p></details>
+        <details><summary>Invoice saya masih "Menunggu Pembayaran", apa artinya?</summary><p>Artinya pesananmu tercatat dan akunnya ditandai Dipesan atas namamu, tapi pembayaranmu belum dikonfirmasi lunas oleh admin.</p></details>
+        <details><summary>Top up saya belum masuk, bagaimana?</summary><p>Top up diproses manual oleh admin setelah lunas. Cek status di Pesanan Saya, dan pastikan User ID yang kamu isi sudah benar — salah ID berarti top up terkirim ke akun lain dan tidak bisa ditarik lagi. Kalau belum masuk, kirim pesan lewat form di bawah dengan nomor invoice-mu.</p></details>
+        <details><summary>Saya tidak sempat menyimpan email &amp; password akun, bagaimana?</summary><p>Data akun hanya ditampilkan satu kali lalu otomatis dihapus dari toko, jadi tidak bisa ditampilkan lagi dari halaman sukses. Kirim pesan lewat form di bawah dengan nomor invoice-mu — admin akan menindaklanjutinya.</p></details>
 
         <div class="auth-wrap" style="max-width:640px;margin:26px 0 0">
           <form class="panel" id="supportForm" novalidate>
             <h3>Hubungi Support</h3>
-            <p class="hint" style="font-size:14px;color:var(--ink-soft);font-weight:600;margin:-6px 0 14px">Pesanmu tersimpan dan dibaca admin toko. Ini bukan balasan otomatis instan — admin menindaklanjuti pesanan dan pembayaranmu. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.</p>
+            <p class="hint" style="font-size:14px;color:var(--ink-soft);font-weight:600;margin:-6px 0 14px">Pesanmu dibaca admin toko — bukan balasan otomatis. Untuk respon tercepat, hubungi langsung via WhatsApp di atas.</p>
             <div class="form-error" id="supportError" role="alert"></div>
             <div class="field"><label for="sName">Nama</label><input id="sName" type="text" placeholder="cth. Bayu" maxlength="40" required /></div>
             <div class="field"><label for="sContact">Email / WhatsApp</label><input id="sContact" type="text" placeholder="cth. nama@email.com atau 081234567890" maxlength="90" required /></div>
@@ -299,7 +293,7 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Dashboard</div>
           <h1>Dashboard Admin</h1>
-          <p>Area khusus penjual — terpisah total dari halaman toko. Setiap tugas admin punya halamannya sendiri di menu Panel Admin di atas: tambah akun, daftar stok, dan pengaturan toko tidak lagi ditumpuk jadi satu.</p>
+          <p>Area khusus penjual. Setiap tugas punya halamannya sendiri di menu di atas.</p>
         </div>
         <div class="stats" id="adminStats"></div>
         <div class="admin-dash-grid">
@@ -310,7 +304,6 @@
           <a class="admin-menu-card" href="#/admin/pengaturan"><span class="amc-icon">⚙</span><b>Pengaturan Toko</b><span>Metode pembayaran Midtrans dan aturan biaya admin 10% yang berlaku di semua invoice.</span><span class="arr">Buka halaman Pengaturan →</span></a>
           <a class="admin-menu-card" href="#/admin/support"><span class="amc-icon">✉</span><b>Pesan Support</b><span>Pesan masuk dari form Hubungi Support di halaman Bantuan — baca dan tandai sudah dibalas.</span><span class="arr">Buka Pesan Support →</span></a>
         </div>
-        <p class="scope-note">Versi server (Python): stok, pesanan, dan paket top up tersimpan di database server dan tetap ada setelah halaman ditutup.</p>
       </main>
     </section>
 
@@ -359,7 +352,7 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Daftar Stok</div>
           <h1>Daftar Stok</h1>
-          <p>Semua akun yang dipajang, di halamannya sendiri. Akun yang diklik Beli Sekarang oleh pembeli otomatis berstatus <strong>Dipesan</strong> — kamu tinggal klik <strong>Konfirmasi Lunas</strong> setelah pembayaran diterima, statusnya langsung jadi Terjual dan email &amp; password akunnya otomatis diserahkan satu kali ke pembeli lalu dihapus dari stok. Pesanan juga bisa dibatalkan kalau pembeli tidak jadi. Baris 🔒 di tiap stok adalah email &amp; password akun — hanya terlihat di area admin ini, tidak pernah tampil ke pembeli sebelum lunas.</p>
+          <p>Akun yang dibeli otomatis berstatus <strong>Dipesan</strong> — klik <strong>Konfirmasi Lunas</strong> setelah pembayaran diterima, statusnya jadi Terjual dan email &amp; password akun diserahkan satu kali ke pembeli lalu dihapus dari stok. Pesanan juga bisa dibatalkan. Baris 🔒 di tiap stok adalah email &amp; password akun — hanya terlihat di area admin ini.</p>
         </div>
         <div class="panel" style="margin-top:20px">
           <div class="stock-page-list" id="stockList"></div>
@@ -386,7 +379,7 @@
               <div class="inv-row"><span>Total invoice</span><b>Harga akun + biaya admin</b></div>
               <div class="inv-row"><span>Status gateway Midtrans</span><b id="midtransStatus">Memeriksa…</b></div>
             </div>
-            <p class="pay-note">Pembayaran lewat Midtrans Snap. Di versi server, tombol Bayar di invoice aktif bila MIDTRANS_SERVER_KEY terpasang di .env server (mode Sandbox dulu; Production menunggu KYC Midtrans disetujui). Selama belum terhubung, pesanan tetap tercatat sebagai invoice berstatus Menunggu Pembayaran dan kamu konfirmasi lunas manual dari Daftar Stok.</p>
+            <p class="pay-note">Tombol Bayar di invoice aktif setelah pembayaran online terhubung. Selama belum terhubung, pesanan tetap tercatat sebagai invoice Menunggu Pembayaran dan kamu konfirmasi lunas manual dari Daftar Stok.</p>
             <p class="scope-note">Biaya admin 10% otomatis dihitung di setiap invoice (akun dan top up), dibulatkan ke rupiah terdekat.</p>
           </div>
         </div>
@@ -399,7 +392,7 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Statistik &amp; Live</div>
           <h1>Statistik &amp; Live Tracking</h1>
-          <p>Angka toko dari database server (versi Python): kunjungan, stok, pesanan, dan penjualan — plus aliran aktivitasnya secara langsung.</p>
+          <p>Kunjungan, stok, pesanan, dan penjualan — plus aktivitas terbaru.</p>
         </div>
         <div class="stats" id="reportStats"></div>
         <div class="report-grid">
@@ -411,7 +404,7 @@
             <div class="panel">
               <h3>Alur Pembelian Sesi Ini</h3>
               <div id="funnelBox"></div>
-              <p class="hint" style="color:var(--ink-faint);font-size:13px;margin:10px 0 0">Klik Beli otomatis mencatat pesanan berstatus Dipesan. Penjualan terhitung setelah kamu klik Konfirmasi Lunas di Daftar Stok.</p>
+              <p class="hint" style="color:var(--ink-faint);font-size:13px;margin:10px 0 0">Penjualan terhitung setelah Konfirmasi Lunas di Daftar Stok.</p>
             </div>
             <div class="panel">
               <h3>Penjualan &amp; Pesanan</h3>
@@ -419,7 +412,6 @@
             </div>
           </div>
         </div>
-        <p class="scope-note">Versi server: penghitung dan laporan dihitung dari database server, jadi mencakup semua perangkat. Di versi statis lama, angka hanya dari browser perangkat ini.</p>
       </main>
     </section>
 
@@ -443,21 +435,25 @@
         <div class="page-head">
           <div class="breadcrumb">GankStore / Top Up</div>
           <h1>Top Up &amp; Produk Digital</h1>
-          <p>Top up diamond, UC, Genesis Crystal, dan mata uang game lainnya untuk 10 game — plus Voucher Digital, Pulsa &amp; Paket Data, E-Wallet &amp; PPOB, Item Game, dan Produk Digital Lainnya. Pilih kategori, pilih paket, isi identitas — invoice terbit di toko ini, sama seperti beli akun.</p>
+          <p>Top up diamond, UC, dan mata uang game lainnya. Saat ini sedang maintenance — kembali lagi nanti.</p>
+        </div>
+        <div class="empty" id="topupMaint" hidden>
+          <h3>Top Up sedang maintenance</h3>
+          <p>Top Up sedang disiapkan — pengiriman otomatis belum tersedia, menunggu supplier. Kembali lagi nanti.</p>
+          <p>Akun Point Blank tetap bisa dibeli seperti biasa.</p>
+          <a class="btn-dark" href="#/katalog">Lihat Akun Point Blank</a>
+          <a class="btn-detail" href="#/bantuan">Butuh bantuan? Hubungi Support</a>
         </div>
         <div class="grid topup-grid" id="topupGrid"></div>
         <div class="empty" id="topupEmpty" hidden>
           <h3>Belum ada paket top up</h3>
-          <p>Katalog top up masih kosong. Paket asli ditambahkan admin lewat Panel Admin — Top Up.</p>
-          <a class="btn-dark" href="#/admin/topup">Kelola Paket Top Up</a>
+          <p>Cek lagi nanti.</p>
         </div>
-        <div class="info-box" style="margin-top:22px">
-          <h3>Jujur soal top up</h3>
+        <div class="info-box" id="topupInfoBox" style="margin-top:22px">
+          <h3>Soal top up</h3>
           <ul>
-            <li>Top up <strong>diproses manual oleh admin</strong> setelah pembayaran lunas — belum ada pengiriman diamond / UC otomatis ke akun game, karena belum ada supplier / provider top up.</li>
-            <li>Kategori baru (Voucher Digital, Pulsa &amp; Paket Data, E-Wallet &amp; PPOB, Item Game, Produk Digital Lainnya) strukturnya sudah ada dan bisa diisi admin — tapi pulsa/PPOB/e-wallet <strong>belum bisa diproses otomatis</strong> karena belum ada supplier PPOB. Sampai ada supplier, semuanya diproses manual oleh admin setelah lunas.</li>
-            <li>Admin memproses ke User ID yang kamu isi, lalu menandai pesanan Selesai. Statusnya bisa dicek di Pesanan Saya.</li>
-            <li>Biaya admin 10% berlaku sama seperti pembelian akun dan selalu tertulis di invoice.</li>
+            <li>Top up diproses manual oleh admin setelah lunas — belum ada pengiriman otomatis.</li>
+            <li>Biaya admin 10%, selalu tertulis di invoice.</li>
           </ul>
         </div>
       </main>
@@ -472,13 +468,20 @@
           <h1 id="topupGameTitle">Top Up</h1>
           <p id="topupGameDesc"></p>
         </div>
+        <div class="empty" id="topupGameMaint" hidden>
+          <h3>Top Up sedang maintenance</h3>
+          <p>Top Up sedang disiapkan — pengiriman otomatis belum tersedia, menunggu supplier. Kembali lagi nanti.</p>
+          <p>Akun Point Blank tetap bisa dibeli seperti biasa.</p>
+          <a class="btn-dark" href="#/katalog">Lihat Akun Point Blank</a>
+          <a class="btn-detail" href="#/bantuan">Butuh bantuan? Hubungi Support</a>
+        </div>
         <div class="grid" id="topupPackages"></div>
         <div class="empty" id="topupPkgEmpty" hidden>
           <h3>Belum ada paket untuk game ini</h3>
           <p>Admin belum menambahkan paket top up untuk game ini. Cek game lain atau kembali lagi nanti.</p>
           <a class="btn-dark" href="#/topup">Pilih Game Lain</a>
         </div>
-        <div class="auth-wrap" style="max-width:640px;margin:0">
+        <div class="auth-wrap" id="topupFormWrap" style="max-width:640px;margin:0">
           <form class="panel" id="topupForm" style="margin-top:20px">
             <h3>Form Order Top Up</h3>
             <div class="field"><label>Paket dipilih</label><div id="topupSelected"><span>Belum ada paket dipilih — klik salah satu paket di atas.</span></div></div>
@@ -498,7 +501,7 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Top Up</div>
           <h1>Paket Top Up</h1>
-          <p>Kelola paket top up per game dan proses pesanan top up yang masuk. Katalog top up mulai kosong — paket asli diisi admin di sini, jangan isi harga palsu.</p>
+          <p>Kelola paket top up per game dan proses pesanan top up yang masuk.</p>
         </div>
         <div class="auth-wrap" style="max-width:640px;margin:0">
           <form class="panel" id="topupPkgForm" style="margin-top:20px">
@@ -533,7 +536,7 @@
         <div class="page-head" style="padding-top:6px">
           <div class="breadcrumb">GankStore / Invoice</div>
           <h1>Invoice Pesanan</h1>
-          <p>Pesananmu tercatat di toko ini. Bayar total invoice lewat Midtrans — setelah admin mengonfirmasi pembayaranmu lunas, status di halaman ini otomatis berubah jadi Lunas dan data akun diserahkan ke kamu.</p>
+          <p>Bayar total invoice lewat Midtrans. Setelah admin mengonfirmasi lunas, status di sini berubah jadi Lunas dan data akun diserahkan ke kamu.</p>
         </div>
         <div id="invoiceWrap"></div>
       </main>
@@ -545,7 +548,7 @@
         <div class="page-head">
           <div class="breadcrumb">GankStore / Pembelian Berhasil</div>
           <h1>Pembelian Berhasil 🎉</h1>
-          <p>Pembayaranmu sudah lunas. Data login akunmu ditampilkan <strong>satu kali</strong> di halaman ini — salin dan simpan sekarang, lalu segera ganti password akunnya. Begitu kamu meninggalkan halaman ini, data tersebut otomatis terhapus dari toko dan tidak bisa ditampilkan lagi.</p>
+          <p>Pembayaranmu sudah lunas. Data login akun ditampilkan <strong>satu kali</strong> di sini — salin dan simpan sekarang, lalu segera ganti passwordnya.</p>
         </div>
         <div id="successWrap"></div>
       </main>
@@ -559,14 +562,14 @@
             <div class="auth-head">
               <img class="auth-logo" src="brand/gankstore-logo.png" alt="GankStore" />
               <h1>Masuk ke GankStore</h1>
-              <p>Masuk untuk membuka Panel Admin dan mengelola stok toko. Belum punya akun? Daftar dulu, langsung bisa dipakai.</p>
+              <p>Masuk untuk melihat pesananmu. Belum punya akun? Daftar dulu, langsung bisa dipakai.</p>
             </div>
             <div class="panel auth-card">
               <button class="btn-google" type="button" id="btnGoogle">
                 <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.3 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
                 Lanjutkan dengan Google
               </button>
-              <p class="auth-msg" id="googleMsg" hidden>Login Google belum aktif di toko ini — verifikasi Google butuh Client ID + server. Sementara pakai email + password di bawah, langsung bisa dites.</p>
+              <p class="auth-msg" id="googleMsg" hidden>Login Google belum aktif — pakai email + password di bawah.</p>
               <div class="auth-divider"><span>atau pakai email</span></div>
               <div class="auth-tabs" role="tablist" aria-label="Pilih masuk atau daftar">
                 <button type="button" class="auth-tab on" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
@@ -589,14 +592,13 @@
                 <button class="btn-auth" type="submit">Daftar Akun</button>
               </form>
 
-              <p class="scope-note">Versi server: akunmu tersimpan di database server GankStore, jadi tetap bisa dipakai dari perangkat lain. (Versi statis lama menyimpan akun hanya di browser perangkat ini.)</p>
             </div>
           </div>
 
           <div id="authLoggedIn" hidden>
             <div class="auth-head">
               <h1>Akun Saya</h1>
-              <p id="authHeadNote">Kamu sudah masuk. Dari sini bisa langsung membuka Panel Admin untuk mengelola stok.</p>
+              <p id="authHeadNote">Kamu sudah masuk. Pesananmu ada di bawah — klik invoice-nya untuk melihat status dan data akunmu.</p>
             </div>
             <div class="panel auth-card">
               <div class="profile-head">
@@ -611,7 +613,7 @@
             </div>
             <div class="panel auth-card">
               <h3 style="font-size:18px;margin-bottom:6px">Pesanan Saya</h3>
-              <p style="color:var(--ink-soft);margin:0;font-size:14.5px">Invoice dari pembelianmu di sesi ini. Klik untuk membuka invoice-nya.</p>
+              <p style="color:var(--ink-soft);margin:0;font-size:14.5px">Klik invoice untuk melihat statusnya.</p>
               <div class="order-rows" id="myOrders"></div>
             </div>
           </div>
@@ -622,7 +624,7 @@
     <footer>
       <div class="wrap">
         <span><img class="footer-logo" src="brand/gankstore-logo.png" alt="GankStore" /> — toko akun Point Blank, semua akun adalah stok milik penjual sendiri.</span>
-        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up</a> · <a href="#/bantuan">Bantuan</a> · <a href="#/akun">Akun</a></span>
+        <span><a href="#/">Beranda</a> · <a href="#/katalog">Katalog</a> · <a href="#/cara-beli">Cara Beli</a> · <a href="#/topup">Top Up <span class="nav-maint">Maintenance</span></a> · <a href="#/bantuan">Bantuan</a> · <a href="#/akun">Akun</a></span>
       </div>
     </footer>
 

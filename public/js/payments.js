@@ -6,15 +6,15 @@
 function loadPaymentsConfig(){
   var el = document.getElementById("midtransStatus");
   function setText(t){ if (el) el.textContent = t; }
-  if (!Server.enabled) { setText("Mode statis — jalankan server Python untuk mengaktifkan Midtrans."); return; }
+  if (!Server.enabled) { setText("Pembayaran online belum terhubung."); return; }
   api("/api/payments/config").catch(function(){ return null; }).then(function(c){
     if (c) {
       Server.payments = c;
       setText(c.configured
         ? (c.is_production ? "Terhubung — Production (live)" : "Terhubung — Sandbox (mode tes)")
-        : "Server jalan, tapi MIDTRANS_SERVER_KEY belum dipasang di .env — isi dulu lalu restart server.");
+        : "Pembayaran online belum terhubung.");
     } else {
-      setText("Status pembayaran tidak bisa dicek.");
+      setText("Pembayaran online belum bisa dicek.");
     }
   });
 }
@@ -25,12 +25,12 @@ function midtransPayBlock(o){
   if (!Server.enabled) {
     return '<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>' + note + '</p></div>' +
       '<button class="btn-pay" type="button" disabled>Bayar via Midtrans</button>' +
-      '<p class="pay-note">Pembayaran online aktif di versi server Python bila MIDTRANS_SERVER_KEY terpasang di .env server. Invoice ini tetap sah sebagai catatan pesananmu — admin mengonfirmasi pembayaran dan status invoice ini berubah jadi Lunas dari Panel Admin.</p>';
+      '<p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah — admin mengonfirmasi pembayaran dan statusnya berubah jadi Lunas.</p>';
   }
   if (!Server.payments.configured) {
     return '<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>' + note + '</p></div>' +
       '<button class="btn-pay" type="button" disabled>Bayar via Midtrans</button>' +
-      '<p class="pay-note">Server berjalan, tapi kunci Midtrans belum dipasang di .env. Minta admin memasang MIDTRANS_SERVER_KEY lalu restart server — setelah itu tombol bayar aktif.</p>';
+      '<p class="pay-note">Pembayaran online masih disiapkan. Setelah aktif, tombol bayar di sini bisa dipakai — untuk sekarang admin mengonfirmasi pembayaran secara manual.</p>';
   }
   var mode = Server.payments.is_production ? "Production (live)" : "Sandbox (mode tes — bukan pembayaran asli)";
   return '<div class="pay-method"><b>Metode pembayaran: Midtrans (' + mode + ')</b><p>' + note + '</p></div>' +

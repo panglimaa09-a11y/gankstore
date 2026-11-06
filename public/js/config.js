@@ -9,6 +9,15 @@ window.GS_CONFIG = {
   /* Biaya admin: 10% dari harga, berlaku untuk akun dan top up. */
   ADMIN_FEE_RATE: 0.10,
 
+  /* Top Up sedang MAINTENANCE (perintah Tuan, 6 Nov 2026): pembeli tidak
+     bisa order top up sampai flag ini dimatikan — halaman #/topup dan
+     #/topup/<game> menampilkan halaman maintenance, tombol order
+     dinonaktifkan. Akun Point Blank tetap bisa dibeli normal.
+     Untuk mengaktifkan lagi: ubah jadi false di sini DAN set
+     GS_TOPUP_MAINTENANCE=0 di server, lalu restart service
+     gankstore-backend. */
+  TOPUP_MAINTENANCE: true,
+
   /* Alamat API backend. "" = origin yang sama (saat disajikan backend
      Python). Saat dibuka sebagai file statis, fetch ke /api/* gagal dan
      toko otomatis jalan dalam mode lokal (localStorage + memori).

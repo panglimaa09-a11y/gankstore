@@ -36,8 +36,34 @@ var TopUp = (function(){
     return m + 1;
   }
 
+  /* Top Up MAINTENANCE (perintah Tuan, 6 Nov 2026): selama flag
+     GS_CONFIG.TOPUP_MAINTENANCE true, pembeli tidak bisa melihat paket
+     atau membuat order top up — halaman menampilkan pemberitahuan
+     maintenance. Admin tetap bisa kelola paket di Panel Admin. */
+  function isMaint(){
+    return !!(window.GS_CONFIG && window.GS_CONFIG.TOPUP_MAINTENANCE);
+  }
+  function showMaint(){
+    var m = document.getElementById("topupMaint");
+    var g = document.getElementById("topupGrid");
+    var e = document.getElementById("topupEmpty");
+    var b = document.getElementById("topupInfoBox");
+    if (m) m.hidden = false;
+    if (g) g.innerHTML = "";
+    if (e) e.hidden = true;
+    if (b) b.hidden = true;
+  }
+  function hideMaint(){
+    var m = document.getElementById("topupMaint");
+    var b = document.getElementById("topupInfoBox");
+    if (m) m.hidden = true;
+    if (b) b.hidden = false;
+  }
+
   /* ---------- halaman daftar game ---------- */
   function renderTopup(){
+    if (isMaint()) { showMaint(); return; }
+    hideMaint();
     var grid = document.getElementById("topupGrid");
     if (!grid) return;
     var games = window.GS_CONFIG.TOPUP_GAMES || [];
@@ -46,10 +72,9 @@ var TopUp = (function(){
       var pkgs = packagesFor(g.name);
       var el = document.createElement("article");
       el.className = "card";
-      el.innerHTML = '<div class="card-media"><div class="glyph">' + esc(g.name) + '</div><span class="badge-game">' + esc(g.currency) + '</span></div>' +
-        '<div class="card-body"><div class="card-title">' + esc(g.name) + '</div>' +
-        '<div class="card-specs"><span>' + (pkgs.length ? pkgs.length + " paket tersedia" : "Belum ada paket") + '</span></div>' +
-        '<div class="card-foot"><div class="price" style="font-size:15px">' + esc(g.currency) + '</div>' +
+      el.innerHTML = '<div class="card-body"><div class="card-title">' + esc(g.name) + '</div>' +
+        '<div class="card-specs"><span>' + esc(g.currency) + '</span><span>' + (pkgs.length ? pkgs.length + " paket tersedia" : "Belum ada paket") + '</span></div>' +
+        '<div class="card-foot">' +
         '<div class="card-actions"><a class="btn-detail" href="#/topup/' + encodeURIComponent(g.name) + '">Lihat Paket</a></div></div></div>';
       grid.appendChild(el);
     });
@@ -59,6 +84,23 @@ var TopUp = (function(){
 
   /* ---------- halaman paket per game + form order ---------- */
   function renderTopupGame(game){
+    var gm = document.getElementById("topupGameMaint");
+    var gbox = document.getElementById("topupPackages");
+    var gem = document.getElementById("topupPkgEmpty");
+    var gform = document.getElementById("topupFormWrap");
+    if (isMaint()) {
+      if (gm) gm.hidden = false;
+      if (gbox) gbox.innerHTML = "";
+      if (gem) gem.hidden = true;
+      if (gform) gform.hidden = true;
+      var t = document.getElementById("topupGameTitle");
+      if (t) t.textContent = "Top Up " + game;
+      var d = document.getElementById("topupGameDesc");
+      if (d) d.textContent = "Top Up sedang maintenance — kembali lagi nanti.";
+      return;
+    }
+    if (gm) gm.hidden = true;
+    if (gform) gform.hidden = false;
     currentGame = game;
     selectedPkg = null;
     var cfg = gameCfg(game);
@@ -127,6 +169,10 @@ var TopUp = (function(){
 
   /* ---------- buat order top up (alur sama seperti akun) ---------- */
   function trackTopupBuy(pkg, userId, serverId){
+    if (isMaint()) {
+      showToast("Top Up sedang maintenance — kembali lagi nanti.");
+      return Promise.resolve(null);
+    }
     if (Server.enabled) {
       return api("/api/topup/orders", { method: "POST", body: { package_id: pkg.id, user_id: userId, server_id: serverId || "" } }).then(function(o){
         if (!o) return null;
@@ -147,7 +193,7 @@ var TopUp = (function(){
       title: "Top Up " + pkg.amount + " " + pkg.currency + " — " + pkg.game,
       price: pkg.price, fee: fee, total: Number(pkg.price || 0) + fee,
       photo: "", game: pkg.game, rank: "", time: timeStr(), status: "dipesan",
-      buyerName: u ? u.name : "Pembeli tamu", buyerEmail: u ? u.email : "",
+      buyerName: u ? u.name : "Pembeli", buyerEmail: u ? u.email : "",
       userId: userId, serverId: serverId || "", packageName: pkg.name,
       amount: String(pkg.amount), currency: pkg.currency
     };
@@ -179,7 +225,7 @@ var TopUp = (function(){
       packages.slice().sort(function(a, b){ return (b.id || 0) - (a.id || 0); }).forEach(function(p){
         var item = document.createElement("div");
         item.className = "stock-item";
-        item.innerHTML = '<div class="thumb">' + esc(p.game.split(/\s+/).slice(0, 2).map(function(w){ return w.charAt(0); }).join("").toUpperCase()) + '</div>' +
+        item.innerHTML = '<div class="thumb"><img src="icon.png" alt="GankStore" /></div>' +
           '<div class="meta"><b>' + esc(p.name) + '</b><span>' + esc(p.game) + " · " + esc(String(p.amount)) + " " + esc(p.currency) + " · " + formatIDR(p.price) + '</span></div>' +
           '<div class="acts"><button class="mini" type="button" data-tp-edit="' + p.id + '">Edit</button>' +
           '<button class="mini danger" type="button" data-tp-del="' + p.id + '">Hapus</button></div>';
@@ -204,7 +250,7 @@ var TopUp = (function(){
           row.className = "sales-row";
           var acts = "";
           if (o.status === "dipesan") acts = '<button class="mini lunas" type="button" data-tu-lunas="' + esc(o.invoiceNo) + '">Konfirmasi Lunas</button><button class="mini" type="button" data-tu-batal="' + esc(o.invoiceNo) + '">Batalkan</button>';
-          row.innerHTML = '<div class="sr-thumb">' + esc((o.game || "TU").split(/\s+/).slice(0, 2).map(function(w){ return w.charAt(0); }).join("").toUpperCase()) + '</div>' +
+          row.innerHTML = '<div class="sr-thumb"><img src="icon.png" alt="GankStore" /></div>' +
             '<div class="sr-body"><b>' + esc(o.title) + '</b><span>' + esc(o.invoiceNo) + " · " + orderStatusLabel(o) + " · User ID " + esc(o.userId || "-") + (o.serverId ? " · Server " + esc(o.serverId) : "") + '</span></div>' +
             '<div class="sr-price">' + formatIDR(o.total != null ? o.total : o.price) + '</div>' +
             (acts ? '<div class="acts">' + acts + '</div>' : '');
@@ -298,6 +344,7 @@ var TopUp = (function(){
   var tuForm = document.getElementById("topupForm");
   if (tuForm) tuForm.addEventListener("submit", function(ev){
     ev.preventDefault();
+    if (isMaint()) { showToast("Top Up sedang maintenance — kembali lagi nanti."); return; }
     if (!selectedPkg) { showToast("Pilih dulu paket top up-nya."); return; }
     var userId = document.getElementById("tuUserId").value.trim();
     var cfg = gameCfg(currentGame);
