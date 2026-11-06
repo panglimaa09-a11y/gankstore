@@ -14,6 +14,9 @@
          fetch relatif, jadi frontend Vercel tidak pernah bisa mencapai
          backend remote. Sekarang semua fetch API melewati API_BASE. */
       var API_BASE=(window.GS_CONFIG.API_BASE||"").replace(/\/$/,"");
+      /* Video intro hero: hormati prefers-reduced-motion — jangan autoplay,
+         tampilkan poster saja. */
+      (function(){var v=document.querySelector(".hero-video");if(!v)return;if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){v.removeAttribute("autoplay");v.pause();}})();
       function apiToken(){try{return localStorage.getItem("gankstore_token");}catch(e){return null;}}
       function setToken(t){try{if(t)localStorage.setItem("gankstore_token",t);else localStorage.removeItem("gankstore_token");}catch(e){}}
       function api(path,opts){
