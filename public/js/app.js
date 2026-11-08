@@ -9,9 +9,6 @@
          tidak terjangkau, semua fungsi lama (localStorage + memori) tetap
          jalan (mode lokal). Tidak ada lagi backend Python. */
       var Server={enabled:false,token:null,user:null,payments:{configured:false,is_production:false,client_key:null}};
-      /* Video intro hero: hormati prefers-reduced-motion — jangan autoplay,
-         tampilkan poster saja. */
-      (function(){var v=document.querySelector(".hero-video");if(!v)return;if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){v.removeAttribute("autoplay");v.pause();}})();
 function apiToken(){ try { return (window.Supa && Supa.getAccessToken()) || localStorage.getItem("gankstore_token"); } catch (e) { return window.Supa ? Supa.getAccessToken() : null; } }
 function setToken(t){ try { if (t) localStorage.setItem("gankstore_token", t); else localStorage.removeItem("gankstore_token"); } catch (e) {} }
 
@@ -545,7 +542,7 @@ function initServer(attempt){
         if(r.page==="akun"){
           renderAuth();
           /* Dibuka dari sidebar "Daftar": langsung buka tab Daftar. */
-          if(pendingAuthTab){var t=document.getElementById(pendingAuthTab==="register"?"tabRegister":"tabLogin");if(t)t.click();pendingAuthTab=null;}
+          if(pendingAuthTab){switchAuthView(pendingAuthTab);pendingAuthTab=null;}
         }
         if(r.page==="bantuan")renderSupportPage();
         if(r.page==="admin-support")renderSupportAdmin();
@@ -894,18 +891,26 @@ function initServer(attempt){
         render();showToast("Listing dihapus dari stok.");
       }
 
-      /* ---------- event login lokal ---------- */
-      function showAuthTab(which){
+      /* ---------- kartu Masuk / Daftar TERPISAH ---------- */
+      /* Primitif kartu saja (tanpa lampu): dipakai oleh setAuthView
+         di js/lamp.js. */
+      function showAuthCard(which){
         var isLogin=which==="login";
-        document.getElementById("tabLogin").classList.toggle("on",isLogin);
-        document.getElementById("tabRegister").classList.toggle("on",!isLogin);
-        document.getElementById("tabLogin").setAttribute("aria-selected",isLogin?"true":"false");
-        document.getElementById("tabRegister").setAttribute("aria-selected",!isLogin?"true":"false");
-        document.getElementById("loginForm").hidden=!isLogin;
-        document.getElementById("registerForm").hidden=isLogin;
+        var lc=document.getElementById("loginCard"),rc=document.getElementById("registerCard");
+        if(lc)lc.hidden=!isLogin;
+        if(rc)rc.hidden=isLogin;
       }
-      document.getElementById("tabLogin").addEventListener("click",function(){showAuthTab("login");});
-      document.getElementById("tabRegister").addEventListener("click",function(){showAuthTab("register");});
+      /* Satu-satunya jalur ganti kartu + lampu: semua pemindah
+         (tali, kepala lampu, tautan teks, pemrograman) lewat
+         window.setAuthView di js/lamp.js — kalau lampu belum
+         termuat, fallback ke kartu saja. */
+      function switchAuthView(which){
+        if(typeof window.setAuthView==="function")window.setAuthView(which);
+        /* lamp.js belum termuat (app.js jalan duluan): kartu diganti
+           sekarang, lampunya menyusul saat lamp.js init membaca
+           flag ini. */
+        else{window.__pendingAuthView=which;showAuthCard(which);}
+      }
       /* ---------- login Google LANGSUNG (GIS + signInWithIdToken) ---------- */
       /* Seperti RekberSTORE: tombol Google dirender GIS dari
          gankstore.my.id, token ID diteruskan ke Supabase — TANPA
@@ -1031,7 +1036,7 @@ function initGoogleSignIn(){
         }
         var users=loadUsers(),found=null;
         users.forEach(function(u){if(u.email===email)found=u;});
-        if(!found){formError("loginError","Email ini belum terdaftar. Daftar dulu lewat tab Daftar.");showAuthTab("register");document.getElementById("rgEmail").value=email;return;}
+        if(!found){formError("registerError","Email ini belum terdaftar. Daftar dulu — emailnya sudah terisi di bawah.");switchAuthView("register");document.getElementById("rgEmail").value=email;return;}
         if(found.pass!==hashPw(pass)){formError("loginError","Password salah. Coba lagi.");return;}
         setSession(email);ev.target.reset();afterLogin(found);
       });
@@ -1056,7 +1061,7 @@ function initGoogleSignIn(){
         }
         var users=loadUsers(),dup=false;
         users.forEach(function(u){if(u.email===email)dup=true;});
-        if(dup){formError("registerError","Email ini sudah terdaftar. Masuk lewat tab Masuk.");return;}
+        if(dup){formError("registerError","Email ini sudah terdaftar. Masuk lewat kartu Masuk.");return;}
         var nu={name:name,email:email,pass:hashPw(pass)};
         users.push(nu);saveUsers(users);setSession(email);ev.target.reset();
         showToast("Akun berhasil dibuat. Selamat datang, "+name.split(" ")[0]+"!");

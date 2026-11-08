@@ -1,16 +1,20 @@
 /* Lampu meja interaktif — halaman login (#/akun).
-   Lampu adalah SAKLAR Masuk/Daftar: lampu MATI = kartu Masuk,
+   Lampu adalah SAKLAR dua kartu terpisah: lampu MATI = kartu Masuk,
    lampu MENYALA = kartu Daftar. Tarik tali (drag ke bawah) atau
    ketuk tali / kepala lampu untuk menyalakan atau mematikan lampu
    — sekaligus berpindah kartu. Bunyi dengung mengikuti pola
    Web Audio dari referensi: sine 120 Hz, envelope 0.001 -> 0.06
    -> 0.001 selama ~0.35 detik, hanya saat user menarik/mengetuk.
-   Klik langsung tab Masuk/Daftar juga menyinkronkan lampu
-   (tanpa bunyi). Tilt parallax halus mengikuti pointer (hanya
-   mouse, hanya transform). Animasi murni visual: form tetap bisa dipakai
-   walau lampu mati, dan tidak ada state login yang disimpan di
-   sini. Sinkron tab HANYA pada aksi user — bukan saat init —
-   supaya deep-link sidebar "Daftar"/"Masuk" tidak dilawan. */
+   Tautan teks di bawah tiap kartu ("Belum punya akun? Daftar" /
+   "Sudah punya akun? Masuk") juga mengganti kartu DAN lampu, tanpa
+   bunyi — seperti tab dulu. Tilt parallax halus mengikuti pointer
+   (hanya mouse, hanya transform). Animasi murni visual: form tetap
+   bisa dipakai walau lampu mati, dan tidak ada state login yang
+   disimpan di sini. SATU fungsi pusat (setAuthView, diekspos ke
+   window) mengatur kartu + lampu — semua jalur ganti, termasuk
+   pemrograman dari app.js (sidebar "Daftar", email belum terdaftar),
+   lewat fungsi itu, supaya kartu dan lampu tidak pernah tidak
+   sinkron. */
 (function(){
   var stage = document.getElementById("lampStage");
   var cord = document.getElementById("lampCord");
@@ -82,39 +86,42 @@
     } catch (e) {}
   }
 
-  /* Pindah kartu lewat handler tab yang sudah ada di app.js
-     (klik tombol tab — aman dari scope fungsi showAuthTab). */
-  function goTab(which){
-    var btn = document.getElementById(which === "register" ? "tabRegister" : "tabLogin");
-    if (btn) btn.click();
+  /* SATU fungsi pusat ganti kartu + lampu. which: "login" | "register".
+     opts.sound=true hanya untuk aksi fisik (tarik/ketuk tali, ketuk
+     kepala) — tautan teks dan pemrograman tidak berbunyi. Kartu
+     diganti lewat showAuthCard di app.js (dimuat sebelum file ini);
+     kalau belum ada, kartu tidak diganti tapi lampu tetap jalan. */
+  function setAuthView(which, opts){
+    var wantOn = which === "register";
+    var sound = !!(opts && opts.sound);
+    if (wantOn !== on) {
+      on = wantOn;
+      applyState();
+      if (sound) hum();
+      if (sound && !reduceMotion) {
+        cord.classList.remove("sway");
+        void cord.offsetWidth;
+        cord.classList.add("sway");
+      }
+    }
+    if (typeof window.showAuthCard === "function") window.showAuthCard(which);
   }
+  window.setAuthView = setAuthView;
 
   /* toggle() karena aksi USER (tarik/klik tali, ketuk kepala):
      lampu membalik DAN kartu ikut berpindah — nyala = Daftar,
-     mati = Masuk. Dengung hanya di sini (aksi user). */
+     mati = Masuk. Dengung hanya di sini (aksi fisik). */
   function toggle(playSound){
-    on = !on;
-    applyState();
-    if (playSound) hum();
-    goTab(on ? "register" : "login");
-    if (!reduceMotion) {
-      cord.classList.remove("sway");
-      void cord.offsetWidth;
-      cord.classList.add("sway");
-    }
+    setAuthView(on ? "login" : "register", {sound: !!playSound});
   }
 
-  /* Sinkron dua arah: klik langsung tab Masuk/Daftar (bukan lewat
-     tali) ikut menyalakan/mematikan lampu, TANPA bunyi. Guard
-     `on !== want` mencegah loop dengan goTab() di toggle(). */
-  var tabLogin = document.getElementById("tabLogin");
-  var tabRegister = document.getElementById("tabRegister");
-  if (tabLogin) tabLogin.addEventListener("click", function(){
-    if (on) { on = false; applyState(); }
-  });
-  if (tabRegister) tabRegister.addEventListener("click", function(){
-    if (!on) { on = true; applyState(); }
-  });
+  /* Tautan teks di bawah tiap kartu ("Belum punya akun? Daftar" /
+     "Sudah punya akun? Masuk") — pengganti tab: ganti kartu DAN
+     lampu, TANPA bunyi. */
+  var linkToRegister = document.getElementById("linkToRegister");
+  var linkToLogin = document.getElementById("linkToLogin");
+  if (linkToRegister) linkToRegister.addEventListener("click", function(){ setAuthView("register"); });
+  if (linkToLogin) linkToLogin.addEventListener("click", function(){ setAuthView("login"); });
 
   /* --- tarik tali: drag vertikal pakai pointer events (jalan di
      sentuhan HP maupun mouse). Tarik >= 24px lalu lepas = toggle.
@@ -172,11 +179,17 @@
     headBtn.addEventListener("click", function(){ toggle(true); });
   }
 
-  /* prefers-reduced-motion: lampu langsung menyala tanpa animasi
-     goyang — form langsung terang, tanpa gerakan. */
-  if (reduceMotion) {
-    on = true;
-    applyState();
+  /* Init: deep-link sidebar ("Daftar"/"Masuk") yang diproses app.js
+     sebelum file ini termuat menang dulu — lampunya menyusul sinkron
+     lewat flag. Kalau tidak ada, prefers-reduced-motion: lampu
+     langsung menyala tanpa animasi goyang — kartu ikut ke Daftar
+     lewat jalur pusat yang sama, jadi kartu dan lampu tetap sinkron. */
+  if (typeof window.__pendingAuthView === "string") {
+    var pv = window.__pendingAuthView;
+    window.__pendingAuthView = null;
+    setAuthView(pv);
+  } else if (reduceMotion) {
+    setAuthView("register");
   } else {
     applyState();
   }

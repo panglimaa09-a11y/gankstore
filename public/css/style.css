@@ -195,9 +195,7 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 #googleRetryBtn{width:100%;justify-content:center;margin-top:10px}
 .auth-divider{display:flex;align-items:center;gap:12px;color:var(--ink-faint);font-size:13.5px;font-weight:600;margin:18px 0}
 .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--line)}
-.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg-sink);border-radius:10px;padding:5px;margin-bottom:18px}
-.auth-tab{border:0;background:transparent;border-radius:8px;padding:9px;font-weight:700;color:var(--ink-soft);font-size:15.5px}
-.auth-tab.on{background:var(--bg-raise);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .form-error{display:none;color:var(--danger);border:1.5px solid var(--danger);border-radius:9px;padding:10px 13px;margin-bottom:13px;font-weight:600;font-size:14.5px}
 .form-error.show{display:block}
 .btn-auth{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px;font-weight:700;font-size:16px}
@@ -242,16 +240,22 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 .lamp-cord.sway{animation:lamp-sway .6s ease}
 @keyframes lamp-sway{0%{transform:translateX(-50%) rotate(0deg)}25%{transform:translateX(-50%) rotate(4deg)}55%{transform:translateX(-50%) rotate(-3deg)}80%{transform:translateX(-50%) rotate(1.5deg)}100%{transform:translateX(-50%) rotate(0deg)}}
 .auth-card{transition:filter .4s ease,box-shadow .4s ease}
-.auth-wrap.lamp-dim .auth-card{filter:brightness(.88) saturate(.92)}
+.auth-google-block{transition:filter .4s ease}
+.auth-wrap.lamp-dim .auth-card,.auth-wrap.lamp-dim .auth-google-block{filter:brightness(.88) saturate(.92)}
 .auth-wrap.lamp-on .auth-card{filter:brightness(1.02);box-shadow:0 0 0 1px rgba(251,191,36,.28),0 16px 44px rgba(251,191,36,.16)}
+.auth-wrap.lamp-on .auth-google-block{filter:brightness(1.02)}
+/* Tautan ganti kartu di bawah tiap kartu ("Belum punya akun? Daftar" /
+   "Sudah punya akun? Masuk") — pengganti tab: target sentuh >=44px. */
+.auth-switch-link{display:block;width:100%;border:0;background:transparent;padding:12px 8px 2px;margin-top:4px;min-height:44px;font:inherit;font-size:14.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;text-align:center}
+.auth-switch-link b{color:var(--accent);font-weight:700}
 
 /* login ringkas v2 — SELURUH kartu termasuk tombol submit terlihat
    bersamaan dengan lampu dalam satu layar HP 390x844 tanpa scroll.
    Hanya #authLoggedOut; tampilan sesudah login dan halaman lain tidak
    disentuh. Judul + deskripsi disembunyikan secara visual di sini saja
    (judul tetap terbaca pembaca layar lewat pola sr-only) karena logo +
-   petunjuk tali + tab Masuk/Daftar sudah menjelaskan jalannya. Tombol
-   submit dan tab tetap >=44px (target sentuh aman); input tidak
+   petunjuk tali + kartu Masuk/Daftar sudah menjelaskan jalannya. Tombol
+   submit dan tautan ganti kartu tetap >=44px (target sentuh aman); input tidak
    dikecilkan. */
 #authLoggedOut .auth-head{padding:4px 0 0}
 #authLoggedOut .auth-head .auth-logo{height:24px;margin-bottom:0}
@@ -265,10 +269,9 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
   #authLoggedOut .lamp-cord{top:38%;height:44px}
   #authLoggedOut .lamp-cord-line{height:28px}
 }
+#authLoggedOut .auth-google-block{margin-top:6px}
 #authLoggedOut .auth-card{margin-top:6px;padding:10px 16px}
 #authLoggedOut .auth-divider{margin:8px 0}
-#authLoggedOut .auth-tabs{margin-bottom:10px}
-#authLoggedOut .auth-tab{padding:8px}
 #authLoggedOut .field{margin-bottom:6px}
 #authLoggedOut .field label{margin-bottom:3px}
 @media (min-width:768px){

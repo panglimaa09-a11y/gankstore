@@ -709,24 +709,35 @@
               </button>
               <p class="lamp-hint" id="lampHint">Tarik tali untuk mendaftar</p>
             </div>
-            <div class="panel auth-card">
+            <!-- Blok Google bersama (SATU, di luar kartu): GIS hanya
+                 render sekali ke #googleBtnWrap, jadi tombol + divider
+                 tidak digandakan. -->
+            <div class="auth-google-block">
               <div id="googleBtnWrap"></div>
               <p class="auth-msg" id="googleMsg" hidden>Login Google tidak bisa dimuat — pakai email + password di bawah.</p>
               <button type="button" class="btn btn-ghost" id="googleRetryBtn" hidden>Coba lagi</button>
               <div class="auth-divider"><span>atau pakai email</span></div>
-              <div class="auth-tabs" role="tablist" aria-label="Pilih masuk atau daftar">
-                <button type="button" class="auth-tab on" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
-                <button type="button" class="auth-tab" id="tabRegister" role="tab" aria-selected="false">Daftar</button>
-              </div>
+            </div>
 
+            <!-- Kartu Masuk dan Daftar TERPISAH (bukan tab dalam satu
+                 kartu): hanya satu yang terlihat; lampu jadi saklarnya
+                 (mati=Masuk, nyala=Daftar). Tautan di bawah tiap kartu
+                 ikut mengganti kartu DAN lampu — satu jalur lewat
+                 window.setAuthView di js/lamp.js. -->
+            <div class="panel auth-card" id="loginCard">
+              <h2 class="sr-only">Masuk ke akunmu</h2>
               <form id="loginForm" novalidate>
                 <div class="form-error" id="loginError" role="alert"></div>
                 <div class="field"><label for="liEmail">Email</label><input id="liEmail" type="email" autocomplete="email" placeholder="cth. nama@email.com" required /></div>
                 <div class="field"><label for="liPass">Password</label><input id="liPass" type="password" autocomplete="current-password" placeholder="Password akunmu" required /></div>
                 <button class="btn-auth" type="submit">Masuk</button>
               </form>
+              <button type="button" class="auth-switch-link" id="linkToRegister">Belum punya akun? <b>Daftar</b></button>
+            </div>
 
-              <form id="registerForm" novalidate hidden>
+            <div class="panel auth-card" id="registerCard" hidden>
+              <h2 class="sr-only">Buat akun baru</h2>
+              <form id="registerForm" novalidate>
                 <div class="form-error" id="registerError" role="alert"></div>
                 <div class="field"><label for="rgName">Nama</label><input id="rgName" type="text" autocomplete="name" placeholder="cth. Bayu" maxlength="40" required /></div>
                 <div class="field"><label for="rgEmail">Email</label><input id="rgEmail" type="email" autocomplete="email" placeholder="cth. nama@email.com" required /></div>
@@ -734,7 +745,7 @@
                 <div class="field"><label for="rgPass2">Ulangi password</label><input id="rgPass2" type="password" autocomplete="new-password" placeholder="Ketik ulang password" required /></div>
                 <button class="btn-auth" type="submit">Daftar Akun</button>
               </form>
-
+              <button type="button" class="auth-switch-link" id="linkToLogin">Sudah punya akun? <b>Masuk</b></button>
             </div>
           </div>
 
