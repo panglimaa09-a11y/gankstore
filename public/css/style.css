@@ -15,6 +15,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;font-size:16px;line-height:1.55;padding-bottom:0}
 h1,h2,h3,.display{font-family:"Chakra Petch","Archivo",sans-serif;line-height:1.15;margin:0}
 button{font:inherit;cursor:pointer} input,select,textarea{font:inherit;color:inherit} img{max-width:100%;display:block} a{color:inherit}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
 
 /* topbar */
@@ -206,6 +207,38 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 .profile-head span{color:var(--ink-faint);font-weight:600;font-size:14.5px}
 .profile-actions{display:flex;flex-direction:column;gap:9px;margin-top:18px}
 .btn-logout{width:100%;border:1.5px solid var(--danger);background:transparent;color:var(--danger);border-radius:10px;padding:12px;font-weight:700;font-size:16px}
+
+/* lampu meja interaktif — halaman login (#/akun). Panggung gelap di
+   atas kartu login; cahaya hanya transform/opacity/filter. */
+.lamp-stage{position:relative;margin-top:20px;border-radius:16px;background:#0b0e13;overflow:hidden}
+.lamp-svg{display:block;width:100%;height:auto}
+.lamp-base{fill:#2b3440}
+.lamp-metal{stroke:#3d4756;stroke-width:9;stroke-linecap:round;fill:none}
+.lamp-joint{fill:#4b5563;stroke:#2b3440;stroke-width:2}
+.lamp-shade{fill:#232c38;stroke:#3d4756;stroke-width:1.5}
+.lamp-bulb{fill:#454b54;transition:fill .35s ease}
+.lamp-bulb-glow{fill:#fde68a;opacity:0;transition:opacity .35s ease}
+.lamp-arm{transition:transform .45s cubic-bezier(.34,1.3,.5,1);transform-origin:112px 96px}
+.lamp-glow{position:absolute;left:69%;top:47%;width:190px;height:190px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(253,230,138,.55),rgba(253,230,138,0) 65%);opacity:0;transition:opacity .4s ease;pointer-events:none}
+.lamp-beam{position:absolute;left:58%;top:46%;width:32%;height:50%;background:linear-gradient(to bottom,rgba(253,230,138,.55),rgba(253,230,138,.05));clip-path:polygon(38% 0,62% 0,100% 100%,0 100%);opacity:0;transition:opacity .4s ease;pointer-events:none}
+.lamp-head-btn{position:absolute;left:58%;top:22%;width:22%;height:30%;background:transparent;border:0;padding:0;cursor:pointer}
+.lamp-cord{position:absolute;left:75%;top:44%;transform:translateX(-50%);transform-origin:top center;width:44px;height:84px;background:transparent;border:0;padding:0;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.lamp-cord:active{cursor:grabbing}
+.lamp-cord-line{display:block;width:2px;height:48px;margin:0 auto;background:#8a94a3;transform-origin:top center}
+.lamp-cord-knob{display:block;width:14px;height:14px;margin:0 auto;border-radius:50%;background:#c8d0da;border:2px solid #6b7686}
+.lamp-hint{position:relative;margin:0;padding:0 16px 16px;text-align:center;color:#8fa08f;font-size:13.5px;font-weight:600}
+.lamp-stage.on .lamp-bulb{fill:#fde68a}
+.lamp-stage.on .lamp-bulb-glow{opacity:.85}
+.lamp-stage.on .lamp-glow,.lamp-stage.on .lamp-beam{opacity:1}
+.lamp-stage.on .lamp-arm{transform:rotate(5deg)}
+.lamp-cord.sway{animation:lamp-sway .6s ease}
+@keyframes lamp-sway{0%{transform:translateX(-50%) rotate(0deg)}25%{transform:translateX(-50%) rotate(4deg)}55%{transform:translateX(-50%) rotate(-3deg)}80%{transform:translateX(-50%) rotate(1.5deg)}100%{transform:translateX(-50%) rotate(0deg)}}
+.auth-card{transition:filter .4s ease,box-shadow .4s ease}
+.auth-wrap.lamp-dim .auth-card{filter:brightness(.88) saturate(.92)}
+.auth-wrap.lamp-on .auth-card{filter:brightness(1.02);box-shadow:0 0 0 1px rgba(251,191,36,.28),0 16px 44px rgba(251,191,36,.16)}
+@media (prefers-reduced-motion: reduce){
+  .lamp-stage *,.lamp-cord{transition:none!important;animation:none!important}
+}
 
 /* admin shell — area terpisah total dari toko */
 .adminbar{display:none}
