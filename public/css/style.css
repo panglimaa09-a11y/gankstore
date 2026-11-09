@@ -105,7 +105,37 @@ body.sidebar-open{overflow:hidden}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 22px}
 .chip{border:1.5px solid var(--line);background:var(--bg-raise);color:var(--ink-soft);border-radius:999px;padding:7px 15px;font-weight:600;font-size:14.5px}
 .chip:hover{border-color:var(--accent);color:var(--ink)} .chip.on{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
-.grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));padding-bottom:8px}
+.grid{display:grid;gap:18px;grid-template-columns:repeat(5,1fr);padding-bottom:8px}
+@media (max-width:1100px){.grid{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:860px){.grid{grid-template-columns:repeat(3,1fr);gap:12px}}
+@media (max-width:480px){.grid{gap:10px}}
+.stock-line{font-size:14px;color:var(--ink-soft);font-weight:600}
+.stock-bar{height:5px;border-radius:99px;background:var(--bg-sink);overflow:hidden;margin-top:4px}
+.stock-bar i{display:block;height:100%;background:var(--accent)}
+.pager{display:flex;gap:10px;align-items:center;justify-content:center;margin:20px 0 8px;font-weight:700}
+.pager .btn-detail{flex:none;padding:10px 16px}
+.pager .btn-detail[disabled]{opacity:.45;pointer-events:none}
+.pager .pg-info{font-size:14.5px;color:var(--ink-soft)}
+.card-fee{font-size:13px;color:var(--ink-faint);font-weight:600}
+/* Kartu ringkas ala toko game (contoh jualpb, 9 Nov 2026): di layar kecil
+   kartu mengecil, hanya chip pertama (rank) yang tampil, tombol Beli
+   penuh lebar, Detail diganti ketuk kartu. */
+@media (max-width:860px){
+  .card{cursor:pointer}
+  .card-body{padding:10px 11px 12px;gap:6px}
+  .card-title{font-size:14.5px}
+  .card-specs span:not(:first-child){display:none}
+  .card-specs span{font-size:11.5px;padding:2px 7px}
+  .price{font-size:17px}
+  .card-fee{font-size:11.5px}
+  .stock-line{font-size:12.5px}
+  .card-actions{flex-direction:column}
+  .btn-detail,.btn-buy{padding:9px 6px;font-size:13.5px}
+  .badge-game{font-size:11px;padding:3px 8px}
+}
+@media (max-width:640px){
+  .card-actions .btn-detail{display:none}
+}
 .card{background:var(--bg-raise);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;text-decoration:none}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 .card-media{aspect-ratio:16/10;background:var(--hero-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}

@@ -1,6 +1,6 @@
       "use strict";
       var GAMES=window.GS_CONFIG.GAMES;
-      var state={products:[],filterGame:"Semua",query:"",sort:"baru",status:"semua",photoData:"",seq:0,unitSeq:0};
+      var state={products:[],filterGame:"Semua",query:"",sort:"baru",status:"semua",photoData:"",seq:0,unitSeq:0,page:1};
       var grid=document.getElementById("grid"), homeGrid=document.getElementById("homeGrid"), emptyState=document.getElementById("emptyState"), emptyTitle=document.getElementById("emptyTitle"), emptyText=document.getElementById("emptyText"), catalogCount=document.getElementById("catalogCount"), chipsBox=document.getElementById("gameChips"), toastEl=document.getElementById("toast");
       var toastTimer=null, currentDetail=null;
       /* ---------- mode server (Supabase) vs lokal ---------- */
@@ -565,12 +565,13 @@ function initServer(attempt){
         var media=p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />';
         var st=pStatus(p);
         var c=stockCounts(p);
-        var stockLine=c.total>0?'<div class="stock-line">Stok: <b>'+c.av+'</b> tersedia</div>':'<div class="stock-line">Stok habis</div>';
+        var soldPct=c.total>0?Math.round(c.te/c.total*100):0;
+        var stockLine=c.total>0?'<div class="stock-line">Stok: <b>'+c.av+'</b> tersedia'+(c.te>0?' · '+soldPct+'% terjual':'')+'</div><div class="stock-bar"><i style="width:'+soldPct+'%"></i></div>':'<div class="stock-line">Stok habis</div>';
         var buyBtn=c.av>0?'<button class="btn-buy" type="button" data-buy="'+p.id+'">Beli Sekarang</button>':'<span class="btn-buy disabled">'+(st==="dipesan"?"Dipesan":st==="terjual"?"Terjual":"Stok Habis")+'</span>';
         var badge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':st==="habis"?'<span class="badge-ordered">STOK HABIS</span>':"";
-        return '<div class="card-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div style="font-size:13px;color:var(--ink-faint);font-weight:600">+ biaya admin 10% · total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
+        return '<div class="card-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div class="card-fee">+ biaya admin 10% · total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
       }
-      function buildCard(p){var el=document.createElement("article");var st=pStatus(p);el.className="card"+(st==="terjual"||st==="habis"?" sold":st==="dipesan"?" ordered":"");el.innerHTML=cardHTML(p);var bb=el.querySelector("[data-buy]");if(bb)bb.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});return el;}
+      function buildCard(p){var el=document.createElement("article");var st=pStatus(p);el.className="card"+(st==="terjual"||st==="habis"?" sold":st==="dipesan"?" ordered":"");el.innerHTML=cardHTML(p);var bb=el.querySelector("[data-buy]");if(bb)bb.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});el.addEventListener("click",function(ev){if(ev.target.closest("button,a"))return;location.hash="#/detail/"+p.id;});return el;}
 
       function renderChips(){ /* toko fokus Point Blank saja — tidak ada filter per game */ }
       function visibleProducts(){
@@ -607,6 +608,17 @@ function initServer(attempt){
         homeGrid.style.display=state.products.length?"":"none";
       }
 
+      /* ---------- katalog: maks 5 kolom x 5 baris (25 akun) per halaman ---------- */
+      var PAGE_SIZE=25;
+      function renderPager(pages){
+        var pg=document.getElementById("pager");if(!pg)return;
+        if(pages<=1){pg.innerHTML="";return;}
+        pg.innerHTML='<button class="btn-detail" type="button" id="pgPrev"'+(state.page<=1?' disabled':'')+'>Sebelumnya</button><span class="pg-info">Halaman '+state.page+' dari '+pages+'</span><button class="btn-detail" type="button" id="pgNext"'+(state.page>=pages?' disabled':'')+'>Berikutnya</button>';
+        var pv=document.getElementById("pgPrev"),nx=document.getElementById("pgNext");
+        if(pv)pv.addEventListener("click",function(){if(state.page>1){state.page--;render();window.scrollTo({top:0,behavior:"smooth"});}});
+        if(nx)nx.addEventListener("click",function(){if(state.page<pages){state.page++;render();window.scrollTo({top:0,behavior:"smooth"});}});
+      }
+
       function render(){
         renderChips();renderHome();
         var list=visibleProducts();
@@ -618,7 +630,12 @@ function initServer(attempt){
           if(sumStock("te"))ccParts.push(sumStock("te")+" terjual");
         }
         catalogCount.textContent=ccParts.join(" · ");
-        grid.innerHTML="";list.forEach(function(p){grid.appendChild(buildCard(p));});
+        var pages=Math.max(1,Math.ceil(list.length/PAGE_SIZE));
+        if(state.page>pages)state.page=pages;
+        if(state.page<1)state.page=1;
+        var start=(state.page-1)*PAGE_SIZE;
+        grid.innerHTML="";list.slice(start,start+PAGE_SIZE).forEach(function(p){grid.appendChild(buildCard(p));});
+        renderPager(pages);
         if(list.length===0){
           emptyState.hidden=false;
           if(state.products.length===0){emptyTitle.textContent="Rak masih kosong";emptyText.textContent=isAdminUser()?"Belum ada akun Point Blank yang dipajang. Tambahkan stok pertama lewat Tambah Akun — isi rank, senjata, harga, dan foto akunnya.":"Belum ada akun dipajang. Cek lagi nanti.";document.getElementById("btnEmptyAdmin").style.display=isAdminUser()?"":"none";}
@@ -652,9 +669,9 @@ function initServer(attempt){
       }
       function fallbackCopy(text){var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e){}document.body.removeChild(ta);}
 
-      document.getElementById("searchInput").addEventListener("input",function(ev){state.query=ev.target.value.trim();render();});
-      document.getElementById("sortSelect").addEventListener("change",function(ev){state.sort=ev.target.value;render();});
-      document.getElementById("statusSelect").addEventListener("change",function(ev){state.status=ev.target.value;render();});
+      document.getElementById("searchInput").addEventListener("input",function(ev){state.query=ev.target.value.trim();state.page=1;render();});
+      document.getElementById("sortSelect").addEventListener("change",function(ev){state.sort=ev.target.value;state.page=1;render();});
+      document.getElementById("statusSelect").addEventListener("change",function(ev){state.status=ev.target.value;state.page=1;render();});
 
       var gameSelect=document.getElementById("fGame");
       GAMES.forEach(function(g){var o=document.createElement("option");o.value=g;o.textContent=g;gameSelect.appendChild(o);});
