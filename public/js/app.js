@@ -921,8 +921,13 @@ function initServer(attempt){
          dikirim SHA-256(rawNonce), ke Supabase dikirim rawNonce —
          Supabase me-hash sendiri lalu membandingkan dengan claim
          nonce di token. TIDAK ada lagi endpoint /api/auth/google. */
-      function googleMsgShow(text,showRetry){var m=document.getElementById("googleMsg");if(m){m.textContent=text;m.hidden=false;}var b=document.getElementById("googleRetryBtn");if(b)b.hidden=!showRetry;}
-      function googleMsgHide(){var m=document.getElementById("googleMsg");if(m)m.hidden=true;var b=document.getElementById("googleRetryBtn");if(b)b.hidden=true;}
+      /* Tombol Google ada di KEDUA kartu (di bawah tombol submit):
+         pesan + fallback ditampilkan di kedua kartu sekaligus, dan
+         GIS merender tombol ke kedua wadah dengan callback yang sama.
+         Error Google ditampilkan di kartu yang sedang terlihat. */
+      function googleErrorId(){var r=document.getElementById("registerCard");return (r&&!r.hidden)?"registerError":"loginError";}
+      function googleMsgShow(text,showRetry){["Login","Register"].forEach(function(s){var m=document.getElementById("googleMsg"+s);if(m)m.textContent=text;var f=document.getElementById("googleFallback"+s);if(f)f.hidden=false;var b=document.getElementById("googleRetryBtn"+s);if(b)b.hidden=!showRetry;});}
+      function googleMsgHide(){["Login","Register"].forEach(function(s){var f=document.getElementById("googleFallback"+s);if(f)f.hidden=true;});}
 var _googleTries = 0;
 var _googleServerRetried = false;
 var _googleInitialized = false;
@@ -945,20 +950,26 @@ function sha256Hex(str){
   return Promise.resolve(str);
 }
 function handleGoogleCredential(resp){
-  if (!resp || !resp.credential) { formError("loginError","Login Google gagal. Coba lagi."); return; }
+  if (!resp || !resp.credential) { formError(googleErrorId(),"Login Google gagal. Coba lagi."); return; }
   var nonce = "";
   try { nonce = sessionStorage.getItem("gs_google_nonce") || ""; } catch (e) {}
-  if (!nonce) { formError("loginError","Login Google gagal. Coba lagi."); return; }
+  if (!nonce) { formError(googleErrorId(),"Login Google gagal. Coba lagi."); return; }
   try { sessionStorage.setItem("gs_after_oauth", location.hash || "#/"); } catch (e) {}
   Supa.signInWithIdToken(resp.credential, nonce).then(function(r){
     Server.user = { name: r.name, email: r.email, is_admin: !!r.is_admin };
     afterLogin(Server.user); refreshServerData();
   }).catch(function(){
-    formError("loginError","Login Google ditolak oleh server. Coba lagi atau pakai email + password.");
+    formError(googleErrorId(),"Login Google ditolak oleh server. Coba lagi atau pakai email + password.");
   });
 }
 function initGoogleSignIn(){
-  var wrap = document.getElementById("googleBtnWrap"); if (!wrap) return;
+  /* Dua wadah (satu per kartu); lebar tombol diambil dari wadah yang
+     terlihat — wadah di kartu yang tersembunyi lebarnya 0. GIS boleh
+     merender ke dua wadah dengan satu initialize + callback yang sama;
+     iframe tidak dipindah-pindah antar kartu. */
+  var wraps=[document.getElementById("googleBtnWrapLogin"),document.getElementById("googleBtnWrapRegister")];
+  if (!wraps[0]||!wraps[1]) return;
+  function setWraps(display){wraps.forEach(function(w){if(w)w.style.display=display;});}
   var GOOGLE_CLIENT_ID = (window.GS_CONFIG && window.GS_CONFIG.GOOGLE_CLIENT_ID) || "";
   if (!Server.enabled) {
     if (!_googleServerRetried) {
@@ -966,27 +977,27 @@ function initGoogleSignIn(){
       setTimeout(function(){ initServer().then(function(){ _googleTries = 0; initGoogleSignIn(); }); }, 1000);
       return;
     }
-    wrap.style.display = "none";
-    googleMsgShow("Login Google butuh koneksi ke server toko — pakai email + password di bawah.", true);
+    setWraps("none");
+    googleMsgShow("Login Google butuh koneksi ke server toko — pakai email + password di atas.", true);
     return;
   }
   _googleServerRetried = false;
   googleMsgHide();
-  wrap.style.display = "";
+  setWraps("");
   if (!GOOGLE_CLIENT_ID) {
-    wrap.style.display = "none";
-    googleMsgShow("Login Google belum terhubung — pakai email + password di bawah.", true);
+    setWraps("none");
+    googleMsgShow("Login Google belum terhubung — pakai email + password di atas.", true);
     return;
   }
   if (!window.Supa || !Supa.ready) {
-    wrap.style.display = "none";
-    googleMsgShow("Login Google belum terhubung — pakai email + password di bawah.", true);
+    setWraps("none");
+    googleMsgShow("Login Google belum terhubung — pakai email + password di atas.", true);
     return;
   }
   if (!window.google || !window.google.accounts || !window.google.accounts.id) {
     if (_googleTries < 10) { _googleTries++; setTimeout(initGoogleSignIn, 500); return; }
-    wrap.style.display = "none";
-    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
+    setWraps("none");
+    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di atas.", true);
     return;
   }
   if (_googleInitialized) return;
@@ -995,28 +1006,34 @@ function initGoogleSignIn(){
   sha256Hex(rawNonce).then(function(hashedNonce){
     try {
       window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential, nonce: hashedNonce, ux_mode: "popup" });
-      var w = wrap.clientWidth || 320; if (w < 200) w = 200; if (w > 400) w = 400;
-      window.google.accounts.id.renderButton(wrap, { theme: "outline", size: "large", width: w, text: "continue_with" });
+      var vis = wraps[0].clientWidth ? wraps[0] : wraps[1];
+      var w = vis.clientWidth || 320; if (w < 200) w = 200; if (w > 400) w = 400;
+      wraps.forEach(function(wrap){
+        window.google.accounts.id.renderButton(wrap, { theme: "outline", size: "large", width: w, text: "continue_with" });
+      });
     } catch (e) {
       _googleInitialized = false;
-      wrap.style.display = "none";
-      googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
+      setWraps("none");
+      googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di atas.", true);
     }
   }).catch(function(){
     _googleInitialized = false;
-    wrap.style.display = "none";
-    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di bawah.", true);
+    setWraps("none");
+    googleMsgShow("Login Google tidak bisa dimuat — pakai email + password di atas.", true);
   });
 }
-      /* Tombol "Coba lagi" di pesan Google: sambung ulang ke server
-         lalu coba inisialisasi Google lagi — tanpa reload halaman. */
+      /* Tombol "Coba lagi" di pesan Google (satu per kartu): sambung
+         ulang ke server lalu coba inisialisasi Google lagi — tanpa
+         reload halaman. */
       (function(){
-        var b=document.getElementById("googleRetryBtn");
-        if(!b)return;
-        b.addEventListener("click",function(){
-          _googleTries=0;_googleServerRetried=false;_googleInitialized=false;
-          googleMsgHide();
-          initServer().then(function(){initGoogleSignIn();});
+        ["Login","Register"].forEach(function(s){
+          var b=document.getElementById("googleRetryBtn"+s);
+          if(!b)return;
+          b.addEventListener("click",function(){
+            _googleTries=0;_googleServerRetried=false;_googleInitialized=false;
+            googleMsgHide();
+            initServer().then(function(){initGoogleSignIn();});
+          });
         });
       })();
       function formError(id,msg){var e=document.getElementById(id);e.textContent=msg;e.classList.add("show");}

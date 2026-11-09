@@ -709,16 +709,6 @@
               </button>
               <p class="lamp-hint" id="lampHint">Tarik tali untuk mendaftar</p>
             </div>
-            <!-- Blok Google bersama (SATU, di luar kartu): GIS hanya
-                 render sekali ke #googleBtnWrap, jadi tombol + divider
-                 tidak digandakan. -->
-            <div class="auth-google-block">
-              <div id="googleBtnWrap"></div>
-              <p class="auth-msg" id="googleMsg" hidden>Login Google tidak bisa dimuat — pakai email + password di bawah.</p>
-              <button type="button" class="btn btn-ghost" id="googleRetryBtn" hidden>Coba lagi</button>
-              <div class="auth-divider"><span>atau pakai email</span></div>
-            </div>
-
             <!-- Kartu Masuk dan Daftar TERPISAH (bukan tab dalam satu
                  kartu): hanya satu yang terlihat; lampu jadi saklarnya
                  (mati=Masuk, nyala=Daftar). Tautan di bawah tiap kartu
@@ -732,6 +722,15 @@
                 <div class="field"><label for="liPass">Password</label><input id="liPass" type="password" autocomplete="current-password" placeholder="Password akunmu" required /></div>
                 <button class="btn-auth" type="submit">Masuk</button>
               </form>
+              <!-- Tombol Google di bawah tombol Masuk (bukan di atas
+                   kartu): GIS render ke #googleBtnWrapLogin; kartu
+                   Daftar punya wadahnya sendiri. -->
+              <div class="auth-divider"><span>atau lanjut dengan Google</span></div>
+              <div id="googleBtnWrapLogin"></div>
+              <div class="auth-google-fallback" id="googleFallbackLogin" hidden>
+                <p class="auth-msg" id="googleMsgLogin">Login Google tidak bisa dimuat — pakai email + password di atas.</p>
+                <button type="button" class="btn btn-ghost" id="googleRetryBtnLogin">Coba lagi</button>
+              </div>
               <button type="button" class="auth-switch-link" id="linkToRegister">Belum punya akun? <b>Daftar</b></button>
             </div>
 
@@ -745,6 +744,14 @@
                 <div class="field"><label for="rgPass2">Ulangi password</label><input id="rgPass2" type="password" autocomplete="new-password" placeholder="Ketik ulang password" required /></div>
                 <button class="btn-auth" type="submit">Daftar Akun</button>
               </form>
+              <!-- Tombol Google di bawah tombol Daftar Akun: GIS render
+                   ke #googleBtnWrapRegister (satu callback yang sama). -->
+              <div class="auth-divider"><span>atau lanjut dengan Google</span></div>
+              <div id="googleBtnWrapRegister"></div>
+              <div class="auth-google-fallback" id="googleFallbackRegister" hidden>
+                <p class="auth-msg" id="googleMsgRegister">Login Google tidak bisa dimuat — pakai email + password di atas.</p>
+                <button type="button" class="btn btn-ghost" id="googleRetryBtnRegister">Coba lagi</button>
+              </div>
               <button type="button" class="auth-switch-link" id="linkToLogin">Sudah punya akun? <b>Masuk</b></button>
             </div>
           </div>
