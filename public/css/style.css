@@ -108,7 +108,7 @@ body.sidebar-open{overflow:hidden}
 .grid{display:grid;gap:18px;grid-template-columns:repeat(5,1fr);padding-bottom:8px}
 @media (max-width:1100px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media (max-width:860px){.grid{grid-template-columns:repeat(3,1fr);gap:12px}}
-@media (max-width:480px){.grid{gap:10px}}
+@media (max-width:480px){.grid{grid-template-columns:repeat(2,1fr);gap:10px}}
 .stock-line{font-size:14px;color:var(--ink-soft);font-weight:600}
 .stock-bar{height:5px;border-radius:99px;background:var(--bg-sink);overflow:hidden;margin-top:4px}
 .stock-bar i{display:block;height:100%;background:var(--accent)}
@@ -122,19 +122,20 @@ body.sidebar-open{overflow:hidden}
    penuh lebar, Detail diganti ketuk kartu. */
 @media (max-width:860px){
   .card{cursor:pointer}
-  .card-body{padding:10px 11px 12px;gap:6px}
-  .card-title{font-size:14.5px}
+  .card-body{padding:10px 12px 12px;gap:6px}
+  .card-title{font-size:15px}
   .card-specs span:not(:first-child){display:none}
   .card-specs span{font-size:11.5px;padding:2px 7px}
-  .price{font-size:17px}
-  .card-fee{font-size:11.5px}
-  .stock-line{font-size:12.5px}
+  .price{font-size:16px}
+  .card-fee{font-size:12px}
+  .stock-line{font-size:13px}
   .card-actions{flex-direction:column}
   .btn-detail,.btn-buy{padding:9px 6px;font-size:13.5px}
   .badge-game{font-size:11px;padding:3px 8px}
 }
 @media (max-width:640px){
   .card-actions .btn-detail{display:none}
+  .badge-game{display:none}
 }
 .card{background:var(--bg-raise);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;text-decoration:none}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
