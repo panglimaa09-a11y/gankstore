@@ -203,9 +203,9 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 .rank-picker{max-height:264px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--hero-bg)}
 .rank-group{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);margin:12px 2px 6px}
 .rank-group:first-child{margin-top:0}
-.rank-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.rank-opt{border:2px solid transparent;border-radius:10px;padding:4px;background:#0b0e13;cursor:pointer}
-.rank-opt img{width:100%;aspect-ratio:1;display:block}
+.rank-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.rank-opt{border:2px solid transparent;border-radius:10px;padding:4px;background:#0b0e13;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.rank-opt img{width:100%;max-width:56px;aspect-ratio:1;display:block;margin:0 auto}
 .rank-opt.sel{border-color:#a3e635;box-shadow:0 0 0 2px rgba(163,230,53,.35)}
 .rank-picked{margin-top:8px;font-size:13.5px;font-weight:600}
 .card-media.rank-photo img{object-fit:contain;padding:16px}
@@ -411,6 +411,9 @@ body.admin-mode .livebar{display:none}
 .btn-pay{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px;font-weight:700;font-size:16.5px}
 .btn-pay:disabled{background:var(--bg-sink);color:var(--ink-faint);cursor:not-allowed}
 .pay-note{font-size:14px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:11px 14px;margin-top:12px;font-weight:600}
+.qris-img{display:block;width:270px;max-width:88%;height:auto;margin:14px auto 4px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.qris-total{font-size:16.5px;text-align:center;margin:8px 0 0}
+.qris-manual .btn-pay{display:block;text-align:center;text-decoration:none;margin-top:12px}
 .order-row{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);text-decoration:none;color:inherit}
 .order-row:hover{border-color:var(--accent)}
 .order-rows{display:flex;flex-direction:column;gap:10px;margin-top:14px}

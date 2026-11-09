@@ -201,7 +201,7 @@
         <div class="steps">
           <article class="step-card"><span class="step-num">01</span><h3>Pilih akun di Katalog</h3><p>Buka halaman Detail Akun untuk melihat rank, level, server, dan isi akunnya.</p></article>
           <article class="step-card"><span class="step-num">02</span><h3>Klik Beli Sekarang, invoice terbit</h3><p>Akun otomatis ditandai <strong>Dipesan</strong> atas namamu dan kamu langsung dibawa ke halaman Invoice — berisi harga akun, biaya admin, dan total bayar.</p></article>
-          <article class="step-card"><span class="step-num">03</span><h3>Bayar via Midtrans &amp; terima data akun</h3><p>Bayar total invoice lewat Midtrans (QRIS, e-wallet, atau virtual account). Setelah pembayaran dikonfirmasi lunas, data login akun diserahkan ke kamu — segera ganti passwordnya.</p></article>
+          <article class="step-card"><span class="step-num">03</span><h3>Bayar via QRIS &amp; terima data akun</h3><p>Scan kode QRIS di invoice dan bayar totalnya, lalu kirim bukti ke WhatsApp toko. Setelah pembayaran dikonfirmasi lunas, data login akun diserahkan ke kamu — segera ganti passwordnya.</p></article>
         </div>
 
         <div class="two-col">
@@ -218,7 +218,7 @@
             <h3>Biaya admin &amp; pembayaran</h3>
             <ul>
               <li>Biaya admin = 10% dari harga akun. Contoh: akun Rp1.000, biaya adminnya Rp100, total bayar Rp1.100.</li>
-              <li>Pembayaran diproses lewat Midtrans: QRIS, e-wallet, dan virtual account bank.</li>
+              <li>Pembayaran lewat QRIS manual: scan kode di invoice, bayar totalnya, kirim bukti ke WhatsApp 089681992892. Pembayaran online via Midtrans menyusul setelah aktif.</li>
             </ul>
           </div>
         </div>
@@ -242,7 +242,7 @@
 
         <h2 style="font-size:24px;margin:26px 0 14px">Tanya Jawab</h2>
         <details><summary>Apakah akunnya milik penjual sendiri?</summary><p>Ya. GankStore menjual akun milik penjual sendiri, dan saat ini fokus khusus menjual akun Point Blank — bukan marketplace dari banyak penjual.</p></details>
-        <details><summary>Bagaimana cara membayarnya?</summary><p>Klik Beli Sekarang pada akun yang dipilih, invoice langsung terbit di toko ini. Bayar totalnya (harga akun + biaya admin 10%) lewat Midtrans dengan QRIS, e-wallet, atau virtual account.</p></details>
+        <details><summary>Bagaimana cara membayarnya?</summary><p>Klik Beli Sekarang pada akun yang dipilih, invoice langsung terbit di toko ini. Scan kode QRIS di invoice dan bayar totalnya (harga akun + biaya admin 10%), lalu kirim bukti pembayaran ke WhatsApp 089681992892. Setelah dikonfirmasi lunas, data akun diserahkan.</p></details>
         <details><summary>Berapa biaya adminnya?</summary><p>Biaya admin adalah 10% dari harga akun, dibulatkan ke rupiah terdekat. Contoh: harga Rp100.000, biaya admin Rp10.000, total bayar Rp110.000. Rinciannya selalu tertulis di invoice sebelum kamu membayar.</p></details>
         <details><summary>Akun yang saya mau sudah terjual, bagaimana?</summary><p>Akun berlabel TERJUAL sudah tidak bisa dibeli. Cek akun lain yang tersedia di Katalog.</p></details>
         <details><summary>Kapan data akun saya terima?</summary><p>Setelah pembayaranmu dikonfirmasi lunas, pesanan ditandai Terjual dan status invoice-mu berubah jadi Lunas. Di invoice itu muncul tombol ke halaman sukses, tempat email &amp; password akun ditampilkan <strong>satu kali</strong> — salin dan simpan saat itu juga.</p></details>
@@ -369,8 +369,8 @@
           <div class="info-box">
             <h3>Pembayaran via Midtrans</h3>
             <ul>
-              <li>Pembayaran diproses lewat Midtrans (QRIS, e-wallet, virtual account).</li>
-              <li>Toko tidak menyimpan nomor kartu, nomor rekening, atau data pembayaranmu — data itu hanya diproses oleh Midtrans.</li>
+              <li>Pembayaran lewat QRIS manual: scan kode di invoice, bayar totalnya, kirim bukti ke WhatsApp 089681992892. Midtrans (QRIS, e-wallet, virtual account) menyusul setelah aktif.</li>
+              <li>Toko tidak menyimpan data pembayaranmu — bukti pembayaran hanya dipakai untuk konfirmasi pesanan ini.</li>
             </ul>
           </div>
           <div class="info-box">
@@ -497,13 +497,13 @@
           <div class="panel" style="margin-top:20px">
             <h3>Pembayaran &amp; Biaya Admin</h3>
             <div class="inv-rows">
-              <div class="inv-row"><span>Metode pembayaran</span><b>Midtrans Snap — QRIS, e-wallet, virtual account</b></div>
+              <div class="inv-row"><span>Metode pembayaran</span><b>QRIS manual (NEXORA TEAM) + Midtrans Snap (menyusul)</b></div>
               <div class="inv-row"><span>Biaya admin</span><b>10% dari harga akun</b></div>
               <div class="inv-row"><span>Contoh</span><b>Akun Rp1.000 → admin Rp100 → total Rp1.100</b></div>
               <div class="inv-row"><span>Total invoice</span><b>Harga akun + biaya admin</b></div>
               <div class="inv-row"><span>Status gateway Midtrans</span><b id="midtransStatus">Memeriksa…</b></div>
             </div>
-            <p class="pay-note">Tombol Bayar di invoice aktif setelah pembayaran online terhubung. Selama belum terhubung, pesanan tetap tercatat sebagai invoice Menunggu Pembayaran dan kamu konfirmasi lunas manual dari Daftar Stok.</p>
+            <p class="pay-note">Invoice menampilkan kode QRIS manual untuk dibayar pembeli. Setelah pembeli kirim bukti ke WhatsApp, kamu konfirmasi lunas manual dari Daftar Stok. Tombol Bayar Midtrans aktif setelah pembayaran online terhubung.</p>
             <p class="scope-note">Biaya admin 10% otomatis dihitung di setiap invoice (akun dan top up), dibulatkan ke rupiah terdekat.</p>
           </div>
         </div>
