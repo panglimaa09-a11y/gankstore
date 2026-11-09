@@ -457,6 +457,12 @@
               <input id="fPhoto" type="file" accept="image/*" />
               <div class="photo-preview" id="photoPreview"><img id="photoPreviewImg" alt="Pratinjau foto akun" /></div>
             </div>
+            <div class="field">
+              <label>atau pilih gambar pangkat</label>
+              <p class="hint" style="font-size:13px;color:var(--ink-soft);margin:0 0 8px">Ketuk salah satu — gambar + nama rank terisi otomatis. Tetap bisa upload foto sendiri di atas.</p>
+              <div class="rank-picker" id="rankPicker"></div>
+              <div class="rank-picked" id="rankPicked" style="display:none">Pangkat dipilih: <b id="rankPickedName"></b> <button class="mini" type="button" id="rankClear">Batalkan pilihan</button></div>
+            </div>
             <button class="btn-add" type="submit">+ Pajang di Katalog</button>
           </form>
         </div>

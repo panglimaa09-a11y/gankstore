@@ -168,6 +168,18 @@ details summary{font-weight:800;cursor:pointer} details p{color:var(--ink-soft);
 .field .hint{font-size:13px;color:var(--ink-faint);margin-top:4px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .photo-preview{margin-top:8px;border-radius:10px;overflow:hidden;display:none;border:1px solid var(--line)} .photo-preview img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.photo-preview.rank-mode img{object-fit:contain;padding:10px;aspect-ratio:1/1;max-height:180px;margin:0 auto}
+.rank-picker{max-height:264px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--hero-bg)}
+.rank-group{font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--ink-faint);margin:12px 2px 6px}
+.rank-group:first-child{margin-top:0}
+.rank-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.rank-opt{border:2px solid transparent;border-radius:10px;padding:4px;background:#0b0e13;cursor:pointer}
+.rank-opt img{width:100%;aspect-ratio:1;display:block}
+.rank-opt.sel{border-color:#a3e635;box-shadow:0 0 0 2px rgba(163,230,53,.35)}
+.rank-picked{margin-top:8px;font-size:13.5px;font-weight:600}
+.card-media.rank-photo img{object-fit:contain;padding:16px}
+.detail-media.rank-photo img{object-fit:contain;padding:28px}
+.stock-item .thumb.rank-photo img{object-fit:contain;padding:2px}
 .btn-add{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px;font-weight:700;font-size:16px;margin-top:4px}
 .stock-list{display:flex;flex-direction:column;gap:10px}
 .stock-item{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--bg)}

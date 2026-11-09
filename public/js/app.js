@@ -568,7 +568,7 @@ function initServer(attempt){
         var stockLine=c.total>0?'<div class="stock-line">Stok: <b>'+c.av+'</b> tersedia</div>':'<div class="stock-line">Stok habis</div>';
         var buyBtn=c.av>0?'<button class="btn-buy" type="button" data-buy="'+p.id+'">Beli Sekarang</button>':'<span class="btn-buy disabled">'+(st==="dipesan"?"Dipesan":st==="terjual"?"Terjual":"Stok Habis")+'</span>';
         var badge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':st==="habis"?'<span class="badge-ordered">STOK HABIS</span>':"";
-        return '<div class="card-media">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div style="font-size:13px;color:var(--ink-faint);font-weight:600">+ biaya admin 10% · total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
+        return '<div class="card-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div style="font-size:13px;color:var(--ink-faint);font-weight:600">+ biaya admin 10% · total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
       }
       function buildCard(p){var el=document.createElement("article");var st=pStatus(p);el.className="card"+(st==="terjual"||st==="habis"?" sold":st==="dipesan"?" ordered":"");el.innerHTML=cardHTML(p);var bb=el.querySelector("[data-buy]");if(bb)bb.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});return el;}
 
@@ -642,7 +642,7 @@ function initServer(attempt){
         var buyHTML=c.av>0?'<button class="btn-buy" type="button" id="detailBuyNow">Beli Sekarang</button>':'<span class="btn-buy disabled">'+(st==="habis"?"Stok Habis":st==="dipesan"?"Sedang Dipesan Pembeli Lain":"Sudah Terjual")+'</span>';
         var stLabel=st==="terjual"?" · Terjual":st==="dipesan"?" · Dipesan":st==="habis"?" · Stok habis":" · Tersedia";
         var stBadge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':st==="habis"?'<span class="badge-ordered">STOK HABIS</span>':"";
-        wrap.innerHTML='<div class="detail-layout"><div class="detail-media">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />')+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p class="dlg-stock">Stok tersedia: <b>'+c.av+' unit</b>'+(c.total>0?' dari '+c.total+' unit':'')+'</p><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin 10% ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Klik Beli Sekarang — 1 unit stok ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit. Setelah lunas dikonfirmasi, username &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses.</p></div></div>';
+        wrap.innerHTML='<div class="detail-layout"><div class="detail-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />')+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p class="dlg-stock">Stok tersedia: <b>'+c.av+' unit</b>'+(c.total>0?' dari '+c.total+' unit':'')+'</p><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin 10% ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Klik Beli Sekarang — 1 unit stok ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit. Setelah lunas dikonfirmasi, username &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses.</p></div></div>';
         var db=document.getElementById("detailBuyNow");if(db)db.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});
         var cp=document.getElementById("detailCopy");if(cp)cp.addEventListener("click",function(){
           var text=p.title+" — "+p.game+"\n"+(p.rank?"Rank: "+p.rank+"\n":"")+(p.level?"Level: "+p.level+"\n":"")+(p.server?"Server: "+p.server+"\n":"")+((p.specs||[]).length?"Isi akun: "+p.specs.join(", ")+"\n":"")+"Harga: "+formatIDR(p.price);
@@ -658,7 +658,56 @@ function initServer(attempt){
 
       var gameSelect=document.getElementById("fGame");
       GAMES.forEach(function(g){var o=document.createElement("option");o.value=g;o.textContent=g;gameSelect.appendChild(o);});
-      document.getElementById("fPhoto").addEventListener("change",function(ev){var file=ev.target.files&&ev.target.files[0];if(!file){state.photoData="";document.getElementById("photoPreview").style.display="none";return;}var reader=new FileReader();reader.onload=function(){state.photoData=String(reader.result||"");document.getElementById("photoPreviewImg").src=state.photoData;document.getElementById("photoPreview").style.display="block";};reader.readAsDataURL(file);});
+      document.getElementById("fPhoto").addEventListener("change",function(ev){var file=ev.target.files&&ev.target.files[0];if(!file){state.photoData="";document.getElementById("photoPreview").style.display="none";return;}clearRankPick();var reader=new FileReader();reader.onload=function(){state.photoData=String(reader.result||"");document.getElementById("photoPreviewImg").src=state.photoData;document.getElementById("photoPreview").classList.remove("rank-mode");document.getElementById("photoPreview").style.display="block";};reader.readAsDataURL(file);});
+
+      /* ---------- Pilih gambar pangkat (57 ikon resmi PB, folder /ranks/) ----------
+         Ketuk ikon = gambar + kolom Rank terisi otomatis. Upload file di atas
+         tetap bisa dipakai — pilih salah satu, yang terakhir dipilih yang menang. */
+      var RANKS=[
+        {g:"Enlisted",items:[["01-trainee.png","Trainee"],["02-senior-trainee.png","Senior Trainee"],["03-private.png","Private"],["04-corporal.png","Corporal"],["05-sergeant.png","Sergeant"]]},
+        {g:"NCO",items:[["06-staff-sgt-grade-1.png","Staff Sgt Grade 1"],["07-staff-sgt-grade-2.png","Staff Sgt Grade 2"],["08-staff-sgt-grade-3.png","Staff Sgt Grade 3"],["09-sgt-1st-class-grade-1.png","Sgt 1st Class Grade 1"],["10-sgt-1st-class-grade-2.png","Sgt 1st Class Grade 2"],["11-sgt-1st-class-grade-3.png","Sgt 1st Class Grade 3"],["12-sgt-1st-class-grade-4.png","Sgt 1st Class Grade 4"],["13-master-sgt-grade-1.png","Master Sgt Grade 1"],["14-master-sgt-grade-2.png","Master Sgt Grade 2"],["15-master-sgt-grade-3.png","Master Sgt Grade 3"],["16-master-sgt-grade-4.png","Master Sgt Grade 4"],["17-master-sgt-grade-5.png","Master Sgt Grade 5"]]},
+        {g:"Junior Officers",items:[["18-2nd-lt-grade-1.png","2nd Lt Grade 1"],["19-2nd-lt-grade-2.png","2nd Lt Grade 2"],["20-2nd-lt-grade-3.png","2nd Lt Grade 3"],["21-2nd-lt-grade-4.png","2nd Lt Grade 4"],["22-1st-lt-grade-1.png","1st Lt Grade 1"],["23-1st-lt-grade-2.png","1st Lt Grade 2"],["24-1st-lt-grade-3.png","1st Lt Grade 3"],["25-1st-lt-grade-4.png","1st Lt Grade 4"],["26-1st-lt-grade-5.png","1st Lt Grade 5"],["27-captain-grade-1.png","Captain Grade 1"],["28-captain-grade-2.png","Captain Grade 2"],["29-captain-grade-3.png","Captain Grade 3"],["30-captain-grade-4.png","Captain Grade 4"],["31-captain-grade-5.png","Captain Grade 5"]]},
+        {g:"Senior Officers",items:[["32-major-grade-1.png","Major Grade 1"],["33-major-grade-2.png","Major Grade 2"],["34-major-grade-3.png","Major Grade 3"],["35-major-grade-4.png","Major Grade 4"],["36-major-grade-5.png","Major Grade 5"],["37-lt-colonel-grade-1.png","Lt Colonel Grade 1"],["38-lt-colonel-grade-2.png","Lt Colonel Grade 2"],["39-lt-colonel-grade-3.png","Lt Colonel Grade 3"],["40-lt-colonel-grade-4.png","Lt Colonel Grade 4"],["41-lt-colonel-grade-5.png","Lt Colonel Grade 5"],["42-colonel-grade-1.png","Colonel Grade 1"],["43-colonel-grade-2.png","Colonel Grade 2"],["44-colonel-grade-3.png","Colonel Grade 3"],["45-colonel-grade-4.png","Colonel Grade 4"],["46-colonel-grade-5.png","Colonel Grade 5"]]},
+        {g:"General",items:[["47-brigadier.png","Brigadier"],["48-major-general.png","Major General"],["49-lt-general.png","Lt General"],["50-general.png","General"],["51-commander.png","Commander"]]},
+        {g:"Hero",items:[["52-hero.png","Hero"]]},
+        {g:"Hero Baru 2026",items:[["53-hero-brigadier-general.png","Hero Brigadier General"],["54-hero-major-general.png","Hero Major General"],["55-hero-lt-general.png","Hero Lt General"],["56-hero-general.png","Hero General"],["57-supreme-hero.png","Supreme Hero"]]}
+      ];
+      function isRankPhoto(src){return typeof src==="string"&&src.indexOf("ranks/")===0;}
+      function clearRankPick(){
+        var pk=document.getElementById("rankPicker");if(!pk)return;
+        var sels=pk.querySelectorAll(".rank-opt.sel");for(var i=0;i<sels.length;i++)sels[i].classList.remove("sel");
+        document.getElementById("rankPicked").style.display="none";
+        if(state.photoData&&isRankPhoto(state.photoData)){state.photoData="";document.getElementById("photoPreview").style.display="none";}
+        document.getElementById("photoPreview").classList.remove("rank-mode");
+      }
+      function initRankPicker(){
+        var pk=document.getElementById("rankPicker");if(!pk)return;
+        var html="";
+        RANKS.forEach(function(grp){
+          html+='<div class="rank-group">'+esc(grp.g)+'</div><div class="rank-grid">';
+          grp.items.forEach(function(it){
+            html+='<button type="button" class="rank-opt" data-file="'+it[0]+'" data-name="'+esc(it[1])+'" title="'+esc(it[1])+'" aria-label="Pangkat '+esc(it[1])+'"><img src="ranks/'+it[0]+'" alt="'+esc(it[1])+'" loading="lazy" /></button>';
+          });
+          html+='</div>';
+        });
+        pk.innerHTML=html;
+        pk.addEventListener("click",function(ev){
+          var btn=ev.target.closest?ev.target.closest(".rank-opt"):null;if(!btn)return;
+          var file=btn.getAttribute("data-file"),name=btn.getAttribute("data-name");
+          clearRankPick();
+          btn.classList.add("sel");
+          state.photoData="ranks/"+file;
+          document.getElementById("fPhoto").value="";
+          document.getElementById("photoPreviewImg").src=state.photoData;
+          document.getElementById("photoPreview").classList.add("rank-mode");
+          document.getElementById("photoPreview").style.display="block";
+          document.getElementById("fRank").value=name;
+          document.getElementById("rankPickedName").textContent=name;
+          document.getElementById("rankPicked").style.display="block";
+        });
+        document.getElementById("rankClear").addEventListener("click",function(){clearRankPick();});
+      }
+      initRankPicker();
       document.getElementById("addForm").addEventListener("submit",function(ev){
         ev.preventDefault();
         var title=document.getElementById("fTitle").value.trim();var price=parseInt(document.getElementById("fPrice").value,10);
@@ -672,7 +721,7 @@ function initServer(attempt){
         function done(saved){
           state.products.push(saved);
           state.filterGame="Semua";state.status="semua";document.getElementById("statusSelect").value="semua";
-          ev.target.reset();state.photoData="";document.getElementById("photoPreview").style.display="none";
+          ev.target.reset();state.photoData="";document.getElementById("photoPreview").style.display="none";clearRankPick();
           logActivity("stok",'Stok baru dipajang: "'+title+'" ('+formatIDR(price)+").");
           render();showToast('Akun "'+title+'" sudah dipajang. Cek di Daftar Stok.');
           location.hash="#/admin/stok";if(getRoute().page==="admin-stok")applyRoute();
@@ -774,7 +823,7 @@ function initServer(attempt){
             }).join("")+'</div>';
           }
           var addHTML='<div class="add-stock"><div class="stock-sec-title">Tambah Stok</div><div class="add-stock-rows" data-rows="'+p.id+'"><div class="add-stock-row"><input type="text" placeholder="Username akun" maxlength="90" /><input type="text" placeholder="Password" maxlength="90" /></div></div><button class="mini" type="button" data-addrow="'+p.id+'">+ Tambah baris</button><button class="mini lunas" type="button" data-addstock="'+p.id+'">Tambah Stok</button></div>';
-          item.innerHTML='<div class="stock-head"><div class="thumb">'+(p.photo?'<img src="'+p.photo+'" alt="" />':'<img src="icon.png" alt="GankStore" />')+'</div><div class="meta"><b>'+esc(p.title)+"</b><span>"+esc(p.game)+" · "+formatIDR(p.price)+" · "+countsLine+"</span></div></div>"+ordersHTML+unitsHTML+addHTML+'<div class="acts"><button class="mini danger" type="button" data-del="'+p.id+'">Hapus Listing</button></div>';
+          item.innerHTML='<div class="stock-head"><div class="thumb'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+(p.photo?'<img src="'+p.photo+'" alt="" />':'<img src="icon.png" alt="GankStore" />')+'</div><div class="meta"><b>'+esc(p.title)+"</b><span>"+esc(p.game)+" · "+formatIDR(p.price)+" · "+countsLine+"</span></div></div>"+ordersHTML+unitsHTML+addHTML+'<div class="acts"><button class="mini danger" type="button" data-del="'+p.id+'">Hapus Listing</button></div>';
           box.appendChild(item);
         });
       }
