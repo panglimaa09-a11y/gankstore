@@ -189,8 +189,7 @@ function initServer(attempt){
         setSeenInvoices(seen);
         var el=document.getElementById("orderAlert");if(el)el.hidden=true;
       }
-      function beepNewOrder(){
-        try{
+      function beepNewOrder(){        try{
           var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
           var ctx=beepNewOrder._ctx||(beepNewOrder._ctx=new AC());
           if(ctx.state==="suspended")ctx.resume();
@@ -207,6 +206,47 @@ function initServer(attempt){
         }catch(e){}
       }
       function getSeenProofs(){try{return JSON.parse(localStorage.getItem("gs_seen_proofs")||"[]");}catch(e){return[];}}
+      /* ---------- PWA: install + service worker ---------- */
+      var pwaDeferredPrompt = null;
+      function pwaIsStandalone(){
+        return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone;
+      }
+      function pwaIsIos(){
+        return /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream;
+      }
+      function initPwa(){
+        var btn = document.getElementById("installPwaBtn");
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.register("/sw.js").catch(function(){});
+        }
+        if (pwaIsStandalone()) { if (btn) btn.hidden = true; return; }
+        window.addEventListener("beforeinstallprompt", function(e){
+          e.preventDefault();
+          pwaDeferredPrompt = e;
+          if (btn) btn.hidden = false;
+        });
+        window.addEventListener("appinstalled", function(){
+          pwaDeferredPrompt = null;
+          if (btn) btn.hidden = true;
+          showToast("GankStore terinstal — buka dari layar utama HP.");
+        });
+        if (pwaIsIos() && btn) btn.hidden = false;
+        if (btn) btn.addEventListener("click", function(){
+          if (pwaDeferredPrompt) {
+            pwaDeferredPrompt.prompt();
+            pwaDeferredPrompt.userChoice.then(function(choice){
+              if (choice && choice.outcome === "accepted" && btn) btn.hidden = true;
+              pwaDeferredPrompt = null;
+            }).catch(function(){});
+            return;
+          }
+          if (pwaIsIos()) {
+            showToast("Di iPhone: ketuk Bagikan lalu 'Tambah ke Layar Utama'.");
+            return;
+          }
+          showToast("Buka menu browser (⋮) lalu pilih 'Install aplikasi' / 'Tambah ke layar utama'.");
+        });
+      }
       function setSeenProofs(list){try{localStorage.setItem("gs_seen_proofs",JSON.stringify(list.slice(-50)));}catch(e){}}
       function markProofsSeen(list){
         var seen=getSeenProofs();
@@ -1411,4 +1451,5 @@ function initGoogleSignIn(){
         logActivity("kunjung","Sesi toko dimulai.");
         render();renderAuth();applyRoute();initGoogleSignIn();
         startOrderWatcher();
+        initPwa();
       });

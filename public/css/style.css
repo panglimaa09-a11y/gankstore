@@ -419,6 +419,9 @@ body.admin-mode .livebar{display:none}
 .order-alert-x{background:transparent;border:1.5px solid rgba(255,255,255,.55);color:#fff;border-radius:8px;padding:6px 11px;font-weight:700;cursor:pointer}
 .orders-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:800}
 .orders-badge[hidden]{display:none}
+.side-install{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;cursor:pointer;margin-bottom:10px}
+.side-install[hidden]{display:none}
+.side-install svg{width:18px;height:18px;flex:none}
 .proof-pick{display:inline-block;background:var(--bg-raise);border:1.5px dashed var(--line);border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;margin:8px 0 2px}
 .proof-preview{display:block;width:220px;max-width:88%;height:auto;margin:10px auto 4px;border:1px solid var(--line);border-radius:10px}
 .proof-status{font-size:13.5px;color:var(--ink-soft);font-weight:600;margin:8px 0 0}
