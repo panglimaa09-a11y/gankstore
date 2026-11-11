@@ -62,6 +62,10 @@ window.GS_CONFIG = {
     { name: "Produk Digital Lainnya", currency: "Produk", needsServer: false, serverLabel: "", idLabel: "ID / keterangan penerima", idPlaceholder: "cth. ID atau email penerima" }
   ],
 
+  /* Backend AI untuk live chat support (pb-ai /support -> 9Router).
+     Bukan secret: alamat publik tunnel, tanpa kunci. */
+  SUPPORT_AI_URL: "https://curvature-reunite-perfected.ngrok-free.dev/pb-ai",
+
   /* Akun demo pembeli untuk review Midtrans (dibuat di server bila
      GS_SEED_DEMO=1). Bukan akun admin. Password-nya hanya ada di env
      server (GS_DEMO_PASSWORD), bukan di file ini. */
