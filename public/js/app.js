@@ -62,6 +62,7 @@ function apiImpl(path, opts){
   if (base === "/api/orders" && method === "POST") return Supa.createAccountOrder(body.product_id);
   if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "confirm" && method === "POST") return Supa.confirmOrder(decodeURIComponent(seg(3)));
   if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "cancel" && method === "POST") return Supa.cancelOrder(decodeURIComponent(seg(3)));
+  if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "proof" && method === "POST") return Supa.submitProof(decodeURIComponent(seg(3)), body.proof_image);
   if (seg(1) === "api" && seg(2) === "orders" && seg(4) === "credentials" && method === "GET") return Supa.revealCredentials(decodeURIComponent(seg(3)));
 
   /* --- top up --- */
@@ -95,7 +96,7 @@ function apiImpl(path, opts){
   return Promise.reject(new Error("HTTP 404"));
 }
       function serverProductToLocal(p){return{id:p.id,game:p.game,title:p.title,rank:p.rank||"",level:p.level||"",server:p.server||"",price:p.price,specs:p.specs||[],desc:p.desc||"",photo:p.photo||"",sold:p.status==="terjual",status:p.status,stockAvailable:Number(p.stock_available||0),stockDipesan:Number(p.stock_dipesan||0),stockTerjual:Number(p.stock_terjual||0),stockTotal:Number(p.stock_total||0),units:[]};}
-      function serverOrderToLocal(o){return{id:o.product_id||o.package_id,kind:o.kind||"akun",invoiceNo:o.invoice_no,title:o.title,price:o.price,fee:o.fee,total:o.total,photo:o.photo||"",game:o.game,rank:o.rank||"",time:(o.created_at||"").slice(11,19),status:o.status,buyerName:o.buyer_name||"",buyerEmail:o.buyer_email||"",userId:o.user_id_game||"",serverId:o.server_id||"",packageName:o.package_name||"",amount:o.amount||"",currency:o.currency||"",credPending:!!o.cred_pending,credRevealed:!!o.cred_revealed,credUser:"",credPass:""};}
+      function serverOrderToLocal(o){return{id:o.product_id||o.package_id,kind:o.kind||"akun",invoiceNo:o.invoice_no,title:o.title,price:o.price,fee:o.fee,total:o.total,photo:o.photo||"",game:o.game,rank:o.rank||"",time:(o.created_at||"").slice(11,19),status:o.status,buyerName:o.buyer_name||"",buyerEmail:o.buyer_email||"",userId:o.user_id_game||"",serverId:o.server_id||"",packageName:o.package_name||"",amount:o.amount||"",currency:o.currency||"",credPending:!!o.cred_pending,credRevealed:!!o.cred_revealed,credUser:"",credPass:"",proofImage:o.proof_image||"",proofAt:o.proof_at||""};}
       function serverPackageToLocal(p){return{id:p.id,game:p.game,name:p.name,amount:p.amount,currency:p.currency,price:p.price};}
       /* Unit stok admin: tempel ke produk (dikelompokkan per product_id).
          Dipakai halaman Daftar Stok. Non-admin tidak pernah memuat unit. */
@@ -205,18 +206,26 @@ function initServer(attempt){
           });
         }catch(e){}
       }
-      function showOrderAlert(unseen){
+      function getSeenProofs(){try{return JSON.parse(localStorage.getItem("gs_seen_proofs")||"[]");}catch(e){return[];}}
+      function setSeenProofs(list){try{localStorage.setItem("gs_seen_proofs",JSON.stringify(list.slice(-50)));}catch(e){}}
+      function markProofsSeen(list){
+        var seen=getSeenProofs();
+        list.forEach(function(o){if(seen.indexOf(o.invoiceNo)<0)seen.push(o.invoiceNo);});
+        setSeenProofs(seen);
+      }
+      function showOrderAlert(unseen, isProof){
         var el=document.getElementById("orderAlert");if(!el)return;
         var latest=unseen[0];
-        el.innerHTML='<b>Pesanan baru: '+esc(latest.title)+' — '+formatIDR(latest.total)+'</b>'+
+        el.innerHTML='<b>'+(isProof?"Bukti pembayaran diterima: ":"Pesanan baru: ")+esc(latest.title)+' — '+formatIDR(latest.total)+'</b>'+
           '<span>'+(unseen.length>1?unseen.length+' pesanan menunggu konfirmasi · ':'')+'Invoice '+esc(latest.invoiceNo)+' · '+esc(latest.buyerName||latest.buyerEmail||'pembeli')+'</span>'+
           '<a class="order-alert-btn" href="#/admin/stok">Lihat Pesanan</a>'+
           '<button class="order-alert-x" type="button" aria-label="Tutup notifikasi">✕</button>';
         el.hidden=false;
+        var done=function(){markInvoicesSeen(unseen);if(isProof)markProofsSeen(unseen);};
         var x=el.querySelector(".order-alert-x");
-        if(x)x.addEventListener("click",function(){markInvoicesSeen(unseen);});
+        if(x)x.addEventListener("click",done);
         var btn=el.querySelector(".order-alert-btn");
-        if(btn)btn.addEventListener("click",function(){markInvoicesSeen(unseen);});
+        if(btn)btn.addEventListener("click",done);
       }
       function updateOrdersBadge(unpaidCount){
         var b=document.getElementById("ordersBadge");if(!b)return;
@@ -232,8 +241,14 @@ function initServer(attempt){
           updateOrdersBadge(unpaid.length);
           var seen=getSeenInvoices();
           var unseen=unpaid.filter(function(o){return seen.indexOf(o.invoiceNo)<0;});
-          if(unseen.length){
-            showOrderAlert(unseen);
+          var seenProofs=getSeenProofs();
+          var newProofs=unpaid.filter(function(o){return o.proofImage&&seenProofs.indexOf(o.invoiceNo)<0;});
+          if(newProofs.length){
+            showOrderAlert(newProofs,true);
+            showToast("Bukti pembayaran diterima: "+newProofs[0].title+" — "+formatIDR(newProofs[0].total));
+            beepNewOrder();
+          }else if(unseen.length){
+            showOrderAlert(unseen,false);
             showToast("Pesanan baru: "+unseen[0].title+" — "+formatIDR(unseen[0].total));
             beepNewOrder();
           }
@@ -388,6 +403,100 @@ function initServer(attempt){
           return '<a class="order-row" href="#/invoice/'+esc(o.invoiceNo)+'"><div class="sr-thumb" style="width:52px;height:40px;border-radius:6px;flex:none;overflow:hidden;background:var(--hero-bg);display:flex;align-items:center;justify-content:center;color:#a3e635;font-family:\'Chakra Petch\',sans-serif;font-weight:700;font-size:12px">'+(o.photo?'<img src="'+o.photo+'" alt="" style="width:100%;height:100%;object-fit:cover" />':'<img src="icon.png" alt="GankStore" style="width:100%;height:100%;object-fit:cover" />')+'</div><div style="flex:1;min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px">'+esc(o.title)+'</b><span style="font-size:13px;color:var(--ink-faint);font-weight:600">'+esc(o.invoiceNo)+" · "+orderStatusLabel(o)+'</span></div><div class="sr-price" style="font-family:\'Chakra Petch\',sans-serif;font-weight:700;color:var(--accent-strong);flex:none">'+formatIDR(o.total!=null?o.total:o.price)+"</div></a>";
         }).join("");
       }
+      /* ---------- bukti pembayaran (upload foto wajib sebelum kirim WA) ----------
+         Pembeli memilih foto bukti di invoice -> dikompres di HP (maks 1024px,
+         JPEG 0.72, ~100-200 KB) -> dikirim ke RPC submit_payment_proof ->
+         tersimpan di orders.proof_image -> admin melihatnya di Daftar Stok
+         dan dapat notifikasi banner. Tombol WA terkunci sampai foto terunggah;
+         bila RPC belum live (patch 08 belum di-apply), tombol WA dibuka lagi
+         dan pembeli diminta melampirkan foto manual di chat WA. */
+      function waProofLink(o){
+        return "https://wa.me/6289681992892?text=" + encodeURIComponent("Invoice bukti pembayaran " + o.invoiceNo + " — total " + formatIDR(o.total) + ". Foto bukti terlampir.");
+      }
+      function compressProofImage(file, cb){
+        var reader = new FileReader();
+        reader.onload = function(){
+          var img = new Image();
+          img.onload = function(){
+            var max = 1024, scale = Math.min(1, max / Math.max(img.width, img.height));
+            var cv = document.createElement("canvas");
+            cv.width = Math.max(1, Math.round(img.width * scale));
+            cv.height = Math.max(1, Math.round(img.height * scale));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            cb(cv.toDataURL("image/jpeg", 0.72));
+          };
+          img.onerror = function(){ cb(null); };
+          img.src = reader.result;
+        };
+        reader.onerror = function(){ cb(null); };
+        reader.readAsDataURL(file);
+      }
+      function submitProof(invoiceNo, dataUrl){
+        return api("/api/orders/" + encodeURIComponent(invoiceNo) + "/proof", { method: "POST", body: { proof_image: dataUrl } });
+      }
+      function proofUploadBlock(o){
+        var has = !!o.proofImage;
+        return '<div class="pay-method proof-box"><b>Invoice bukti pembayaran</b>' +
+          '<p>Foto bukti transfer/screenshot pembayaranmu — wajib foto. Unggah dulu di sini, baru tombol kirim ke WhatsApp aktif.</p>' +
+          (has ? '<img class="proof-thumb" src="' + esc(o.proofImage) + '" alt="Bukti pembayaran"><p class="proof-done">Bukti sudah diunggah ✓ — bisa diganti dengan foto lain di bawah.</p>' : '') +
+          '<label class="proof-pick" for="proofFile">Pilih foto bukti</label>' +
+          '<input type="file" id="proofFile" accept="image/*" hidden>' +
+          '<img id="proofPreview" class="proof-preview" hidden alt="Pratinjau bukti">' +
+          '<p id="proofStatus" class="proof-status"></p>' +
+          '<button class="btn-pay" type="button" id="btnUploadProof" disabled>Unggah Bukti Pembayaran</button></div>';
+      }
+      function wireProofSection(o){
+        var wa = document.getElementById("btnWaProof");
+        if (wa && !o.proofImage) {
+          var locked = document.createElement("button");
+          locked.type = "button"; locked.className = "btn-pay locked"; locked.id = "btnWaProofLocked";
+          locked.textContent = "Kirim Bukti via WhatsApp";
+          locked.addEventListener("click", function(){
+            showToast("Unggah foto bukti dulu — kirim wajib foto.");
+            var box = document.querySelector(".proof-box"); if (box) box.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+          wa.parentNode.replaceChild(locked, wa);
+        }
+        var pf = document.getElementById("proofFile");
+        if (pf) pf.addEventListener("change", function(){
+          var file = pf.files && pf.files[0];
+          var prev = document.getElementById("proofPreview");
+          var status = document.getElementById("proofStatus");
+          var btn = document.getElementById("btnUploadProof");
+          if (!file) return;
+          if (file.type.indexOf("image/") !== 0) { if (status) status.textContent = "File harus berupa gambar."; return; }
+          if (file.size > 10 * 1024 * 1024) { if (status) status.textContent = "Foto terlalu besar (maks 10 MB)."; return; }
+          if (status) status.textContent = "Memproses foto…";
+          compressProofImage(file, function(dataUrl){
+            if (!dataUrl) { if (status) status.textContent = "Foto tidak bisa dibaca. Coba foto lain."; return; }
+            if (prev) { prev.src = dataUrl; prev.hidden = false; }
+            if (btn) { btn.disabled = false; btn.dataset.proof = dataUrl; }
+            if (status) status.textContent = "Foto siap — tekan Unggah Bukti Pembayaran.";
+          });
+        });
+        var ub = document.getElementById("btnUploadProof");
+        if (ub) ub.addEventListener("click", function(){
+          var dataUrl = ub.dataset.proof;
+          if (!dataUrl) { showToast("Pilih foto bukti dulu."); return; }
+          ub.disabled = true; ub.textContent = "Mengunggah…";
+          submitProof(o.invoiceNo, dataUrl).then(function(){
+            var ord = findOrder(o.invoiceNo);
+            if (ord) { ord.proofImage = dataUrl; ord.proofAt = new Date().toISOString(); }
+            showToast("Bukti pembayaran tersimpan. Lanjutkan kirim ke WhatsApp.");
+            renderInvoice(o.invoiceNo);
+          }).catch(function(){
+            showToast("Unggah ke toko gagal — kirim bukti lewat WhatsApp saja, lampirkan fotonya di chat.");
+            var lockedBtn = document.getElementById("btnWaProofLocked");
+            if (lockedBtn) {
+              var a = document.createElement("a");
+              a.className = "btn-pay"; a.id = "btnWaProof"; a.href = waProofLink(o); a.target = "_blank"; a.rel = "noopener";
+              a.textContent = "Kirim Bukti via WhatsApp";
+              lockedBtn.parentNode.replaceChild(a, lockedBtn);
+            }
+            ub.disabled = false; ub.textContent = "Unggah Bukti Pembayaran";
+          });
+        });
+      }
       function renderInvoice(invNo){
         var wrap=document.getElementById("invoiceWrap");if(!wrap)return;
         var o=findOrder(invNo);
@@ -411,13 +520,14 @@ function initServer(attempt){
           if(typeof midtransPayBlock==="function"){payBlock=midtransPayBlock(o);}
           else{
             /* Cadangan bila payments.js gagal dimuat: QRIS manual tetap tampil. */
-            var waText=encodeURIComponent("Halo GankStore, saya kirim bukti pembayaran invoice "+o.invoiceNo+" total "+formatIDR(o.total)+".");
-            payBlock='<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b><p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar '+formatIDR(o.total)+'</strong> atas nama NEXORA TEAM.</p><img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM"><p class="qris-total">Total bayar: <b>'+formatIDR(o.total)+'</b></p><p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p><a class="btn-pay" href="https://wa.me/6289681992892?text='+waText+'" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div><div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
+            var waText=encodeURIComponent("Invoice bukti pembayaran "+o.invoiceNo+" — total "+formatIDR(o.total)+". Foto bukti terlampir.");
+            payBlock='<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b><p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar '+formatIDR(o.total)+'</strong> atas nama NEXORA TEAM.</p><img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM"><p class="qris-total">Total bayar: <b>'+formatIDR(o.total)+'</b></p><p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p><a class="btn-pay" id="btnWaProof" href="https://wa.me/6289681992892?text='+waText+'" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div><div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
           }
         }
-        wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Akun")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>'+(o.kind==="topup"?"Harga paket":"Harga akun")+'</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
+        wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Akun")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>'+(o.kind==="topup"?"Harga paket":"Harga akun")+'</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+(st!=="terjual"&&st!=="dibatalkan"?proofUploadBlock(o):"")+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
         var sp=document.getElementById("btnSnapPay");
         if(sp)sp.addEventListener("click",function(){if(typeof requestSnapPay==="function")requestSnapPay(o.invoiceNo);});
+        wireProofSection(o);
       }
       function renderSukses(invNo){
         var wrap=document.getElementById("successWrap");if(!wrap)return;
@@ -906,7 +1016,7 @@ function initServer(attempt){
           var ordersHTML="";
           if(activeOrders.length){
             ordersHTML='<div class="stock-orders"><div class="stock-sec-title">Pesanan aktif ('+activeOrders.length+')</div>'+activeOrders.map(function(o){
-              return '<div class="stock-order-row"><div class="stock-order-meta"><b>'+esc(o.invoiceNo)+'</b><span>'+esc(o.buyerName||"Pembeli")+(o.buyerEmail?" · "+esc(o.buyerEmail):"")+' · '+formatIDR(o.total)+'</span></div><div class="acts"><button class="mini lunas" type="button" data-lunas="'+esc(o.invoiceNo)+'">Konfirmasi Lunas</button><button class="mini" type="button" data-batal="'+esc(o.invoiceNo)+'">Batalkan Pesanan</button></div></div>';
+              return '<div class="stock-order-row"><div class="stock-order-meta"><b>'+esc(o.invoiceNo)+'</b><span>'+esc(o.buyerName||"Pembeli")+(o.buyerEmail?" · "+esc(o.buyerEmail):"")+' · '+formatIDR(o.total)+'</span></div>'+(o.proofImage?'<a class="stock-proof" href="'+esc(o.proofImage)+'" target="_blank" rel="noopener" title="Lihat bukti pembayaran"><img src="'+esc(o.proofImage)+'" alt="Bukti pembayaran"><span class="proof-tag">Bukti diterima</span></a>':"")+'<div class="acts"><button class="mini lunas" type="button" data-lunas="'+esc(o.invoiceNo)+'">Konfirmasi Lunas</button><button class="mini" type="button" data-batal="'+esc(o.invoiceNo)+'">Batalkan Pesanan</button></div></div>';
             }).join("")+'</div>';
           }
           var units=(p.units||[]).slice().sort(function(a,b){return (Number(a.id)||0)-(Number(b.id)||0);});

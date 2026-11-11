@@ -292,6 +292,7 @@
     },
     confirmOrder: function(invoiceNo){ return rpc("confirm_order", { p_invoice: invoiceNo }); },
     cancelOrder: function(invoiceNo){ return rpc("cancel_order", { p_invoice: invoiceNo }); },
+    submitProof: function(invoiceNo, proofImage){ return rpc("submit_payment_proof", { p_invoice: invoiceNo, p_proof_image: proofImage }); },
     /* Tampilkan kredensial SATU KALI — fungsi RPC menghapusnya.
        Kembalian: {username, password} (username PB, bukan email). */
     revealCredentials: function(invoiceNo){ return rpc("reveal_order_credentials", { p_invoice: invoiceNo }); },

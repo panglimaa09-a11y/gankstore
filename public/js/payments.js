@@ -24,13 +24,13 @@ function loadPaymentsConfig(){
    bukti ke WhatsApp toko; admin konfirmasi lunas manual dari Daftar Stok. */
 function manualQrisBlock(o){
   var total = (typeof formatIDR === "function") ? formatIDR(o.total) : ("Rp" + o.total);
-  var waText = encodeURIComponent("Halo GankStore, saya kirim bukti pembayaran invoice " + o.invoiceNo + " total " + total + ".");
+  var waText = encodeURIComponent("Invoice bukti pembayaran " + o.invoiceNo + " — total " + total + ". Foto bukti terlampir.");
   return '<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b>' +
     '<p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar ' + total + '</strong> atas nama NEXORA TEAM.</p>' +
     '<img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM">' +
     '<p class="qris-total">Total bayar: <b>' + total + '</b></p>' +
     '<p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p>' +
-    '<a class="btn-pay" href="https://wa.me/6289681992892?text=' + waText + '" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div>';
+    '<a class="btn-pay" id="btnWaProof" href="https://wa.me/6289681992892?text=' + waText + '" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div>';
 }
 
 /* Blok tombol bayar di halaman invoice (dipanggil dari renderInvoice). */
