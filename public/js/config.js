@@ -68,6 +68,11 @@ window.GS_CONFIG = {
      dibuat oleh Edge Function setup-push-keys. Diisi setelah setup. */
   VAPID_PUBLIC_KEY: "BGZnapxzxYRSQpUGn9y0zeILjx5GZ6jNN1TokvzEtX8dwDB_yLVFUGaQw0QTP5hQU3gsoWGbMbHRJKmFsj9-4m8",
 
+  /* Alamat backend AI untuk live chat support (pb-ai, via tunnel ngrok).
+     BUKAN secret — hanya URL publik. Dipakai support-chat.js untuk
+     POST /support + polling GET /support/<job_id>. */
+  SUPPORT_AI_URL: "https://curvature-reunite-perfected.ngrok-free.dev/pb-ai",
+
   /* Akun demo pembeli untuk review Midtrans (dibuat di server bila
      GS_SEED_DEMO=1). Bukan akun admin. Password-nya hanya ada di env
      server (GS_DEMO_PASSWORD), bukan di file ini. */

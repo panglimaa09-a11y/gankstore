@@ -1,18 +1,21 @@
-/* GankStore — Live chat support TANPA AI (12 Nov 2026, perintah Tuan).
-   Pembeli chat langsung dengan admin (Tuan). Pesan tersimpan di Supabase
-   (live_chats + live_chat_messages); admin membalas dari #/admin/chat.
-   Widget mengecek balasan admin tiap 3 detik selama panel terbuka.
-   Riwayat chat tersimpan di localStorage (id chat UUID) + server.
-   Kalau server tidak terjangkau, pesan ditampilkan sebagai "belum terkirim"
-   dan pembeli diarahkan ke WhatsApp admin. */
+/* GankStore — Live chat support AI Jarvis + admin (12 Nov 2026).
+   AI menjawab dulu (Jarvis, via backend /support -> 9Router/Groq).
+   Setiap pesan pembeli TETAP tersimpan di Supabase (live_chats +
+   live_chat_messages) dan jawaban AI juga disimpan sebagai pesan admin,
+   jadi admin melihat percakapan lengkap di #/admin/chat, dapat push
+   notification untuk pesan pembeli, dan bisa ikut membalas kapan saja.
+   Kalau AI gangguan, pembeli tidak mentok: pesan sys jujur + admin
+   sudah menerima pesan itu. Riwayat tersimpan di localStorage + server.
+   Polling balasan tiap 3 detik selama panel terbuka. */
 (function () {
   "use strict";
   var LS_CHAT = "gs_live_chat_id";
   var LS_CACHE = "gs_live_chat_cache";
   var POLL_MS = 3000;
   var MAX_MSGS = 100;
-  var WA_LINK = "https://wa.me/6289681992892?text=Halo%20GankStore";
-  var GREETING = "Halo! Kamu terhubung langsung dengan admin GankStore. Tulis pertanyaanmu di bawah — admin akan membalas di sini. Kalau panel ini ditutup, riwayat chat tetap tersimpan di browser ini.";
+  var AI_URL = (window.GS_CONFIG && window.GS_CONFIG.SUPPORT_AI_URL) || "";
+  var GREETING = "Halo! Aku Jarvis, support AI GankStore. Tanya soal cara beli, bayar QRIS, atau status pesanan — kalau aku tidak bisa jawab, admin akan membalas di sini juga.";
+  var AI_FALLBACK = "Maaf, AI support lagi gangguan. Pesanmu sudah diteruskan ke admin — admin akan membalas di sini, atau chat admin via WhatsApp.";
 
   var fab, panel, body, form, input, chips;
   var chatId = null;
@@ -49,12 +52,12 @@
       var raw = localStorage.getItem(LS_CACHE);
       if (raw) {
         var arr = JSON.parse(raw);
-        if (Array.isArray(arr)) messages = arr.slice(-MAX_MSGS);
+        if (Array.isArray(arr)) messages = arr.filter(function (m) { return !m.temp; }).slice(-MAX_MSGS);
       }
     } catch (e) { messages = []; }
   }
   function saveCache() {
-    try { localStorage.setItem(LS_CACHE, JSON.stringify(messages.slice(-MAX_MSGS))); } catch (e) {}
+    try { localStorage.setItem(LS_CACHE, JSON.stringify(messages.filter(function (m) { return !m.temp; }).slice(-MAX_MSGS))); } catch (e) {}
   }
   function fmtTime(ts) {
     try {
@@ -79,8 +82,15 @@
     body.scrollTop = body.scrollHeight;
   }
   function push(role, text, ts) {
-    messages.push({ role: role, text: String(text), ts: ts || Date.now() });
+    var m = { role: role, text: String(text), ts: ts || Date.now() };
+    messages.push(m);
     if (messages.length > MAX_MSGS) messages = messages.slice(-MAX_MSGS);
+    saveCache();
+    return m;
+  }
+  function removeMsg(m) {
+    var i = messages.indexOf(m);
+    if (i >= 0) messages.splice(i, 1);
     saveCache();
   }
   function toast(msg) {
@@ -93,6 +103,7 @@
     var merged = [];
     function keyOf(m) { return (m.role || "") + "|" + (m.text || "") + "|" + Math.floor((m.ts || 0) / 5000); }
     for (var i = 0; i < messages.length; i++) {
+      if (messages[i].temp) continue;
       var k = keyOf(messages[i]);
       if (!byKey[k]) { byKey[k] = true; merged.push(messages[i]); }
     }
@@ -107,6 +118,10 @@
       if (!byKey[k2]) { byKey[k2] = true; merged.push(nm); }
     }
     merged.sort(function (a, b) { return a.ts - b.ts; });
+    // Pertahankan placeholder "sedang mengetik" yang masih aktif.
+    for (var t = 0; t < messages.length; t++) {
+      if (messages[t].temp) merged.push(messages[t]);
+    }
     messages = merged.slice(-MAX_MSGS);
     saveCache();
   }
@@ -136,6 +151,93 @@
       .then(function () { return true; })
       .catch(function () { return false; });
   }
+  function historyForAI() {
+    var h = [];
+    for (var i = 0; i < messages.length; i++) {
+      var m = messages[i];
+      if (m.temp || m.role === "sys") continue;
+      h.push({ role: m.role === "user" ? "user" : "assistant", content: m.text });
+    }
+    return h.slice(-6);
+  }
+  function orderContext(text) {
+    var m = String(text || "").match(/INV-[0-9-]+/i);
+    if (!m || typeof window.api !== "function") return Promise.resolve("");
+    return window.api("/api/orders/" + encodeURIComponent(m[0].toUpperCase()))
+      .then(function (o) {
+        if (!o) return "";
+        return "Invoice " + m[0].toUpperCase() + ": produk " + (o.title || o.product || "?") +
+          ", total Rp" + (o.total != null ? o.total : "?") + ", status " + (o.status || "?") + ".";
+      })
+      .catch(function () { return ""; });
+  }
+  function sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+  function askAI(question, typingMsg) {
+    if (!AI_URL) { removeMsg(typingMsg); render(); return Promise.resolve(); }
+    var ctx = "";
+    return orderContext(question).then(function (c) {
+      ctx = c || "";
+      var payload = { question: question, history: historyForAI(), context: ctx };
+      var tries = 0;
+      function postOnce() {
+        tries++;
+        return fetch(AI_URL.replace(/\/$/, "") + "/support", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then(function (r) {
+          if (!r.ok) throw new Error("http " + r.status);
+          return r.json();
+        }).catch(function (err) {
+          // Tunnel ngrok free kadang memutus koneksi sesaat — coba lagi.
+          if (tries < 3) return sleep(1500).then(postOnce);
+          throw err;
+        });
+      }
+      return postOnce();
+    }).then(function (job) {
+      var jobId = job && job.job_id;
+      if (!jobId) throw new Error("no job");
+      var n = 0;
+      function poll() {
+        n++;
+        return fetch(AI_URL.replace(/\/$/, "") + "/support/" + encodeURIComponent(jobId))
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (res && res.status === "done" && res.answer) return res.answer;
+            if (res && res.status === "error") throw new Error("ai error");
+            if (n >= 36) throw new Error("ai timeout");
+            return sleep(2500).then(poll);
+          })
+          .catch(function (err) {
+            // Gangguan jaringan sesaat saat polling: jangan langsung
+            // menyerah, coba lagi selama masih dalam batas.
+            if (n < 36 && err && err.message !== "ai error" && err.message !== "ai timeout") {
+              return sleep(2500).then(poll);
+            }
+            throw err;
+          });
+      }
+      return poll();
+    }).then(function (answer) {
+      removeMsg(typingMsg);
+      // Simpan jawaban AI sebagai pesan admin: admin melihat transkrip
+      // lengkap di #/admin/chat; pembeli menerima via polling server.
+      if (typeof window.api === "function") {
+        return window.api("/api/live-chats/" + encodeURIComponent(getChatId()) + "/messages", {
+          method: "POST",
+          body: { sender: "admin", text: String(answer).slice(0, 2000) },
+        }).then(function () { return fetchMessages(); })
+          .catch(function () { push("ai", answer); render(); });
+      }
+      push("ai", answer);
+      render();
+    }).catch(function () {
+      removeMsg(typingMsg);
+      push("sys", AI_FALLBACK);
+      render();
+    });
+  }
   function send(text) {
     text = String(text || "").trim();
     if (!text || sending) return;
@@ -153,6 +255,11 @@
     }).then(function () {
       push("user", text);
       render();
+      // AI menjawab dulu; admin sudah menerima pesan ini di panelnya.
+      var typing = push("ai", "Jarvis sedang mengetik…");
+      typing.temp = true;
+      render();
+      askAI(text, typing);
       return fetchMessages();
     }).catch(function () {
       push("user", text);
