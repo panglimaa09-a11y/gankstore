@@ -1,11 +1,15 @@
 /* GankStore service worker — cache aset statis, HTML selalu network-first.
    API Supabase (cross-origin) dan request non-GET tidak pernah di-cache,
-   jadi data pesanan/stok selalu segar. */
+   jadi data pesanan/stok selalu segar.
+   ATURAN CACHE: tiap kali js/app.js atau css/style.css berubah, naikkan
+   ?v= di index.html DAN di CORE bawah ini — kalau tidak, HP yang sudah
+   pasang PWA tetap pakai file lama (cache-first) dan fitur baru tidak
+   jalan (kejadian 11 Nov 2026: slider tidak bergerak). */
 var CACHE = "gankstore-v2";
 var CORE = [
   "/", "/index.html", "/manifest.json",
-  "/css/style.css", "/css/hero.css",
-  "/js/config.js", "/js/app.js", "/js/payments.js", "/js/topup.js",
+  "/css/style.css?v=2", "/css/hero.css",
+  "/js/config.js", "/js/app.js?v=2", "/js/payments.js", "/js/topup.js",
   "/js/supabase-client.js", "/js/lamp.js",
   "/icon.png", "/logo.png", "/banner.png", "/qris.jpg",
   "/brand/gankstore-banner.png",

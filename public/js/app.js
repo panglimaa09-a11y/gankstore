@@ -261,7 +261,7 @@ function initServer(attempt){
           dots.forEach(function(d, j){ d.classList.toggle("is-active", j === cur); });
         }
         function stop(){ if (timer) { clearInterval(timer); timer = null; } }
-        function start(){ if (reduced) return; stop(); timer = setInterval(function(){ show(cur + 1); }, 4000); }
+        function start(){ if (reduced) return; stop(); timer = setInterval(function(){ show(cur + 1); }, 2000); }
         dots.forEach(function(d, j){ d.addEventListener("click", function(){ show(j); start(); }); });
         slider.addEventListener("pointerdown", stop);
         slider.addEventListener("pointerup", start);
