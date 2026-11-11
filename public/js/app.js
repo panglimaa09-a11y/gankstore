@@ -247,7 +247,10 @@ function initServer(attempt){
           showToast("Buka menu browser (⋮) lalu pilih 'Install aplikasi' / 'Tambah ke layar utama'.");
         });
       }
+      var bannerSliderStarted = false;
       function initBannerSlider(){
+        if (bannerSliderStarted) return;
+        bannerSliderStarted = true;
         var slider = document.getElementById("bannerSlider");
         if (!slider) return;
         var slides = Array.prototype.slice.call(slider.querySelectorAll(".banner-slide"));
@@ -1474,8 +1477,18 @@ function initGoogleSignIn(){
       if(!location.hash) location.hash="#/";
       initServer().then(function(){
         logActivity("kunjung","Sesi toko dimulai.");
-        render();renderAuth();applyRoute();initGoogleSignIn();
-        startOrderWatcher();
-        initPwa();
-        initBannerSlider();
+        /* Tiap langkah dibungkus sendiri: satu langkah gagal (mis. Google
+           / PWA / watcher) tidak boleh mematikan langkah lain. */
+        try { render(); } catch (e) { console.error("boot render", e); }
+        try { renderAuth(); } catch (e) { console.error("boot renderAuth", e); }
+        try { applyRoute(); } catch (e) { console.error("boot applyRoute", e); }
+        try { initGoogleSignIn(); } catch (e) { console.error("boot google", e); }
+        try { startOrderWatcher(); } catch (e) { console.error("boot watcher", e); }
+        try { initPwa(); } catch (e) { console.error("boot pwa", e); }
       });
+      /* Slider jalan SENDIRI, di luar rantai boot: banner hanya butuh DOM,
+         bukan server/Google/PWA. Kalau rantai boot macet atau salah satu
+         langkahnya throw, banner tetap muter. (11 Nov 2026: slider mati
+         total di live padahal kode sama jalan di tes lokal — rantai boot
+         ternyata bisa putus sebelum initBannerSlider dipanggil.) */
+      try { initBannerSlider(); } catch (e) { console.error("boot slider", e); }
