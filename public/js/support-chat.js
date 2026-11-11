@@ -194,8 +194,35 @@
           throw err;
         });
       }
-      return postOnce();
+      function trySync(attempt) {
+        // Jalur utama (12 Nov 2026): SATU request tunggu jawaban (maks 25 dtk
+        // di server). Polling GET dari browser terbukti tidak pernah sampai
+        // ke backend saat tes live, jadi jangan andalkan polling saja.
+        // Tunnel ngrok kadang memutus koneksi di awal — coba sync sampai 3x.
+        attempt = attempt || 1;
+        return fetch(AI_URL.replace(/\/$/, "") + "/support-sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }).then(function (r) {
+          if (!r.ok) throw new Error("http " + r.status);
+          return r.json();
+        }).then(function (res) {
+          if (res && res.status === "done" && res.answer) return res;
+          if (res && res.status === "error") throw new Error("ai error");
+          if (res && res.status === "pending" && res.job_id) return res;
+          throw new Error("bad sync");
+        }).catch(function (err) {
+          if (attempt < 3 && err && err.message !== "ai error") {
+            return sleep(1500).then(function () { return trySync(attempt + 1); });
+          }
+          // Sync gagal (tunnel memutus dsb) — jatuh ke jalur async + polling.
+          return postOnce();
+        });
+      }
+      return trySync(1);
     }).then(function (job) {
+      if (job && job.status === "done" && job.answer) return job.answer;
       var jobId = job && job.job_id;
       if (!jobId) throw new Error("no job");
       var n = 0;
