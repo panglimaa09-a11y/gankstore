@@ -362,8 +362,16 @@
     /* ---------- live chat tanpa AI (buyer <-> admin) ---------- */
     createChat: function(id){
       needClient();
-      return client.from("live_chats").upsert({ id: id }, { onConflict: "id" })
-        .select("*").single().then(function(res){ return take(res); });
+      /* INSERT biasa (bukan upsert): upsert butuh hak UPDATE yang anon
+         tidak punya (PostgREST menolak 42501). Kalau baris sudah ada
+         (pembeli kembali / dua tab bersamaan), abaikan error duplicate
+         key — barisnya memang sudah ada. */
+      return client.from("live_chats").insert({ id: id })
+        .select("*").single().then(function(res){ return take(res); })
+        .catch(function(e){
+          if (/duplicate key/i.test(String(e && e.message))) return { id: id };
+          throw e;
+        });
     },
     listChats: function(){
       needClient();
