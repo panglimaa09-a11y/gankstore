@@ -411,6 +411,14 @@ body.admin-mode .livebar{display:none}
 .btn-pay{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:14px;font-weight:700;font-size:16.5px}
 .btn-pay:disabled{background:var(--bg-sink);color:var(--ink-faint);cursor:not-allowed}
 .pay-note{font-size:14px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:11px 14px;margin-top:12px;font-weight:600}
+.order-alert{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;background:#14532d;color:#fff;padding:11px 16px;font-size:14.5px;font-weight:600}
+.order-alert[hidden]{display:none}
+.order-alert b{font-size:15px}
+.order-alert span{opacity:.92}
+.order-alert-btn{margin-left:auto;background:#a3e635;color:#0b0e13;border-radius:8px;padding:8px 14px;font-weight:700;text-decoration:none;white-space:nowrap}
+.order-alert-x{background:transparent;border:1.5px solid rgba(255,255,255,.55);color:#fff;border-radius:8px;padding:6px 11px;font-weight:700;cursor:pointer}
+.orders-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;background:#dc2626;color:#fff;border-radius:999px;font-size:12px;font-weight:800}
+.orders-badge[hidden]{display:none}
 .qris-img{display:block;width:270px;max-width:88%;height:auto;margin:14px auto 4px;border:1px solid var(--line);border-radius:10px;background:#fff}
 .qris-total{font-size:16.5px;text-align:center;margin:8px 0 0}
 .qris-manual .btn-pay{display:block;text-align:center;text-decoration:none;margin-top:12px}

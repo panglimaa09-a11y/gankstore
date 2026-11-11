@@ -179,7 +179,7 @@ var TopUp = (function(){
         var order = serverOrderToLocal(o);
         analytics.buyClicks++;
         analytics.orders.unshift(order);
-        logActivity("pesan", 'Top up "' + order.title + '" dipesan — invoice ' + order.invoiceNo + " terbit (" + formatIDR(order.total) + " termasuk biaya admin " + formatIDR(order.fee) + "). Menunggu pembayaran via Midtrans.");
+        logActivity("pesan", 'Top up "' + order.title + '" dipesan — invoice ' + order.invoiceNo + " terbit (" + formatIDR(order.total) + " termasuk biaya admin " + formatIDR(order.fee) + "). Menunggu pembayaran via QRIS manual.");
         showEventPopup({ title: order.title, price: order.price, photo: "", game: order.game }, "pesan");
         showToast("Pesanan top up dibuat! Invoice " + order.invoiceNo);
         render();
@@ -199,7 +199,7 @@ var TopUp = (function(){
     };
     analytics.buyClicks++;
     analytics.orders.unshift(order);
-    logActivity("pesan", 'Top up "' + order.title + '" dipesan — invoice ' + order.invoiceNo + " terbit (" + formatIDR(order.total) + " termasuk biaya admin " + formatIDR(fee) + "). Menunggu pembayaran via Midtrans.");
+    logActivity("pesan", 'Top up "' + order.title + '" dipesan — invoice ' + order.invoiceNo + " terbit (" + formatIDR(order.total) + " termasuk biaya admin " + formatIDR(fee) + "). Menunggu pembayaran via QRIS manual.");
     showEventPopup({ title: order.title, price: order.price, photo: "", game: order.game }, "pesan");
     showToast("Pesanan top up dibuat! Invoice " + order.invoiceNo);
     render();

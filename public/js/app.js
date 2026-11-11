@@ -173,6 +173,79 @@ function initServer(attempt){
       function formatIDR(n){return "Rp"+Number(n||0).toLocaleString("id-ID");}
       function showToast(msg){toastEl.textContent=msg;toastEl.classList.add("show");if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){toastEl.classList.remove("show");},2600);}
 
+      /* ---------- notifikasi pesanan baru — admin saja ----------
+         Tab yang sedang dibuka admin mengecek pesanan tiap 20 detik.
+         Pesanan "dipesan" yang belum pernah dilihat memunculkan banner
+         + toast + bunyi, dan lencana jumlah di menu Daftar Stok.
+         Hanya jalan kalau tab toko ini sedang dibuka — kalau tab
+         tertutup, tidak ada notifikasi (butuh bot Telegram/push). */
+      var orderWatcherStarted=false;
+      function getSeenInvoices(){try{return JSON.parse(localStorage.getItem("gs_seen_invoices")||"[]");}catch(e){return[];}}
+      function setSeenInvoices(list){try{localStorage.setItem("gs_seen_invoices",JSON.stringify(list.slice(-50)));}catch(e){}}
+      function markInvoicesSeen(list){
+        var seen=getSeenInvoices();
+        list.forEach(function(o){if(seen.indexOf(o.invoiceNo)<0)seen.push(o.invoiceNo);});
+        setSeenInvoices(seen);
+        var el=document.getElementById("orderAlert");if(el)el.hidden=true;
+      }
+      function beepNewOrder(){
+        try{
+          var AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+          var ctx=beepNewOrder._ctx||(beepNewOrder._ctx=new AC());
+          if(ctx.state==="suspended")ctx.resume();
+          [880,1175].forEach(function(freq,i){
+            var t=ctx.currentTime+i*0.22;
+            var o=ctx.createOscillator(),g=ctx.createGain();
+            o.type="sine";o.frequency.value=freq;
+            g.gain.setValueAtTime(0.0001,t);
+            g.gain.exponentialRampToValueAtTime(0.09,t+0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+            o.connect(g);g.connect(ctx.destination);
+            o.start(t);o.stop(t+0.2);
+          });
+        }catch(e){}
+      }
+      function showOrderAlert(unseen){
+        var el=document.getElementById("orderAlert");if(!el)return;
+        var latest=unseen[0];
+        el.innerHTML='<b>Pesanan baru: '+esc(latest.title)+' — '+formatIDR(latest.total)+'</b>'+
+          '<span>'+(unseen.length>1?unseen.length+' pesanan menunggu konfirmasi · ':'')+'Invoice '+esc(latest.invoiceNo)+' · '+esc(latest.buyerName||latest.buyerEmail||'pembeli')+'</span>'+
+          '<a class="order-alert-btn" href="#/admin/stok">Lihat Pesanan</a>'+
+          '<button class="order-alert-x" type="button" aria-label="Tutup notifikasi">✕</button>';
+        el.hidden=false;
+        var x=el.querySelector(".order-alert-x");
+        if(x)x.addEventListener("click",function(){markInvoicesSeen(unseen);});
+        var btn=el.querySelector(".order-alert-btn");
+        if(btn)btn.addEventListener("click",function(){markInvoicesSeen(unseen);});
+      }
+      function updateOrdersBadge(unpaidCount){
+        var b=document.getElementById("ordersBadge");if(!b)return;
+        if(unpaidCount>0){b.textContent=unpaidCount;b.hidden=false;}
+        else{b.hidden=true;}
+      }
+      function checkNewOrders(){
+        if(!Server.enabled||!isAdmin())return;
+        api("/api/orders").catch(function(){return[];}).then(function(rows){
+          if(!rows||!rows.length){updateOrdersBadge(0);return;}
+          var list=rows.map(serverOrderToLocal);
+          var unpaid=list.filter(function(o){return o.status==="dipesan";});
+          updateOrdersBadge(unpaid.length);
+          var seen=getSeenInvoices();
+          var unseen=unpaid.filter(function(o){return seen.indexOf(o.invoiceNo)<0;});
+          if(unseen.length){
+            showOrderAlert(unseen);
+            showToast("Pesanan baru: "+unseen[0].title+" — "+formatIDR(unseen[0].total));
+            beepNewOrder();
+          }
+        }).catch(function(){});
+      }
+      function startOrderWatcher(){
+        if(orderWatcherStarted||!Server.enabled||!isAdmin())return;
+        orderWatcherStarted=true;
+        checkNewOrders();
+        setInterval(checkNewOrders,20000);
+      }
+
       /* ---------- statistik, live tracking, pesanan otomatis ---------- */
       var analytics={pageViews:0,detailViews:0,buyClicks:0,activity:[],orders:[],lastRoute:"",lastRouteAt:0,invoiceSeq:0};
       function timeStr(d){return (d||new Date()).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",second:"2-digit"});}
@@ -241,7 +314,7 @@ function initServer(attempt){
         /* Ticker SELALU tampil. Saat stok/pesanan/penjualan masih kosong,
            tampilkan teks bermakna tanpa angka palsu — jangan deretan nol. */
         var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
-        t.innerHTML=empty?"<span>Toko buka — akun Point Blank siap main &nbsp;◆&nbsp; Pembayaran aman via Midtrans &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
+        t.innerHTML=empty?"<span>Toko buka — akun Point Blank siap main &nbsp;◆&nbsp; Pembayaran via QRIS manual &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
       }
       function showEventPopup(p,kind){
         var box=document.getElementById("salePopups");if(!box)return;
@@ -276,7 +349,7 @@ function initServer(attempt){
                padahal hitungan stok sudah berkurang. */
             var claimed=false;
             (p.units||[]).forEach(function(u){if(!claimed&&u.status==="tersedia"){u.status="dipesan";u.invoiceNo=order.invoiceNo;claimed=true;}});
-            logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(order.fee)+"). Menunggu pembayaran via Midtrans.");
+            logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(order.fee)+"). Menunggu pembayaran via QRIS manual.");
             showEventPopup(p,"pesan");
             showToast('Pesanan dibuat! Invoice '+order.invoiceNo+" — 1 unit stok otomatis ditandai DIPESAN.");
             render();
@@ -294,7 +367,7 @@ function initServer(attempt){
         unit.invoiceNo=order.invoiceNo;
         syncLocalStock(p);
         analytics.orders.unshift(order);
-        logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(fee)+"). Menunggu pembayaran via Midtrans.");
+        logActivity("pesan",'Akun "'+p.title+'" dipesan — invoice '+order.invoiceNo+" terbit ("+formatIDR(order.total)+" termasuk biaya admin "+formatIDR(fee)+"). Menunggu pembayaran via QRIS manual.");
         showEventPopup(p,"pesan");
         showToast('Pesanan dibuat! Invoice '+order.invoiceNo+" — 1 unit stok otomatis ditandai DIPESAN.");
         render();
@@ -335,7 +408,12 @@ function initServer(attempt){
         }else if(st==="dibatalkan"){
           payBlock='<div class="pay-method"><b>Pesanan dibatalkan</b><p>Pesanan ini dibatalkan dan akunnya sudah tersedia lagi di katalog. Kamu bisa membuat pesanan baru dari halaman Katalog.</p></div>';
         }else{
-          payBlock=(typeof midtransPayBlock==="function")?midtransPayBlock(o):'<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
+          if(typeof midtransPayBlock==="function"){payBlock=midtransPayBlock(o);}
+          else{
+            /* Cadangan bila payments.js gagal dimuat: QRIS manual tetap tampil. */
+            var waText=encodeURIComponent("Halo GankStore, saya kirim bukti pembayaran invoice "+o.invoiceNo+" total "+formatIDR(o.total)+".");
+            payBlock='<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b><p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar '+formatIDR(o.total)+'</strong> atas nama NEXORA TEAM.</p><img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM"><p class="qris-total">Total bayar: <b>'+formatIDR(o.total)+'</b></p><p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p><a class="btn-pay" href="https://wa.me/6289681992892?text='+waText+'" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div><div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
+          }
         }
         wrap.innerHTML='<div class="invoice-box"><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Akun")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>'+(o.kind==="topup"?"Harga paket":"Harga akun")+'</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
         var sp=document.getElementById("btnSnapPay");
@@ -454,6 +532,7 @@ function initServer(attempt){
       function afterLogin(u){
         renderAuth();
         showToast("Selamat datang, "+u.name.split(" ")[0]+"!");
+        startOrderWatcher();
         if(pendingAdmin){
           pendingAdmin=false;
           if(isAdminUser()){location.hash="#/admin";if(isAdminPage(getRoute().page))applyRoute();}
@@ -1221,4 +1300,5 @@ function initGoogleSignIn(){
       initServer().then(function(){
         logActivity("kunjung","Sesi toko dimulai.");
         render();renderAuth();applyRoute();initGoogleSignIn();
+        startOrderWatcher();
       });

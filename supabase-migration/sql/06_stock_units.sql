@@ -396,7 +396,7 @@ begin
   perform public.log_activity(
     'pesan',
     'Akun "' || v_product.title || '" dipesan — invoice ' || v_invoice ||
-    ' terbit. Menunggu pembayaran via Midtrans.'
+    ' terbit. Menunggu pembayaran via QRIS manual.'
   );
   return row_to_json(v_order)::jsonb;
 end;

@@ -104,7 +104,7 @@ begin
   perform public.log_activity(
     'pesan',
     'Akun "' || v_product.title || '" dipesan — invoice ' || v_invoice ||
-    ' terbit. Menunggu pembayaran via Midtrans.'
+    ' terbit. Menunggu pembayaran via QRIS manual.'
   );
   return row_to_json(v_order)::jsonb;
 end;
@@ -181,7 +181,7 @@ begin
   perform public.log_activity(
     'pesan',
     'Top up "' || v_order.title || '" dipesan — invoice ' || v_invoice ||
-    ' terbit. Menunggu pembayaran via Midtrans.'
+    ' terbit. Menunggu pembayaran via QRIS manual.'
   );
   return row_to_json(v_order)::jsonb;
 end;
