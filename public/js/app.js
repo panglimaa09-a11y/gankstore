@@ -253,7 +253,6 @@ function initServer(attempt){
         var slides = Array.prototype.slice.call(slider.querySelectorAll(".banner-slide"));
         var dots = Array.prototype.slice.call(slider.querySelectorAll(".banner-dot"));
         if (slides.length < 2) return;
-        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         var cur = 0, timer = null;
         function show(i){
           cur = ((i % slides.length) + slides.length) % slides.length;
@@ -261,10 +260,12 @@ function initServer(attempt){
           dots.forEach(function(d, j){ d.classList.toggle("is-active", j === cur); });
         }
         function stop(){ if (timer) { clearInterval(timer); timer = null; } }
-        function start(){ if (reduced) return; stop(); timer = setInterval(function(){ show(cur + 1); }, 2000); }
+        function start(){ stop(); timer = setInterval(function(){ show(cur + 1); }, 2000); }
         dots.forEach(function(d, j){ d.addEventListener("click", function(){ show(j); start(); }); });
         slider.addEventListener("pointerdown", stop);
         slider.addEventListener("pointerup", start);
+        slider.addEventListener("pointercancel", start);
+        slider.addEventListener("pointerleave", start);
         document.addEventListener("visibilitychange", function(){ document.hidden ? stop() : start(); });
         start();
       }
