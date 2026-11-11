@@ -8,8 +8,8 @@
 var CACHE = "gankstore-v2";
 var CORE = [
   "/", "/index.html", "/manifest.json",
-  "/css/style.css?v=6", "/css/hero.css",
-  "/js/config.js", "/js/app.js?v=6", "/js/payments.js", "/js/topup.js",
+  "/css/style.css?v=7", "/css/hero.css",
+  "/js/config.js", "/js/app.js?v=7", "/js/payments.js?v=7", "/js/topup.js", "/js/qrcode.js?v=7",
   "/js/supabase-client.js", "/js/lamp.js",
   "/icon.png", "/logo.png", "/banner.png", "/qris.jpg",
   "/brand/gankstore-banner.png",
