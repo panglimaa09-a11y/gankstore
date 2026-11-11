@@ -528,13 +528,13 @@ footer .wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 }
 
 /* ---------- banner promo ---------- */
-/* Slider banner (4 slide: banner Top Up 1774x887 ~2:1, banner Char PB dan
-   banner Pangkat PB 1670x941 16:9, banner Update EXP Rank 1774x887 ~2:1):
-   wadah rasio 16:9, slide ditumpuk absolute + crossfade (JS
-   initBannerSlider, ganti tiap 4 dtk + dot). Gambar 2:1 di-contain supaya
-   tidak terpotong — latar wadah gelap jadi bilah atas-bawahnya menyatu.
-   Jangan pakai height tetap / object-fit cover di sini, supaya teks
-   banner tidak terpotong. */
+/* Slider banner (5 slide: banner Top Up 1774x887 ~2:1, banner Char PB dan
+   banner Pangkat PB 1670x941 16:9, banner Update EXP Rank 1774x887 ~2:1,
+   banner Cari Akun Murah 2172x724 ~3:1): wadah rasio 16:9, slide ditumpuk
+   absolute + crossfade (JS initBannerSlider, ganti tiap 4 dtk + dot).
+   Gambar lebar di-contain supaya tidak terpotong — latar wadah gelap jadi
+   bilah atas-bawahnya menyatu. Jangan pakai height tetap / object-fit
+   cover di sini, supaya teks banner tidak terpotong. */
 .banner-slider{position:relative;margin:20px 0 4px;aspect-ratio:16/9;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#0a0f1a}
 .banner-slide{position:absolute;inset:0;display:block;opacity:0;transition:opacity .6s ease;pointer-events:none}
 .banner-slide.is-active{opacity:1;pointer-events:auto}

@@ -1,13 +1,18 @@
 /* GankStore service worker — cache aset statis, HTML selalu network-first.
    API Supabase (cross-origin) dan request non-GET tidak pernah di-cache,
    jadi data pesanan/stok selalu segar. */
-var CACHE = "gankstore-v1";
+var CACHE = "gankstore-v2";
 var CORE = [
   "/", "/index.html", "/manifest.json",
   "/css/style.css", "/css/hero.css",
   "/js/config.js", "/js/app.js", "/js/payments.js", "/js/topup.js",
   "/js/supabase-client.js", "/js/lamp.js",
   "/icon.png", "/logo.png", "/banner.png", "/qris.jpg",
+  "/brand/gankstore-banner.png",
+  "/brand/gankstore-banner-pb.jpg",
+  "/brand/gankstore-banner-pb-rank.jpg",
+  "/brand/gankstore-banner-pb-exp.jpg",
+  "/brand/gankstore-banner-pb-murah.jpg",
   "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png"
 ];
 self.addEventListener("install", function(e){
