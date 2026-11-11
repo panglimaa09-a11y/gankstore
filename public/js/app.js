@@ -220,6 +220,12 @@ function initServer(attempt){
           navigator.serviceWorker.register("/sw.js").catch(function(){});
         }
         if (pwaIsStandalone()) { if (btn) btn.hidden = true; return; }
+        /* Tombol SELALU tampil (bukan cuma saat beforeinstallprompt):
+           event itu tidak bisa diandalkan — di banyak browser/sesi dia
+           tidak pernah fire (sudah ditolak sebelumnya, engagement rendah,
+           atau WebView), dan tombol yang tersembunyi = fitur yang tidak
+           ada. Klik tanpa prompt native = toast petunjuk install manual. */
+        if (btn) btn.hidden = false;
         window.addEventListener("beforeinstallprompt", function(e){
           e.preventDefault();
           pwaDeferredPrompt = e;
@@ -1484,8 +1490,10 @@ function initGoogleSignIn(){
         try { applyRoute(); } catch (e) { console.error("boot applyRoute", e); }
         try { initGoogleSignIn(); } catch (e) { console.error("boot google", e); }
         try { startOrderWatcher(); } catch (e) { console.error("boot watcher", e); }
-        try { initPwa(); } catch (e) { console.error("boot pwa", e); }
       });
+      /* PWA juga jalan mandiri di luar rantai boot (alasan sama seperti
+         slider: initPwa tidak boleh mati gara-gara langkah boot lain). */
+      try { initPwa(); } catch (e) { console.error("boot pwa", e); }
       /* Slider jalan SENDIRI, di luar rantai boot: banner hanya butuh DOM,
          bukan server/Google/PWA. Kalau rantai boot macet atau salah satu
          langkahnya throw, banner tetap muter. (11 Nov 2026: slider mati
