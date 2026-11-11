@@ -1,7 +1,7 @@
 # Email otomatis pesanan GankStore
 
 Setiap ada pesanan baru, dan setiap bukti pembayaran diunggah, email otomatis
-terkirim ke **nexorateam44@gmail.com** berisi rincian invoice — dan foto bukti
+terkirim ke **panglimaa09@gmail.com** berisi rincian invoice — dan foto bukti
 sebagai lampiran bila sudah diunggah.
 
 ## Cara kerja
@@ -13,8 +13,9 @@ sebagai lampiran bila sudah diunggah.
 
 ## Yang dibutuhkan (sekali saja)
 
-1. **Akun Resend gratis** — daftar di https://resend.com pakai email
-   `nexorateam44@gmail.com` (tanpa kartu). Lalu **API Keys → Create API Key**,
+1. **Akun Resend gratis** — daftar di https://resend.com (akun saat ini
+   terdaftar atas `panglimaa09@gmail.com`, jadi tanpa domain terverifikasi
+   email hanya bisa dikirim ke alamat itu). Lalu **API Keys → Create API Key**,
    permission **Sending access**. Simpan key-nya (cuma tampil sekali).
 2. **Deploy function** ke Supabase (dashboard → Edge Functions → Create,
    nama `send-order-email`, paste isi `index.ts`), lalu set secret
@@ -23,9 +24,21 @@ sebagai lampiran bila sudah diunggah.
    - Tabel: `orders`, event: `INSERT` dan `UPDATE`
    - URL: `https://fbncsifwelllkpvoxmfe.supabase.co/functions/v1/send-order-email`
    - Header: `Authorization: Bearer <anon key project GankStore>`
-4. **Tes**: buat pesanan baru dari katalog → cek inbox
-   `nexorateam44@gmail.com` (dan folder Spam). Lalu unggah bukti di invoice
-   → email kedua masuk dengan foto terlampir.
+4. **Tes**: panggil function dengan payload webhook tiruan (lihat di bawah),
+   atau buat pesanan baru dari katalog → cek inbox `panglimaa09@gmail.com`
+   (dan folder Spam). Lalu unggah bukti di invoice → email kedua masuk
+   dengan foto terlampir.
+
+## Tes function langsung (tanpa pesanan sungguhan)
+
+POST ke URL function dengan header `Authorization: Bearer <anon key>` dan
+body JSON seperti ini:
+
+```json
+{"type": "INSERT", "record": {"invoice_no": "INV-TEST-001", "kind": "akun", "title": "D1 polos", "game": "Point Blank", "rank": "Diamond 1", "price": 25000, "fee": 2500, "total": 27500, "buyer_name": "Pembeli Tes", "buyer_email": "tes@example.com", "status": "dipesan", "created_at": "2026-11-11T12:00:00Z"}}
+```
+
+Harus mengembalikan HTTP 200 dan email tes masuk ke `panglimaa09@gmail.com`.
 
 ## Catatan
 

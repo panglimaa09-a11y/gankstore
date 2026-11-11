@@ -1,16 +1,20 @@
-// GankStore — email otomatis ke penjual (nexorateam44@gmail.com).
+// GankStore — email otomatis ke penjual (panglimaa09@gmail.com).
 // Dipicu Database Webhook Supabase (INSERT / UPDATE tabel orders):
 //  - INSERT (pesanan baru) -> email "Pesanan baru ..." berisi rincian invoice.
 //  - UPDATE dengan proof_image baru -> email "Bukti pembayaran ..." berisi
 //    rincian invoice + foto bukti sebagai lampiran.
 // Secret yang dibutuhkan: RESEND_API_KEY (Resend, daftar gratis di resend.com).
 // Pengirim bawaan Resend: onboarding@resend.dev (tanpa domain sendiri).
+// Akun Resend terdaftar atas panglimaa09@gmail.com, jadi tanpa domain
+// terverifikasi email hanya bisa dikirim ke alamat itu. Kalau nanti mau
+// kirim ke nexorateam44@gmail.com, verifikasi domain gankstore.my.id di
+// Resend dan ubah FROM jadi noreply@gankstore.my.id.
 // Webhook: Database -> Webhooks -> tabel orders, event INSERT + UPDATE,
 //   URL: https://<ref>.supabase.co/functions/v1/send-order-email
 //   Header: Authorization: Bearer <anon key project>
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
-const SELLER_EMAIL = "nexorateam44@gmail.com";
+const SELLER_EMAIL = "panglimaa09@gmail.com";
 const FROM = "GankStore <onboarding@resend.dev>";
 
 const idr = (n: unknown) => "Rp" + Number(n || 0).toLocaleString("id-ID");
