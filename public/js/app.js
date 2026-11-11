@@ -247,6 +247,27 @@ function initServer(attempt){
           showToast("Buka menu browser (⋮) lalu pilih 'Install aplikasi' / 'Tambah ke layar utama'.");
         });
       }
+      function initBannerSlider(){
+        var slider = document.getElementById("bannerSlider");
+        if (!slider) return;
+        var slides = Array.prototype.slice.call(slider.querySelectorAll(".banner-slide"));
+        var dots = Array.prototype.slice.call(slider.querySelectorAll(".banner-dot"));
+        if (slides.length < 2) return;
+        var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var cur = 0, timer = null;
+        function show(i){
+          cur = ((i % slides.length) + slides.length) % slides.length;
+          slides.forEach(function(s, j){ s.classList.toggle("is-active", j === cur); });
+          dots.forEach(function(d, j){ d.classList.toggle("is-active", j === cur); });
+        }
+        function stop(){ if (timer) { clearInterval(timer); timer = null; } }
+        function start(){ if (reduced) return; stop(); timer = setInterval(function(){ show(cur + 1); }, 4000); }
+        dots.forEach(function(d, j){ d.addEventListener("click", function(){ show(j); start(); }); });
+        slider.addEventListener("pointerdown", stop);
+        slider.addEventListener("pointerup", start);
+        document.addEventListener("visibilitychange", function(){ document.hidden ? stop() : start(); });
+        start();
+      }
       function setSeenProofs(list){try{localStorage.setItem("gs_seen_proofs",JSON.stringify(list.slice(-50)));}catch(e){}}
       function markProofsSeen(list){
         var seen=getSeenProofs();
@@ -1452,4 +1473,5 @@ function initGoogleSignIn(){
         render();renderAuth();applyRoute();initGoogleSignIn();
         startOrderWatcher();
         initPwa();
+        initBannerSlider();
       });
