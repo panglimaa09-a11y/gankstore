@@ -78,6 +78,18 @@ function apiImpl(path, opts){
   if (base === "/api/support" && method === "GET") return Supa.listSupport();
   if (seg(1) === "api" && seg(2) === "support" && seg(4) === "replied" && method === "POST") return Supa.markSupportReplied(seg(3));
 
+  /* --- live chat tanpa AI (buyer <-> admin) --- */
+  if (base === "/api/live-chats" && method === "GET") return Supa.listChats();
+  if (base === "/api/live-chats" && method === "POST") return Supa.createChat(body.id);
+  if (seg(1) === "api" && seg(2) === "live-chats" && seg(4) === "messages" && method === "GET") return Supa.listChatMessages(decodeURIComponent(seg(3)));
+  if (seg(1) === "api" && seg(2) === "live-chats" && seg(4) === "messages" && method === "POST") return Supa.sendChatMessage(decodeURIComponent(seg(3)), body.sender, body.text);
+  if (seg(1) === "api" && seg(2) === "live-chats" && seg(4) === "status" && method === "POST") return Supa.setChatStatus(decodeURIComponent(seg(3)), body.status);
+
+  /* --- langganan Web Push perangkat admin --- */
+  if (base === "/api/push-subscriptions" && method === "GET") return Supa.listPushSubscriptions();
+  if (base === "/api/push-subscriptions" && method === "POST") return Supa.savePushSubscription(body);
+  if (base === "/api/push-subscriptions" && method === "DELETE") return Supa.deletePushSubscription(body.endpoint);
+
   /* --- auth --- */
   if (base === "/api/auth/register" && method === "POST") {
     return Supa.register(body.name, body.email, body.password).then(function(r){
@@ -776,6 +788,7 @@ function initServer(attempt){
         if(h.indexOf("/topup/")===0){return{page:"topup-game",game:decodeURIComponent(h.slice(7))};}
         if(h==="/admin/topup")return{page:"admin-toppup"};
         if(h==="/admin/support")return{page:"admin-support"};
+        if(h==="/admin/chat")return{page:"admin-chat"};
         return{page:"beranda"};
       }
       function applyRoute(){
@@ -791,7 +804,7 @@ function initServer(attempt){
         var nowMs=Date.now();
         if(analytics.lastRoute!==r.page||nowMs-analytics.lastRouteAt>1200){
           analytics.lastRoute=r.page;analytics.lastRouteAt=nowMs;analytics.pageViews++;
-          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","bantuan":"Bantuan","privacy-policy":"Kebijakan Privasi","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up","admin-support":"Pesan Support"};
+          var pageNames={"beranda":"Beranda","katalog":"Katalog","cara-beli":"Cara Beli","bantuan":"Bantuan","privacy-policy":"Kebijakan Privasi","akun":"halaman Akun","detail":"Detail Akun","topup":"Top Up","topup-game":"Top Up","admin-toppup":"Paket Top Up","admin-support":"Pesan Support","admin-chat":"Live Chat"};
           if(pageNames[r.page])logActivity("kunjung","Pengunjung membuka "+pageNames[r.page]+".");
           renderReport();
         }
@@ -810,6 +823,7 @@ function initServer(attempt){
         }
         if(r.page==="bantuan")renderSupportPage();
         if(r.page==="admin-support")renderSupportAdmin();
+        if(r.page==="admin-chat")renderLiveChatAdmin();
         if(r.page==="topup"&&window.TopUp)TopUp.renderTopup();
         if(r.page==="topup-game"&&window.TopUp)TopUp.renderTopupGame(r.game);
         if(r.page==="admin-toppup"&&window.TopUp)TopUp.renderTopupAdmin();
@@ -1479,6 +1493,203 @@ function initGoogleSignIn(){
           return;
         }
         paint(loadLocalSupport());
+      }
+
+      /* ---------- Live chat admin (#/admin/chat) ---------- */
+      var liveChatState = { chats: [], openId: null, lastMsgId: 0, timer: null, tick: 0 };
+      function liveChatTime(ts){
+        try { return new Date(ts).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }
+        catch (e) { return ""; }
+      }
+      function liveChatRowHTML(c){
+        var open = c.status !== "closed";
+        var who = esc(c.buyer_name || c.buyer_contact || "Pembeli");
+        return '<button type="button" class="livechat-row' + (liveChatState.openId === c.id ? " active" : "") + '" data-chat="' + esc(c.id) + '">' +
+          '<span class="livechat-who">' + who + (open ? ' <i class="livechat-dot"></i>' : "") + "</span>" +
+          '<span class="livechat-preview">' + esc(c.last_message || "Belum ada pesan.") + "</span>" +
+          '<span class="livechat-meta">' + esc(liveChatTime(c.updated_at)) + " · " + (open ? "Terbuka" : "Selesai") + "</span></button>";
+      }
+      function paintLiveChatList(){
+        var box = document.getElementById("liveChatList"); if (!box) return;
+        if (!liveChatState.chats.length) { box.innerHTML = '<p class="stock-empty">Belum ada chat masuk.</p>'; return; }
+        box.innerHTML = liveChatState.chats.map(liveChatRowHTML).join("");
+        box.querySelectorAll("[data-chat]").forEach(function (b) {
+          b.addEventListener("click", function () { openLiveChat(b.getAttribute("data-chat")); });
+        });
+      }
+      function paintLiveChatConversation(list){
+        var box = document.getElementById("liveChatMessages"); if (!box) return;
+        if (!list.length) { box.innerHTML = '<p class="stock-empty">Belum ada pesan di chat ini.</p>'; return; }
+        box.innerHTML = list.map(function (m) {
+          return '<div class="chat-msg ' + (m.sender === "admin" ? "me" : "ai") + '">' + esc(m.text).replace(/\n/g, "<br>") +
+            '<span class="chat-time">' + esc(liveChatTime(m.created_at)) + "</span></div>";
+        }).join("");
+        box.scrollTop = box.scrollHeight;
+      }
+      function loadLiveChatList(){
+        return api("/api/live-chats").then(function (list) {
+          liveChatState.chats = list || [];
+          paintLiveChatList();
+          var head = document.getElementById("liveChatHead");
+          if (head && liveChatState.openId) {
+            var c = liveChatState.chats.find(function (x) { return x.id === liveChatState.openId; });
+            if (c) head.textContent = (c.buyer_name || c.buyer_contact || "Pembeli") + " — " + (c.status === "closed" ? "Selesai" : "Terbuka");
+          }
+        }).catch(function () {});
+      }
+      function loadLiveChatMessages(){
+        if (!liveChatState.openId) return Promise.resolve();
+        return api("/api/live-chats/" + encodeURIComponent(liveChatState.openId) + "/messages").then(function (list) {
+          paintLiveChatConversation(list || []);
+        }).catch(function () {});
+      }
+      function openLiveChat(id){
+        liveChatState.openId = id;
+        paintLiveChatList();
+        loadLiveChatMessages();
+        var box = document.getElementById("liveChatMessages");
+        if (box) box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      function renderLiveChatAdmin(){
+        if (!isAdminUser()) return;
+        var listBox = document.getElementById("liveChatList"); if (!listBox) return;
+        if (!Server.enabled) { listBox.innerHTML = '<p class="stock-empty">Live chat butuh server Supabase.</p>'; return; }
+        var form = document.getElementById("adminChatForm");
+        if (form && !form.dataset.wired) {
+          form.dataset.wired = "1";
+          form.addEventListener("submit", function (ev) { ev.preventDefault(); sendAdminReply(); });
+          var bClose = document.getElementById("adminChatClose");
+          if (bClose) bClose.addEventListener("click", function () { setLiveChatStatus("closed"); });
+          var bOpen = document.getElementById("adminChatReopen");
+          if (bOpen) bOpen.addEventListener("click", function () { setLiveChatStatus("open"); });
+          var bOn = document.getElementById("btnEnablePush");
+          if (bOn) bOn.addEventListener("click", enablePush);
+          var bTest = document.getElementById("btnTestPush");
+          if (bTest) bTest.addEventListener("click", sendTestPush);
+          var bOff = document.getElementById("btnDisablePush");
+          if (bOff) bOff.addEventListener("click", disablePush);
+        }
+        loadLiveChatList();
+        refreshPushStatus();
+        if (liveChatState.timer) clearInterval(liveChatState.timer);
+        liveChatState.timer = setInterval(function () {
+          if (getRoute().page !== "admin-chat") { clearInterval(liveChatState.timer); liveChatState.timer = null; return; }
+          liveChatState.tick++;
+          if (liveChatState.tick % 2 === 0) loadLiveChatList();
+          loadLiveChatMessages();
+        }, 3000);
+      }
+      function sendAdminReply(){
+        var inp = document.getElementById("adminChatInput");
+        if (!inp || !liveChatState.openId) { showToast("Pilih chat dulu."); return; }
+        var text = inp.value.trim();
+        if (!text) return;
+        if (text.length > 1000) text = text.slice(0, 1000);
+        inp.value = "";
+        api("/api/live-chats/" + encodeURIComponent(liveChatState.openId) + "/messages", {
+          method: "POST", body: { sender: "admin", text: text },
+        }).then(function () { loadLiveChatMessages(); loadLiveChatList(); })
+          .catch(function () { showToast("Gagal mengirim balasan."); });
+      }
+      function setLiveChatStatus(status){
+        if (!liveChatState.openId) { showToast("Pilih chat dulu."); return; }
+        api("/api/live-chats/" + encodeURIComponent(liveChatState.openId) + "/status", {
+          method: "POST", body: { status: status },
+        }).then(function () { loadLiveChatList(); showToast(status === "closed" ? "Chat ditandai selesai." : "Chat dibuka lagi."); })
+          .catch(function () { showToast("Gagal mengubah status."); });
+      }
+
+      /* ---------- Web Push: langganan notifikasi perangkat admin ---------- */
+      function pushVapidKey(){ return (window.GS_CONFIG && window.GS_CONFIG.VAPID_PUBLIC_KEY) || ""; }
+      function pushSupported(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
+      function urlB64ToUint8(s){
+        var b64 = s.replace(/-/g, "+").replace(/_/g, "/");
+        var pad = b64.length % 4;
+        if (pad) b64 += new Array(5 - pad).join("=");
+        var bin = atob(b64);
+        var out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+      function b64urlEncode(buf){
+        var bytes = new Uint8Array(buf);
+        var s = "";
+        for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+        return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      }
+      function refreshPushStatus(){
+        var st = document.getElementById("pushStatus"); if (!st) return;
+        var bOn = document.getElementById("btnEnablePush");
+        var bTest = document.getElementById("btnTestPush");
+        var bOff = document.getElementById("btnDisablePush");
+        function show(on, test, off){ if (bOn) bOn.hidden = !on; if (bTest) bTest.hidden = !test; if (bOff) bOff.hidden = !off; }
+        if (!pushSupported()) { st.textContent = "Perangkat / browser ini tidak mendukung push notification. Buka situs di Chrome asli."; show(false, false, false); return; }
+        if (!pushVapidKey()) { st.textContent = "Kunci push belum siap (setup server belum selesai)."; show(false, false, false); return; }
+        navigator.serviceWorker.ready.then(function (reg) {
+          return reg.pushManager.getSubscription();
+        }).then(function (sub) {
+          if (sub) { st.textContent = "Notifikasi aktif di perangkat ini."; show(false, true, true); }
+          else { st.textContent = "Belum aktif. Aktifkan supaya HP bergetar saat ada pesan/pesanan baru, walau aplikasi tidak dibuka."; show(true, false, false); }
+        }).catch(function () { st.textContent = "Tidak bisa memeriksa status notifikasi."; show(true, false, false); });
+        api("/api/push-subscriptions").then(function (list) {
+          var box = document.getElementById("pushSubList"); if (!box) return;
+          if (!list || !list.length) { box.innerHTML = "<p class=\"stock-empty\">Belum ada perangkat yang berlangganan.</p>"; return; }
+          box.innerHTML = list.map(function (s) {
+            return '<div class="support-item"><div class="support-meta"><b>' + esc(s.label || "Perangkat") + '</b><span>' + esc((s.created_at || "").slice(0, 10)) + "</span></div></div>";
+          }).join("");
+        }).catch(function () {});
+      }
+      function enablePush(){
+        if (!pushSupported()) { showToast("Browser ini tidak mendukung push notification."); return; }
+        if (!pushVapidKey()) { showToast("Kunci push belum siap."); return; }
+        var perm = Notification.permission;
+        var p = perm === "granted" ? Promise.resolve("granted")
+          : perm === "denied" ? Promise.reject(new Error("denied"))
+          : Notification.requestPermission();
+        p.then(function (res) {
+          if (res !== "granted") throw new Error("denied");
+          return navigator.serviceWorker.ready;
+        }).then(function (reg) {
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(pushVapidKey()) });
+        }).then(function (sub) {
+          var j = sub.toJSON();
+          return api("/api/push-subscriptions", { method: "POST", body: {
+            endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, label: "HP Admin",
+          }});
+        }).then(function () {
+          showToast("Notifikasi aktif di perangkat ini.");
+          refreshPushStatus();
+        }).catch(function (e) {
+          if (String(e && e.message) === "denied") showToast("Izin notifikasi ditolak. Aktifkan di pengaturan browser (ikon gembok / Site settings).");
+          else showToast("Gagal mengaktifkan notifikasi. Coba lagi.");
+        });
+      }
+      function disablePush(){
+        navigator.serviceWorker.ready.then(function (reg) {
+          return reg.pushManager.getSubscription();
+        }).then(function (sub) {
+          if (!sub) return;
+          var ep = sub.endpoint;
+          return sub.unsubscribe().then(function () {
+            return api("/api/push-subscriptions", { method: "DELETE", body: { endpoint: ep } });
+          });
+        }).then(function () { showToast("Notifikasi dimatikan di perangkat ini."); refreshPushStatus(); })
+          .catch(function () { showToast("Gagal mematikan notifikasi."); });
+      }
+      function sendTestPush(){
+        var url = (window.GS_CONFIG && window.GS_CONFIG.SUPABASE_URL) + "/functions/v1/send-push";
+        var key = (window.GS_CONFIG && window.GS_CONFIG.SUPABASE_ANON_KEY) || "";
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: key, Authorization: "Bearer " + key },
+          body: JSON.stringify({ test: true }),
+        }).then(function (r) { return r.json().catch(function () { return {}; }); })
+          .then(function (d) {
+            if (d && d.sent > 0) showToast("Notifikasi tes dikirim — cek HP.");
+            else if (d && d.note) showToast("Tidak ada perangkat berlangganan. Aktifkan notifikasi dulu.");
+            else showToast("Gagal mengirim tes.");
+          })
+          .catch(function () { showToast("Gagal mengirim tes."); });
       }
 
       if(!location.hash) location.hash="#/";

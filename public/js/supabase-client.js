@@ -359,6 +359,50 @@
         .select("*").single().then(function(res){ return take(res); });
     },
 
+    /* ---------- live chat tanpa AI (buyer <-> admin) ---------- */
+    createChat: function(id){
+      needClient();
+      return client.from("live_chats").upsert({ id: id }, { onConflict: "id" })
+        .select("*").single().then(function(res){ return take(res); });
+    },
+    listChats: function(){
+      needClient();
+      return client.from("live_chats").select("*").order("updated_at", { ascending: false }).limit(50)
+        .then(function(res){ return take(res); });
+    },
+    listChatMessages: function(chatId){
+      needClient();
+      return client.from("live_chat_messages").select("*").eq("chat_id", chatId).order("id", { ascending: true }).limit(200)
+        .then(function(res){ return take(res); });
+    },
+    sendChatMessage: function(chatId, sender, text){
+      needClient();
+      return client.from("live_chat_messages").insert({ chat_id: chatId, sender: sender, text: text })
+        .select("*").single().then(function(res){ return take(res); });
+    },
+    setChatStatus: function(chatId, status){
+      needClient();
+      return client.from("live_chats").update({ status: status }).eq("id", chatId)
+        .select("*").single().then(function(res){ return take(res); });
+    },
+
+    /* ---------- langganan Web Push perangkat admin ---------- */
+    savePushSubscription: function(sub){
+      needClient();
+      return client.from("push_subscriptions").upsert(sub, { onConflict: "endpoint" })
+        .select("*").single().then(function(res){ return take(res); });
+    },
+    listPushSubscriptions: function(){
+      needClient();
+      return client.from("push_subscriptions").select("id,endpoint,label,created_at").order("created_at", { ascending: false })
+        .then(function(res){ return take(res); });
+    },
+    deletePushSubscription: function(endpoint){
+      needClient();
+      return client.from("push_subscriptions").delete().eq("endpoint", endpoint)
+        .then(function(res){ return take(res); });
+    },
+
     /* ---------- statistik (dulu /api/stats — tidak dipakai frontend,
        tapi disediakan supaya endpoint lama tetap ada padanannya) ---------- */
     getStats: function(){

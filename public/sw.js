@@ -5,12 +5,12 @@
    ?v= di index.html DAN di CORE bawah ini — kalau tidak, HP yang sudah
    pasang PWA tetap pakai file lama (cache-first) dan fitur baru tidak
    jalan (kejadian 11 Nov 2026: slider tidak bergerak). */
-var CACHE = "gankstore-v2";
+var CACHE = "gankstore-v3";
 var CORE = [
   "/", "/index.html", "/manifest.json",
-  "/css/style.css?v=8", "/css/hero.css",
-  "/js/config.js?v=8", "/js/app.js?v=7", "/js/payments.js?v=7", "/js/topup.js", "/js/qrcode.js?v=7", "/js/support-chat.js?v=8",
-  "/js/supabase-client.js", "/js/lamp.js",
+  "/css/style.css?v=9", "/css/hero.css",
+  "/js/config.js?v=9", "/js/app.js?v=9", "/js/payments.js?v=7", "/js/topup.js", "/js/qrcode.js?v=7", "/js/support-chat.js?v=9",
+  "/js/supabase-client.js?v=9", "/js/lamp.js",
   "/icon.png", "/logo.png", "/banner.png", "/qris.jpg",
   "/brand/gankstore-banner.png",
   "/brand/gankstore-banner-pb.jpg",
@@ -45,6 +45,44 @@ self.addEventListener("fetch", function(e){
       var isPage = e.request.mode === "navigate" || url.pathname === "/" || url.pathname.slice(-5) === ".html";
       if (isPage) return network;
       return cached || network;
+    })
+  );
+});
+
+/* Web Push (12 Nov 2026): Edge Function send-push mengirim pesan ke
+   perangkat admin yang berlangganan. Handler ini yang menampilkan
+   notifikasi di HP walau aplikasi tidak dibuka, dan membukakan halaman
+   admin yang benar saat notifikasi diketuk. */
+self.addEventListener("push", function (e) {
+  var data = {};
+  try { if (e.data) data = e.data.json(); } catch (err) { data = {}; }
+  var title = data.title || "GankStore";
+  var body = data.body || "";
+  var url = data.url || "/#/admin/chat";
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: url },
+      tag: "gankstore-admin",
+      renotify: true
+    })
+  );
+});
+self.addEventListener("notificationclick", function (e) {
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || "/#/admin/chat";
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].url.indexOf(self.location.origin) === 0) {
+          list[i].focus();
+          list[i].navigate(url);
+          return;
+        }
+      }
+      return clients.openWindow(url);
     })
   );
 });

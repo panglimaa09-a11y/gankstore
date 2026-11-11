@@ -62,9 +62,11 @@ window.GS_CONFIG = {
     { name: "Produk Digital Lainnya", currency: "Produk", needsServer: false, serverLabel: "", idLabel: "ID / keterangan penerima", idPlaceholder: "cth. ID atau email penerima" }
   ],
 
-  /* Backend AI untuk live chat support (pb-ai /support -> 9Router).
-     Bukan secret: alamat publik tunnel, tanpa kunci. */
-  SUPPORT_AI_URL: "https://curvature-reunite-perfected.ngrok-free.dev/pb-ai",
+  /* Kunci publik VAPID untuk Web Push (bukan secret — kunci publik memang
+     dibagikan ke browser supaya bisa berlangganan push). Kunci privatnya
+     hanya ada di tabel push_settings Supabase (service_role saja) dan
+     dibuat oleh Edge Function setup-push-keys. Diisi setelah setup. */
+  VAPID_PUBLIC_KEY: "BGZnapxzxYRSQpUGn9y0zeILjx5GZ6jNN1TokvzEtX8dwDB_yLVFUGaQw0QTP5hQU3gsoWGbMbHRJKmFsj9-4m8",
 
   /* Akun demo pembeli untuk review Midtrans (dibuat di server bila
      GS_SEED_DEMO=1). Bukan akun admin. Password-nya hanya ada di env

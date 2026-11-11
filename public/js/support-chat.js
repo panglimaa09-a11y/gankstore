@@ -1,181 +1,184 @@
-/* GankStore — Live chat support (Jarvis AI).
-   Gelembung chat di semua halaman. Jawaban AI lewat backend /pb-ai/support
-   (FastAPI :8765 -> 9Router, pola async job + polling seperti /ask).
-   Bila AI gagal/tidak terjangkau: tampilkan pesan gangguan + arahkan ke
-   WhatsApp admin. Riwayat tersimpan di localStorage; tombol "Minta admin
-   balas" mengirim transkrip ke inbox Pesan Support (#/admin/support). */
+/* GankStore — Live chat support TANPA AI (12 Nov 2026, perintah Tuan).
+   Pembeli chat langsung dengan admin (Tuan). Pesan tersimpan di Supabase
+   (live_chats + live_chat_messages); admin membalas dari #/admin/chat.
+   Widget mengecek balasan admin tiap 3 detik selama panel terbuka.
+   Riwayat chat tersimpan di localStorage (id chat UUID) + server.
+   Kalau server tidak terjangkau, pesan ditampilkan sebagai "belum terkirim"
+   dan pembeli diarahkan ke WhatsApp admin. */
 (function () {
   "use strict";
-  var AI_BASE = (window.GS_CONFIG && window.GS_CONFIG.SUPPORT_AI_URL) || "https://curvature-reunite-perfected.ngrok-free.dev/pb-ai";
-  var WA_NUMBER = "6289681992892";
-  var LS_KEY = "gs_chat_history";
-  var MAX_MSGS = 50;
-  var GREETING = "Halo! Aku Jarvis, support GankStore. Ada yang bisa dibantu? Tanya soal cara beli, cara bayar, atau status pesanan — kalau ada nomor invoice, ketik saja nomornya.";
-  var FALLBACK = "Maaf, AI support lagi gangguan. Silakan chat admin langsung via WhatsApp, atau ketuk \"Minta admin balas\" di bawah — nanti admin balas.";
+  var LS_CHAT = "gs_live_chat_id";
+  var LS_CACHE = "gs_live_chat_cache";
+  var POLL_MS = 3000;
+  var MAX_MSGS = 100;
+  var WA_LINK = "https://wa.me/6289681992892?text=Halo%20GankStore";
+  var GREETING = "Halo! Kamu terhubung langsung dengan admin GankStore. Tulis pertanyaanmu di bawah — admin akan membalas di sini. Kalau panel ini ditutup, riwayat chat tetap tersimpan di browser ini.";
 
-  var fab, panel, body, form, input, chips, escForm, escName, escContact;
+  var fab, panel, body, form, input, chips;
+  var chatId = null;
   var messages = [];
-  var sending = false;
   var pollTimer = null;
+  var sending = false;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
-  function fmtIDR(n) {
-    if (typeof window.formatIDR === "function") return window.formatIDR(n);
-    return "Rp" + Number(n || 0).toLocaleString("id-ID");
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
   }
-  function load() {
+  function getChatId() {
     try {
-      var raw = localStorage.getItem(LS_KEY);
-      if (raw) { var arr = JSON.parse(raw); if (Array.isArray(arr)) messages = arr.slice(-MAX_MSGS); }
+      chatId = localStorage.getItem(LS_CHAT);
+      if (!chatId) {
+        chatId = uuid();
+        localStorage.setItem(LS_CHAT, chatId);
+      }
+    } catch (e) {
+      chatId = chatId || uuid();
+    }
+    return chatId;
+  }
+  function loadCache() {
+    try {
+      var raw = localStorage.getItem(LS_CACHE);
+      if (raw) {
+        var arr = JSON.parse(raw);
+        if (Array.isArray(arr)) messages = arr.slice(-MAX_MSGS);
+      }
     } catch (e) { messages = []; }
   }
-  function save() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(messages.slice(-MAX_MSGS))); } catch (e) {}
+  function saveCache() {
+    try { localStorage.setItem(LS_CACHE, JSON.stringify(messages.slice(-MAX_MSGS))); } catch (e) {}
   }
-  function push(role, text) {
-    messages.push({ role: role, text: String(text), ts: Date.now() });
-    if (messages.length > MAX_MSGS) messages = messages.slice(-MAX_MSGS);
-    save();
+  function fmtTime(ts) {
+    try {
+      var d = new Date(ts);
+      return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+    } catch (e) { return ""; }
   }
   function render() {
     if (!body) return;
     var html = "";
     for (var i = 0; i < messages.length; i++) {
       var m = messages[i];
-      if (m.role === "sys") html += '<div class="chat-sys">' + esc(m.text) + "</div>";
-      else html += '<div class="chat-msg ' + (m.role === "user" ? "me" : "ai") + '">' + esc(m.text).replace(/\n/g, "<br>") + "</div>";
+      if (m.role === "sys") {
+        html += '<div class="chat-sys">' + esc(m.text) + "</div>";
+      } else {
+        html += '<div class="chat-msg ' + (m.role === "user" ? "me" : "ai") + '">' +
+          esc(m.text).replace(/\n/g, "<br>") +
+          '<span class="chat-time">' + esc(fmtTime(m.ts)) + "</span></div>";
+      }
     }
     body.innerHTML = html;
     body.scrollTop = body.scrollHeight;
   }
-  function setTyping(on) {
-    var t = document.getElementById("chatTyping");
-    if (t) t.hidden = !on;
-    if (body) body.scrollTop = body.scrollHeight;
-  }
-  function setBusy(b) {
-    sending = b;
-    if (input) input.disabled = b;
-    var btn = form ? form.querySelector(".chat-send") : null;
-    if (btn) btn.disabled = b;
+  function push(role, text, ts) {
+    messages.push({ role: role, text: String(text), ts: ts || Date.now() });
+    if (messages.length > MAX_MSGS) messages = messages.slice(-MAX_MSGS);
+    saveCache();
   }
   function toast(msg) {
     if (typeof window.showToast === "function") { window.showToast(msg); return; }
     push("sys", msg); render();
   }
-
-  function invoiceContext(text) {
-    var m = String(text || "").match(/INV-[0-9][0-9A-Za-z-]*/i);
-    if (!m) return Promise.resolve("");
-    var inv = m[0].toUpperCase();
-    if (typeof window.api !== "function") return Promise.resolve("Nomor invoice " + inv + " disebut pembeli, tapi statusnya tidak bisa dicek saat ini.");
-    return window.api("/api/orders/" + encodeURIComponent(inv)).then(function (o) {
-      if (!o || !o.invoiceNo) return "Nomor invoice " + inv + " tidak ditemukan di sistem.";
-      var status = o.status === "lunas" ? "Lunas" : o.status === "dibatalkan" ? "Dibatalkan" : "Menunggu Pembayaran";
-      var proof = o.proofImage ? "bukti pembayaran SUDAH diunggah" : "bukti pembayaran BELUM diunggah";
-      return "Pesanan " + inv + ": produk " + (o.title || "-") + ", status " + status + ", total " + fmtIDR(o.total) + ", " + proof + ".";
-    }).catch(function () {
-      return "Nomor invoice " + inv + " tidak ditemukan di sistem.";
-    });
+  function mergeServer(list) {
+    // Gabungkan pesan server (sumber kebenaran) dengan cache lokal.
+    var byKey = {};
+    var merged = [];
+    function keyOf(m) { return (m.role || "") + "|" + (m.text || "") + "|" + Math.floor((m.ts || 0) / 5000); }
+    for (var i = 0; i < messages.length; i++) {
+      var k = keyOf(messages[i]);
+      if (!byKey[k]) { byKey[k] = true; merged.push(messages[i]); }
+    }
+    for (var j = 0; j < list.length; j++) {
+      var sm = list[j];
+      var nm = {
+        role: sm.sender === "admin" ? "ai" : "user",
+        text: String(sm.text || ""),
+        ts: new Date(sm.created_at || Date.now()).getTime(),
+      };
+      var k2 = keyOf(nm);
+      if (!byKey[k2]) { byKey[k2] = true; merged.push(nm); }
+    }
+    merged.sort(function (a, b) { return a.ts - b.ts; });
+    messages = merged.slice(-MAX_MSGS);
+    saveCache();
   }
-
-  function askAI(question, context) {
-    var history = messages.filter(function (m) { return m.role === "user" || m.role === "ai"; })
-      .slice(-6).map(function (m) { return { role: m.role, content: m.text }; });
-    return fetch(AI_BASE + "/support", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "ngrok-skip-browser-warning": "true" },
-      body: JSON.stringify({ question: question, history: history, context: context || "" })
-    }).then(function (r) {
-      if (!r.ok) throw new Error("http " + r.status);
-      return r.json();
-    }).then(function (d) {
-      if (!d || !d.job_id) throw new Error("no job");
-      return pollJob(d.job_id);
-    });
+  function fetchMessages() {
+    if (typeof window.api !== "function") return Promise.resolve(false);
+    return window.api("/api/live-chats/" + encodeURIComponent(getChatId()) + "/messages")
+      .then(function (list) {
+        if (!Array.isArray(list)) return false;
+        var before = messages.length;
+        mergeServer(list);
+        render();
+        return messages.length !== before;
+      })
+      .catch(function () { return false; });
   }
-  function pollJob(jobId) {
-    return new Promise(function (resolve, reject) {
-      var tries = 0;
-      function tick() {
-        tries++;
-        fetch(AI_BASE + "/support/" + encodeURIComponent(jobId), {
-          headers: { "ngrok-skip-browser-warning": "true" }
-        }).then(function (r) {
-          if (!r.ok) throw new Error("http " + r.status);
-          return r.json();
-        }).then(function (d) {
-          if (d && d.status === "done" && d.answer) return resolve(String(d.answer));
-          if (d && d.status === "error") return reject(new Error("ai error"));
-          if (tries >= 30) return reject(new Error("timeout"));
-          pollTimer = setTimeout(tick, 2000);
-        }).catch(reject);
-      }
-      tick();
-    });
+  function startPoll() {
+    stopPoll();
+    fetchMessages();
+    pollTimer = setInterval(fetchMessages, POLL_MS);
   }
-
+  function stopPoll() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  }
+  function ensureChat() {
+    if (typeof window.api !== "function") return Promise.resolve(false);
+    return window.api("/api/live-chats", { method: "POST", body: { id: getChatId() } })
+      .then(function () { return true; })
+      .catch(function () { return false; });
+  }
   function send(text) {
     text = String(text || "").trim();
     if (!text || sending) return;
-    push("user", text);
-    render();
-    setBusy(true);
-    setTyping(true);
-    invoiceContext(text).then(function (ctx) {
-      return askAI(text, ctx);
-    }).then(function (answer) {
-      setTyping(false);
-      push("ai", answer);
+    if (text.length > 1000) text = text.slice(0, 1000);
+    sending = true;
+    if (input) input.disabled = true;
+    var btn = form ? form.querySelector(".chat-send") : null;
+    if (btn) btn.disabled = true;
+    ensureChat().then(function (ok) {
+      if (!ok || typeof window.api !== "function") throw new Error("no api");
+      return window.api("/api/live-chats/" + encodeURIComponent(getChatId()) + "/messages", {
+        method: "POST",
+        body: { sender: "buyer", text: text },
+      });
+    }).then(function () {
+      push("user", text);
       render();
+      return fetchMessages();
     }).catch(function () {
-      setTyping(false);
-      push("sys", FALLBACK);
+      push("user", text);
+      push("sys", "Pesan belum terkirim (server tidak terjangkau). Coba lagi, atau hubungi admin via WhatsApp.");
       render();
     }).then(function () {
-      setBusy(false);
-      if (input) input.focus();
+      sending = false;
+      if (input) { input.disabled = false; input.focus(); }
+      if (btn) btn.disabled = false;
     });
   }
-
   function openPanel() {
     if (!panel) return;
     panel.hidden = false;
     if (fab) fab.setAttribute("aria-expanded", "true");
     if (!messages.length) { push("ai", GREETING); render(); }
     render();
+    startPoll();
     if (input) input.focus();
   }
   function closePanel() {
     if (!panel) return;
     panel.hidden = true;
     if (fab) fab.setAttribute("aria-expanded", "false");
-    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    stopPoll();
   }
-
-  function escalate() {
-    var name = escName ? escName.value.trim() : "";
-    var contact = escContact ? escContact.value.trim() : "";
-    if (name.length < 2) { toast("Isi namamu dulu ya."); return; }
-    if (contact.length < 5) { toast("Isi WhatsApp / email untuk dibalas admin."); return; }
-    var lines = messages.map(function (m) {
-      return (m.role === "user" ? "Pembeli" : m.role === "ai" ? "Jarvis" : "Sistem") + ": " + m.text;
-    }).join("\n");
-    if (typeof window.api !== "function") { toast("Gagal mengirim ke admin. Coba lagi atau hubungi via WhatsApp."); return; }
-    window.api("/api/support", { method: "POST", body: { name: name, contact: contact, topic: "Live Chat", message: lines.slice(0, 4000) } })
-      .then(function () {
-        if (escForm) escForm.hidden = true;
-        push("sys", "Sudah diteruskan ke admin. Nanti dibalas via " + contact + ".");
-        render();
-        toast("Obrolan terkirim ke admin.");
-      })
-      .catch(function () { toast("Gagal mengirim ke admin. Coba lagi atau hubungi via WhatsApp."); });
-  }
-
   function init() {
     fab = document.getElementById("chatFab");
     panel = document.getElementById("chatPanel");
@@ -183,11 +186,9 @@
     form = document.getElementById("chatForm");
     input = document.getElementById("chatInput");
     chips = document.getElementById("chatChips");
-    escForm = document.getElementById("chatEscalateForm");
-    escName = document.getElementById("escName");
-    escContact = document.getElementById("escContact");
     if (!fab || !panel || !body) return;
-    load();
+    getChatId();
+    loadCache();
     render();
     fab.addEventListener("click", function () {
       if (panel.hidden) openPanel(); else closePanel();
@@ -204,16 +205,7 @@
       var b = ev.target.closest ? ev.target.closest("[data-q]") : null;
       if (b) send(b.getAttribute("data-q"));
     });
-    var escBtn = document.getElementById("chatEscalate");
-    if (escBtn) escBtn.addEventListener("click", function () {
-      if (escForm) { escForm.hidden = !escForm.hidden; if (!escForm.hidden && escName) escName.focus(); }
-    });
-    var escSend = document.getElementById("escSend");
-    if (escSend) escSend.addEventListener("click", escalate);
-    var escCancel = document.getElementById("escCancel");
-    if (escCancel) escCancel.addEventListener("click", function () { if (escForm) escForm.hidden = true; });
   }
-
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
