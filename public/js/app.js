@@ -266,6 +266,9 @@ function initServer(attempt){
         slider.addEventListener("pointerup", start);
         slider.addEventListener("pointercancel", start);
         slider.addEventListener("pointerleave", start);
+        // Jaring pengaman: scroll apa pun memastikan timer hidup lagi,
+        // seandainya pointercancel tidak sampai di perangkat tertentu.
+        window.addEventListener("scroll", start, { passive: true });
         document.addEventListener("visibilitychange", function(){ document.hidden ? stop() : start(); });
         start();
       }
