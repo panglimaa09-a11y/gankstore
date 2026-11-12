@@ -5,12 +5,12 @@
    ?v= di index.html DAN di CORE bawah ini — kalau tidak, HP yang sudah
    pasang PWA tetap pakai file lama (cache-first) dan fitur baru tidak
    jalan (kejadian 11 Nov 2026: slider tidak bergerak). */
-var CACHE = "gankstore-v6";
+var CACHE = "gankstore-v7";
 var CORE = [
   "/", "/index.html", "/manifest.json",
-  "/css/style.css?v=9", "/css/hero.css",
-  "/js/config.js?v=10", "/js/app.js?v=9", "/js/payments.js?v=7", "/js/topup.js", "/js/qrcode.js?v=7", "/js/support-chat.js?v=11",
-  "/js/supabase-client.js?v=10", "/js/lamp.js",
+  "/css/style.css?v=10", "/css/hero.css",
+  "/js/config.js?v=10", "/js/app.js?v=12", "/js/payments.js?v=8", "/js/topup.js", "/js/qrcode.js?v=7", "/js/support-chat.js?v=11",
+  "/js/supabase-client.js?v=12", "/js/lamp.js",
   "/icon.png", "/logo.png", "/banner.png", "/qris.jpg",
   "/brand/gankstore-banner.png",
   "/brand/gankstore-banner-pb.jpg",

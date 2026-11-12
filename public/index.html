@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="css/style.css?v=9" />
+        <link rel="stylesheet" href="css/style.css?v=10" />
     <link rel="stylesheet" href="css/hero.css" />
   </head>
   <body>
@@ -76,7 +76,7 @@
           <b>Butuh bantuan?</b>
           <span>Hubungi Support →</span>
         </a>
-        <a class="side-wa" href="https://wa.me/6289681992892" target="_blank" rel="noopener">WhatsApp 0896 8199 2892</a>
+        <a class="side-wa" data-wa href="https://wa.me/6289681992892" target="_blank" rel="noopener">WhatsApp 0896 8199 2892</a>
       </div>
     </aside>
 
@@ -290,8 +290,9 @@
         </div>
 
         <div class="support-contacts">
-          <a class="btn btn-lime" href="https://wa.me/6289681992892" target="_blank" rel="noopener">Chat WhatsApp — 0896 8199 2892</a>
-          <span class="support-alt">Telegram: GankStore &nbsp;·&nbsp; Respon tercepat lewat WhatsApp.</span>
+          <a class="btn btn-lime" data-wa href="https://wa.me/6289681992892" target="_blank" rel="noopener">Chat WhatsApp — 0896 8199 2892</a>
+          <span class="support-alt">Telegram: <span data-store-telegram>GankStore</span> &nbsp;·&nbsp; Respon tercepat lewat WhatsApp.</span>
+          <span class="support-alt">Email: <a data-store-email href="mailto:panglimaa09@gmail.com">panglimaa09@gmail.com</a></span>
         </div>
 
         <div class="two-col">
@@ -415,7 +416,7 @@
         <div class="info-box">
           <h3>Hubungi kami</h3>
           <ul>
-            <li>WhatsApp: <a href="https://wa.me/6289681992892">0896 8199 2892</a></li>
+            <li>WhatsApp: <a data-wa-num href="https://wa.me/6289681992892">0896 8199 2892</a></li>
             <li>Email: <a href="mailto:nexorateam44@gmail.com">nexorateam44@gmail.com</a></li>
           </ul>
         </div>
@@ -510,20 +511,54 @@
         <div class="page-head">
           <div class="breadcrumb">Panel Admin / Pengaturan Toko</div>
           <h1>Pengaturan Toko</h1>
-          <p>Halaman khusus pengaturan pembayaran. Semua pesanan dibayar pembeli lewat invoice di dalam toko ini — tidak ada checkout keluar ke aplikasi lain.</p>
+          <p>Semua pengaturan toko di satu halaman: profil, pembayaran, top up, dan status toko. Perubahan tersimpan di database dan langsung berlaku.</p>
         </div>
         <div class="auth-wrap" style="max-width:640px;margin:0">
           <div class="panel" style="margin-top:20px">
+            <h3>Profil Toko</h3>
+            <p class="set-note">Nama dipakai di judul tab browser. Nomor WhatsApp dipakai di tombol kirim bukti dan tautan WhatsApp di toko.</p>
+            <div class="field"><label for="setStoreName">Nama toko</label><input id="setStoreName" type="text" maxlength="60" autocomplete="off"></div>
+            <div class="field"><label for="setStoreTagline">Slogan toko</label><input id="setStoreTagline" type="text" maxlength="120" autocomplete="off"></div>
+            <div class="field"><label for="setStoreWa">Nomor WhatsApp toko</label><input id="setStoreWa" type="tel" inputmode="numeric" autocomplete="off" placeholder="6289681992892"><p class="hint">Angka saja, diawali 62.</p></div>
+            <div class="field"><label for="setStoreEmail">Email toko</label><input id="setStoreEmail" type="email" autocomplete="off"><p class="hint">Ditampilkan di halaman Bantuan.</p></div>
+            <div class="field"><label for="setStoreTelegram">Telegram toko</label><input id="setStoreTelegram" type="text" autocomplete="off" placeholder="GankStore"><p class="hint">Nama pengguna tanpa @. Kosongkan bila belum ada.</p></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px"><button class="btn-pay" type="button" id="btnSaveProfile" style="width:auto;padding:10px 18px">Simpan Profil</button><span class="set-note" id="profileNote"></span></div>
+          </div>
+          <div class="panel" style="margin-top:20px">
             <h3>Pembayaran &amp; Biaya Admin</h3>
-            <div class="inv-rows">
+            <div class="field"><label for="setFeeRate">Biaya admin (%)</label><input id="setFeeRate" type="number" min="0" max="50" step="0.5" inputmode="decimal"><p class="hint" id="feeExample">Contoh: akun Rp1.000 → admin Rp100 → total Rp1.100</p></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px"><button class="btn-pay" type="button" id="btnSaveFee" style="width:auto;padding:10px 18px">Simpan Biaya Admin</button><span class="set-note" id="feeNote"></span></div>
+            <div class="inv-rows" style="margin-top:14px">
               <div class="inv-row"><span>Metode pembayaran</span><b>QRIS manual (NEXORA TEAM) + Midtrans Snap (menyusul)</b></div>
-              <div class="inv-row"><span>Biaya admin</span><b>10% dari harga akun</b></div>
-              <div class="inv-row"><span>Contoh</span><b>Akun Rp1.000 → admin Rp100 → total Rp1.100</b></div>
               <div class="inv-row"><span>Total invoice</span><b>Harga akun + biaya admin</b></div>
               <div class="inv-row"><span>Status gateway Midtrans</span><b id="midtransStatus">Memeriksa…</b></div>
             </div>
+            <p class="pay-note">Biaya admin dihitung di setiap invoice baru (akun dan top up), dibulatkan ke rupiah terdekat. Invoice yang sudah terbit tidak berubah.</p>
             <p class="pay-note">Invoice menampilkan kode QRIS manual untuk dibayar pembeli. Setelah pembeli kirim bukti ke WhatsApp, kamu konfirmasi lunas manual dari Daftar Stok. Tombol Bayar Midtrans aktif setelah pembayaran online terhubung.</p>
-            <p class="scope-note">Biaya admin 10% otomatis dihitung di setiap invoice (akun dan top up), dibulatkan ke rupiah terdekat.</p>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <h3>Top Up</h3>
+            <div class="set-row"><div><b>Maintenance Top Up</b><p class="set-note" id="topupMaintState">Memeriksa…</p></div><label class="set-toggle"><input type="checkbox" id="setTopupMaint"><span>Maintenance</span></label></div>
+            <div class="inv-rows">
+              <div class="inv-row"><span>Paket top up tersimpan</span><b id="tpPkgCount">…</b></div>
+            </div>
+            <p class="set-note" id="topupNote"></p>
+            <p style="margin:12px 0 0"><a class="btn-detail" href="#/admin/toppup">Kelola Paket Top Up</a></p>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <h3>Toko</h3>
+            <div class="set-row"><div><b>Tutup toko sementara</b><p class="set-note" id="closedState">Memeriksa…</p></div><label class="set-toggle"><input type="checkbox" id="setStoreClosed"><span>Tutup toko</span></label></div>
+            <div class="field"><label for="setAnnouncement">Pengumuman beranda</label><textarea id="setAnnouncement" rows="2" maxlength="200" placeholder="Tulis pengumuman singkat untuk pembeli"></textarea><p class="hint">Tampil di ticker beranda. Kosongkan untuk menyembunyikan.</p></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px"><button class="btn-pay" type="button" id="btnSaveStore" style="width:auto;padding:10px 18px">Simpan Pengumuman</button><span class="set-note" id="storeNote"></span></div>
+          </div>
+          <div class="panel" style="margin-top:20px">
+            <h3>Notifikasi</h3>
+            <div class="inv-rows">
+              <div class="inv-row"><span>Perangkat berlangganan push</span><b id="pushCount">…</b></div>
+              <div class="inv-row"><span>Email invoice otomatis</span><b>panglimaa09@gmail.com</b></div>
+            </div>
+            <p class="pay-note">Notifikasi HP diaktifkan dari halaman Live Chat. Email invoice dikirim otomatis ke alamat di atas setiap ada pesanan atau bukti bayar; alamat itu diatur di fungsi email server, bukan di sini.</p>
+            <p style="margin:12px 0 0"><a class="btn-detail" href="#/admin/chat">Buka Live Chat dan Notifikasi</a></p>
           </div>
         </div>
       </main>
@@ -875,7 +910,7 @@
         <button class="chat-send" type="submit" aria-label="Kirim"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21.9 12 3.4 3.6l-.01 6.53L14 12 3.39 13.87z"/></svg></button>
       </form>
       <div class="chat-foot">
-        <a href="https://wa.me/6289681992892?text=Halo%20GankStore" target="_blank" rel="noopener">Chat WhatsApp admin</a>
+        <a data-wa href="https://wa.me/6289681992892?text=Halo%20GankStore" target="_blank" rel="noopener">Chat WhatsApp admin</a>
         <span>AI menjawab instan · Admin memantau</span>
       </div>
     </section>
@@ -883,12 +918,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="js/config.js?v=10"></script>
-    <script src="js/supabase-client.js?v=10"></script>
-    <script src="js/app.js?v=9"></script>
+    <script src="js/supabase-client.js?v=12"></script>
+    <script src="js/app.js?v=12"></script>
     <script src="js/lamp.js"></script>
     <script src="js/topup.js"></script>
     <script src="js/qrcode.js?v=7"></script>
-    <script src="js/payments.js?v=7"></script>
+    <script src="js/payments.js?v=8"></script>
     <script src="js/support-chat.js?v=11"></script>
   </body>
 </html>

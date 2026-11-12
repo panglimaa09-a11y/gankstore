@@ -205,6 +205,21 @@
         return (s.topup_maintenance || "true") === "true";
       }).catch(function(){ return true; /* gagal baca = tetap maintenance (aman) */ });
     },
+    /* Simpan satu setting (admin saja, ditegakkan RLS
+       settings_write_admin). Pakai upsert supaya key baru maupun lama
+       sama-sama bisa ditulis. Cache settings dibersihkan supaya baca
+       berikutnya langsung melihat nilai baru. */
+    updateSetting: function(key, value){
+      needClient();
+      _settingsCache = null;
+      return client.from("settings")
+        .upsert({ key: String(key), value: String(value == null ? "" : value) }, { onConflict: "key" })
+        .select("key,value")
+        .then(function(res){
+          if (res.error) fail(res.error);
+          return (res.data && res.data[0]) || { key: key, value: String(value == null ? "" : value) };
+        });
+    },
 
     /* ---------- produk (menggantikan /api/products) ----------
        products = LISTING; stok = stock_units (1 baris = 1 akun).

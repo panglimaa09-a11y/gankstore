@@ -9,6 +9,41 @@
          tidak terjangkau, semua fungsi lama (localStorage + memori) tetap
          jalan (mode lokal). Tidak ada lagi backend Python. */
       var Server={enabled:false,token:null,user:null,payments:{configured:false,is_production:false,client_key:null}};
+      /* ---------- profil + saklar toko (Pengaturan Toko, 12 Nov 2026) -----
+         Dibaca dari tabel settings Supabase saat boot (initServer), disimpan
+         di window.GS_STORE supaya file JS lain (payments.js, topup.js) ikut
+         bisa pakai. Nilai default = kondisi toko hari ini bila settings
+         belum ada / Supabase tidak terjangkau. */
+      window.GS_STORE = window.GS_STORE || { feeRate: 0.10, closed: false, announcement: "", name: "GankStore", tagline: "", whatsapp: "6289681992892", email: "panglimaa09@gmail.com", telegram: "" };
+      function storeFeeRate(){ var s = window.GS_STORE || {}; var r = (typeof s.feeRate === "number") ? s.feeRate : Number(window.GS_CONFIG.ADMIN_FEE_RATE || 0.10); if (isNaN(r) || r < 0) r = 0.10; if (r > 0.50) r = 0.50; return r; }
+      function feePct(){ return Math.round(storeFeeRate() * 100) + "%"; }
+      function storeWaNumber(){ var s = window.GS_STORE || {}; var w = String(s.whatsapp || "6289681992892").replace(/\D/g, ""); return w || "6289681992892"; }
+      function storeWaLink(text){ return "https://wa.me/" + storeWaNumber() + (text ? "?text=" + encodeURIComponent(text) : ""); }
+      function storeWaDisplay(){ var w = storeWaNumber().replace(/^62/, "0"); return w.replace(/(\d{4})(?=\d)/g, "$1 ").trim(); }
+      function applyStoreSettings(s){
+        s = s || {};
+        var st = window.GS_STORE || {};
+        st.name = String(s.store_name || "GankStore").slice(0, 60) || "GankStore";
+        st.tagline = String(s.store_tagline || "");
+        st.whatsapp = String(s.store_whatsapp || "6289681992892").replace(/\D/g, "") || "6289681992892";
+        st.email = String(s.store_email || "panglimaa09@gmail.com");
+        st.telegram = String(s.store_telegram || "").replace(/^@/, "");
+        var fr = parseFloat(s.admin_fee_rate);
+        st.feeRate = (isNaN(fr) ? 0.10 : Math.min(0.50, Math.max(0, fr)));
+        st.closed = String(s.store_closed || "false") === "true";
+        st.announcement = String(s.announcement || "");
+        window.GS_STORE = st;
+        applyStoreProfile();
+        try { if (typeof renderTicker === "function") renderTicker(); } catch (e) {}
+      }
+      function applyStoreProfile(){
+        var st = window.GS_STORE || {};
+        try { document.title = (st.name || "GankStore") + " - Toko Akun Point Blank"; } catch (e) {}
+        document.querySelectorAll("[data-wa]").forEach(function(a){ try { a.href = storeWaLink("Halo GankStore"); } catch (e) {} });
+        document.querySelectorAll("[data-wa-num]").forEach(function(a){ try { a.href = storeWaLink("Halo GankStore"); a.textContent = storeWaDisplay(); } catch (e) {} });
+        document.querySelectorAll("[data-store-email]").forEach(function(el){ try { el.textContent = st.email || ""; if (el.tagName === "A") el.href = "mailto:" + (st.email || ""); } catch (e) {} });
+        document.querySelectorAll("[data-store-telegram]").forEach(function(el){ try { if (st.telegram) el.textContent = "Telegram: @" + st.telegram; } catch (e) {} });
+      }
 function apiToken(){ try { return (window.Supa && Supa.getAccessToken()) || localStorage.getItem("gankstore_token"); } catch (e) { return window.Supa ? Supa.getAccessToken() : null; } }
 function setToken(t){ try { if (t) localStorage.setItem("gankstore_token", t); else localStorage.removeItem("gankstore_token"); } catch (e) {} }
 
@@ -156,6 +191,7 @@ function initServer(attempt){
     if (health && typeof health.topup_maintenance === "boolean") {
       window.GS_CONFIG.TOPUP_MAINTENANCE = health.topup_maintenance;
     }
+    try { if (window.Supa && Supa.getSettings) Supa.getSettings().then(function(s){ applyStoreSettings(s || {}); }).catch(function(){}); } catch (e) {}
     return Promise.all([
       api("/api/products").catch(function(){ return []; }),
       api("/api/orders").catch(function(){ return []; }),
@@ -415,6 +451,9 @@ function initServer(attempt){
         /* Ticker SELALU tampil. Saat stok/pesanan/penjualan masih kosong,
            tampilkan teks bermakna tanpa angka palsu — jangan deretan nol. */
         var empty=!analytics.orders.length&&!state.products.length&&totalRevenue()===0;
+        var st = window.GS_STORE || {};
+        if (st.closed) { t.innerHTML="<span><b>Toko tutup sementara.</b> Pembelian dijeda."+(st.announcement?" &nbsp;◆&nbsp; "+esc(st.announcement):"")+"</span>"; return; }
+        if (st.announcement) { t.innerHTML="<span>"+esc(st.announcement)+" &nbsp;◆&nbsp; "+(empty?"Toko buka — akun Point Blank siap main":tickerText())+"</span>"; return; }
         t.innerHTML=empty?"<span>Toko buka — akun Point Blank siap main &nbsp;◆&nbsp; Pembayaran via QRIS manual &nbsp;◆&nbsp; Butuh bantuan? Hubungi Support</span>":"<span>"+tickerText()+"</span>";
       }
       function showEventPopup(p,kind){
@@ -428,12 +467,13 @@ function initServer(attempt){
         el.querySelector(".sp-close").addEventListener("click",kill);
         setTimeout(kill,6000);
       }
-      function adminFee(price){return Math.round(Number(price||0)*0.10);}
+      function adminFee(price){return Math.round(Number(price||0)*storeFeeRate());}
       function makeInvoiceNo(){analytics.invoiceSeq++;var d=new Date();function p2(n){return (n<10?"0":"")+n;}return "INV-"+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+"-"+p2(d.getHours())+p2(d.getMinutes())+p2(d.getSeconds())+"-"+analytics.invoiceSeq;}
       function findOrder(inv){for(var i=0;i<analytics.orders.length;i++){if(analytics.orders[i].invoiceNo===inv)return analytics.orders[i];}return null;}
       function trackBuy(p){
         /* Beli = klaim 1 unit stok yang tersedia. Listing tetap bisa
            dibeli selama sisa unit > 0 (server mengklaim atomik). */
+        if (window.GS_STORE && window.GS_STORE.closed) { showToast("Toko sedang tutup sementara. Pembelian dijeda."); return Promise.resolve(null); }
         if(stockCounts(p).av<=0)return Promise.resolve(null);
         if(Server.enabled){
           return api("/api/orders",{method:"POST",body:{product_id:p.id}}).then(function(o){
@@ -497,7 +537,7 @@ function initServer(attempt){
          bila RPC belum live (patch 08 belum di-apply), tombol WA dibuka lagi
          dan pembeli diminta melampirkan foto manual di chat WA. */
       function waProofLink(o){
-        return "https://wa.me/6289681992892?text=" + encodeURIComponent("Invoice bukti pembayaran " + o.invoiceNo + " — total " + formatIDR(o.total) + ". Foto bukti terlampir.");
+        return storeWaLink("Invoice bukti pembayaran " + o.invoiceNo + " — total " + formatIDR(o.total) + ". Foto bukti terlampir.");
       }
       function compressProofImage(file, cb){
         var reader = new FileReader();
@@ -606,11 +646,10 @@ function initServer(attempt){
           if(typeof midtransPayBlock==="function"){payBlock=midtransPayBlock(o);}
           else{
             /* Cadangan bila payments.js gagal dimuat: QRIS manual tetap tampil. */
-            var waText=encodeURIComponent("Invoice bukti pembayaran "+o.invoiceNo+" — total "+formatIDR(o.total)+". Foto bukti terlampir.");
-            payBlock='<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b><p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar '+formatIDR(o.total)+'</strong> atas nama NEXORA TEAM.</p><img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM"><p class="qris-total">Total bayar: <b>'+formatIDR(o.total)+'</b></p><p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p><a class="btn-pay" id="btnWaProof" href="https://wa.me/6289681992892?text='+waText+'" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div><div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
+            payBlock='<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b><p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — bayar <strong>tepat sebesar '+formatIDR(o.total)+'</strong> atas nama NEXORA TEAM.</p><img class="qris-img" src="qris.jpg" alt="Kode QRIS NEXORA TEAM"><p class="qris-total">Total bayar: <b>'+formatIDR(o.total)+'</b></p><p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko ('+storeWaDisplay()+'). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p><a class="btn-pay" id="btnWaProof" href="'+waProofLink(o)+'" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div><div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin '+feePct()+').</p></div><button class="btn-pay" type="button" disabled>Bayar via Midtrans</button><p class="pay-note">Pembayaran online masih disiapkan. Invoice ini tetap sah sebagai catatan pesananmu — pembayaran dikonfirmasi dan statusnya berubah jadi Lunas.</p>';
           }
         }
-        wrap.innerHTML='<div class="invoice-box"><div class="invoice-title">Detail Pesanan</div><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Produk")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.kind!=="topup"?'<div class="inv-row"><span>Jumlah</span><b>1 akun</b></div><div class="inv-row"><span>Metode</span><b>QRIS</b></div>':"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>Subtotal</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin (10%)</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+(st!=="terjual"&&st!=="dibatalkan"?proofUploadBlock(o):"")+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
+        wrap.innerHTML='<div class="invoice-box"><div class="invoice-title">Detail Pesanan</div><div class="invoice-head"><div><div class="invoice-no">'+esc(o.invoiceNo)+'</div><div style="color:var(--ink-faint);font-weight:600;font-size:14px">Dibuat '+o.time+" · "+esc(o.game)+'</div></div>'+statusChip+'</div><div class="inv-rows"><div class="inv-row"><span>Pembeli</span><b>'+esc(o.buyerName)+(o.buyerEmail?" ("+esc(o.buyerEmail)+")":"")+'</b></div><div class="inv-row"><span>'+(o.kind==="topup"?"Top Up":"Produk")+'</span><b>'+esc(o.title)+'</b></div>'+(o.kind==="topup"?'<div class="inv-row"><span>User ID</span><b>'+esc(o.userId||"-")+'</b></div>'+(o.serverId?'<div class="inv-row"><span>Server / Zone ID</span><b>'+esc(o.serverId)+'</b></div>':""):"")+(o.kind!=="topup"?'<div class="inv-row"><span>Jumlah</span><b>1 akun</b></div><div class="inv-row"><span>Metode</span><b>QRIS</b></div>':"")+(o.rank?'<div class="inv-row"><span>Rank</span><b>'+esc(o.rank)+'</b></div>':"")+'<div class="inv-row"><span>Subtotal</span><b>'+formatIDR(o.price)+'</b></div><div class="inv-row"><span>Biaya admin ('+feePct()+')</span><b>'+formatIDR(o.fee)+'</b></div><div class="inv-row total"><span>Total bayar</span><b>'+formatIDR(o.total)+"</b></div></div>"+payBlock+(st!=="terjual"&&st!=="dibatalkan"?proofUploadBlock(o):"")+'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="btn-detail" href="#/katalog" style="flex:1">Lihat Katalog</a><a class="btn-detail" href="#/akun" style="flex:1">Pesanan Saya</a></div></div>';
         if (typeof renderQrisCode === "function") renderQrisCode(o.total);
         var sp=document.getElementById("btnSnapPay");
         if(sp)sp.addEventListener("click",function(){if(typeof requestSnapPay==="function")requestSnapPay(o.invoiceNo);});
@@ -824,6 +863,7 @@ function initServer(attempt){
         if(r.page==="bantuan")renderSupportPage();
         if(r.page==="admin-support")renderSupportAdmin();
         if(r.page==="admin-chat")renderLiveChatAdmin();
+        if(r.page==="admin-pengaturan")renderSettingsAdmin();
         if(r.page==="topup"&&window.TopUp)TopUp.renderTopup();
         if(r.page==="topup-game"&&window.TopUp)TopUp.renderTopupGame(r.game);
         if(r.page==="admin-toppup"&&window.TopUp)TopUp.renderTopupAdmin();
@@ -847,7 +887,7 @@ function initServer(attempt){
         var stockLine=c.total>0?'<div class="stock-line">Stok: <b>'+c.av+'</b> tersedia'+(c.te>0?' · '+soldPct+'% terjual':'')+'</div><div class="stock-bar"><i style="width:'+soldPct+'%"></i></div>':'<div class="stock-line">Stok habis</div>';
         var buyBtn=c.av>0?'<button class="btn-buy" type="button" data-buy="'+p.id+'">Beli Sekarang</button>':'<span class="btn-buy disabled">'+(st==="dipesan"?"Dipesan":st==="terjual"?"Terjual":"Stok Habis")+'</span>';
         var badge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':st==="habis"?'<span class="badge-ordered">STOK HABIS</span>':"";
-        return '<div class="card-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div class="card-fee"><span class="fee-label">+ biaya admin 10% · </span>total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
+        return '<div class="card-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+media+'<span class="badge-game">'+esc(p.game)+"</span>"+badge+'</div><div class="card-body"><div class="card-title">'+esc(p.title)+'</div><div class="card-specs">'+specsHTML(p)+'</div>'+stockLine+'<div class="card-foot"><div class="price">'+formatIDR(p.price)+'</div><div class="card-fee"><span class="fee-label">+ biaya admin ' + feePct() + ' · </span>total '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</div><div class="card-actions"><a class="btn-detail" href="#/detail/'+p.id+'">Detail</a>'+buyBtn+"</div></div></div>";
       }
       function buildCard(p){var el=document.createElement("article");var st=pStatus(p);el.className="card"+(st==="terjual"||st==="habis"?" sold":st==="dipesan"?" ordered":"");el.innerHTML=cardHTML(p);var bb=el.querySelector("[data-buy]");if(bb)bb.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});el.addEventListener("click",function(ev){if(ev.target.closest("button,a"))return;location.hash="#/detail/"+p.id;});return el;}
 
@@ -937,7 +977,7 @@ function initServer(attempt){
         var buyHTML=c.av>0?'<button class="btn-buy" type="button" id="detailBuyNow">Beli Sekarang</button>':'<span class="btn-buy disabled">'+(st==="habis"?"Stok Habis":st==="dipesan"?"Sedang Dipesan Pembeli Lain":"Sudah Terjual")+'</span>';
         var stLabel=st==="terjual"?" · Terjual":st==="dipesan"?" · Dipesan":st==="habis"?" · Stok habis":" · Tersedia";
         var stBadge=st==="terjual"?'<span class="badge-sold">TERJUAL</span>':st==="dipesan"?'<span class="badge-ordered">DIPESAN</span>':st==="habis"?'<span class="badge-ordered">STOK HABIS</span>':"";
-        wrap.innerHTML='<div class="detail-layout"><div class="detail-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />')+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p class="dlg-stock">Stok tersedia: <b>'+c.av+' unit</b>'+(c.total>0?' dari '+c.total+' unit':'')+'</p><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin 10% ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Klik Beli Sekarang — 1 unit stok ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit. Setelah lunas dikonfirmasi, username &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses.</p></div></div>';
+        wrap.innerHTML='<div class="detail-layout"><div class="detail-media'+(isRankPhoto(p.photo)?' rank-photo':'')+'">'+(p.photo?'<img src="'+p.photo+'" alt="Foto akun '+esc(p.title)+'" />':'<img src="icon.png" alt="GankStore" />')+stBadge+'</div><div class="detail-panel"><div class="dlg-game">'+esc(p.game)+stLabel+'</div><h1>'+esc(p.title)+'</h1><div class="dlg-specs">'+specsHTML(p)+'</div><p class="dlg-desc">'+esc(p.desc||"Semua rincian transaksi ada di invoice setelah kamu klik Beli Sekarang.")+'</p><div class="dlg-price">'+formatIDR(p.price)+'</div><p class="dlg-stock">Stok tersedia: <b>'+c.av+' unit</b>'+(c.total>0?' dari '+c.total+' unit':'')+'</p><p style="color:var(--ink-soft);font-size:14.5px;margin:-8px 0 16px;font-weight:600">+ biaya admin ' + feePct() + ' ('+formatIDR(adminFee(p.price))+') di invoice · <strong>Total bayar '+formatIDR(Number(p.price||0)+adminFee(p.price))+'</strong></p><div class="dlg-actions">'+buyHTML+'<button class="btn-detail" type="button" id="detailCopy">Salin Detail</button></div><p style="color:var(--ink-faint);font-size:14px;margin:16px 0 0">Klik Beli Sekarang — 1 unit stok ditandai <strong>Dipesan</strong> atas namamu dan invoice langsung terbit. Setelah lunas dikonfirmasi, username &amp; password akun ditampilkan <strong>satu kali</strong> di halaman sukses.</p></div></div>';
         var db=document.getElementById("detailBuyNow");if(db)db.addEventListener("click",function(){trackBuy(p).then(function(o){if(o)location.hash="#/invoice/"+encodeURIComponent(o.invoiceNo);});});
         var cp=document.getElementById("detailCopy");if(cp)cp.addEventListener("click",function(){
           var text=p.title+" — "+p.game+"\n"+(p.rank?"Rank: "+p.rank+"\n":"")+(p.level?"Level: "+p.level+"\n":"")+(p.server?"Server: "+p.server+"\n":"")+((p.specs||[]).length?"Isi akun: "+p.specs.join(", ")+"\n":"")+"Harga: "+formatIDR(p.price);
@@ -1045,7 +1085,7 @@ function initServer(attempt){
           '<div class="stat"><b>'+analytics.pageViews+'</b><span>Kunjungan — <a href="#/admin/laporan" style="color:var(--accent-strong);font-weight:800">detail di Statistik &amp; Live</a></span></div>'+
           '<div class="stat"><b>'+formatIDR(totalRevenue())+'</b><span>Total penjualan</span></div>'+
           '<div class="stat"><b>'+analytics.orders.length+'</b><span>Pesanan masuk</span></div>'+
-          '<div class="stat"><b>Midtrans</b><span>Pembayaran invoice · biaya admin 10% — <a href="#/admin/pengaturan" style="color:var(--accent-strong);font-weight:800">detail di Pengaturan</a></span></div>';
+          '<div class="stat"><b>Midtrans</b><span>Pembayaran invoice · biaya admin ' + feePct() + ' — <a href="#/admin/pengaturan" style="color:var(--accent-strong);font-weight:800">detail di Pengaturan</a></span></div>';
       }
 
       /* ---------- Daftar Stok (admin) — model unit ----------
@@ -1549,6 +1589,106 @@ function initGoogleSignIn(){
         loadLiveChatMessages();
         var box = document.getElementById("liveChatMessages");
         if (box) box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      /* ---------- Pengaturan Toko lengkap (12 Nov 2026) ----------
+         Isi form dari tabel settings (server = sumber kebenaran), simpan
+         per kartu lewat Supa.updateSetting (RLS: hanya admin). Saklar
+         disimpan langsung saat diubah; input teks/% + pengumuman lewat
+         tombol Simpan. Setelah simpan, GS_STORE + ticker dimuat ulang. */
+      function renderSettingsAdmin(){
+        if (!isAdminUser()) { showToast("Hanya admin yang bisa membuka Pengaturan Toko."); return; }
+        var $ = function(id){ return document.getElementById(id); };
+        function val(id){ var el = $(id); return el ? String(el.value || "") : ""; }
+        function setVal(id, v){ var el = $(id); if (el) el.value = v; }
+        function setTxt(id, t){ var el = $(id); if (el) el.textContent = t; }
+        function note(id, t){ setTxt(id, t); }
+        var busy = false;
+        function fillFeeExample(){
+          var inp = $("setFeeRate");
+          var pct = inp ? parseFloat(inp.value) : NaN;
+          if (isNaN(pct)) pct = Math.round(storeFeeRate() * 100);
+          var fee = Math.round(1000 * pct / 100);
+          setTxt("feeExample", "Contoh: akun Rp1.000 → admin Rp" + fee.toLocaleString("id-ID") + " → total Rp" + (1000 + fee).toLocaleString("id-ID"));
+        }
+        function save(keys, noteId, okMsg){
+          if (busy) return Promise.resolve(false);
+          if (!window.Supa || !Supa.updateSetting) { note(noteId, "Gagal: Supabase belum terhubung."); return Promise.resolve(false); }
+          busy = true;
+          note(noteId, "Menyimpan…");
+          var chain = Promise.resolve();
+          keys.forEach(function(kv){
+            chain = chain.then(function(){ return Supa.updateSetting(kv[0], kv[1]); });
+          });
+          return chain.then(function(){
+            return Supa.getSettings(true).then(function(s){ applyStoreSettings(s || {}); }).catch(function(){});
+          }).then(function(){
+            busy = false;
+            try { renderTicker(); } catch (e) {}
+            note(noteId, okMsg || "Tersimpan.");
+            showToast(okMsg || "Pengaturan tersimpan.");
+            fillFeeExample();
+            return true;
+          }).catch(function(e){
+            busy = false;
+            note(noteId, "Gagal menyimpan: " + (e && e.message ? e.message : "server tidak terjangkau"));
+            return false;
+          });
+        }
+        /* getSettings/listPushSubscriptions bisa throw SINKRON bila klien
+           Supabase belum ada (CDN gagal dimuat) — bungkus supaya halaman
+           Pengaturan tetap tampil dengan nilai default, bukan crash. */
+        function safeSettings(){ try { return (window.Supa && Supa.getSettings) ? Supa.getSettings(true) : Promise.resolve({}); } catch (e) { return Promise.resolve({}); } }
+        function safePushList(){ try { return (window.Supa && Supa.listPushSubscriptions) ? Supa.listPushSubscriptions() : Promise.resolve([]); } catch (e) { return Promise.resolve([]); } }
+        safeSettings().catch(function(){ return {}; }).then(function(s){
+          s = s || {};
+          setVal("setStoreName", s.store_name || "GankStore");
+          setVal("setStoreTagline", s.store_tagline || "");
+          setVal("setStoreWa", s.store_whatsapp || "6289681992892");
+          setVal("setStoreEmail", s.store_email || "panglimaa09@gmail.com");
+          setVal("setStoreTelegram", s.store_telegram || "");
+          setVal("setFeeRate", String(Math.round((parseFloat(s.admin_fee_rate) || 0.10) * 1000) / 10));
+          var tm = $("setTopupMaint"); if (tm) tm.checked = String(s.topup_maintenance || "true") === "true";
+          setTxt("topupMaintState", String(s.topup_maintenance || "true") === "true" ? "Maintenance — pembeli tidak bisa order top up." : "Aktif — pembeli bisa order top up.");
+          var sc = $("setStoreClosed"); if (sc) sc.checked = String(s.store_closed || "false") === "true";
+          setTxt("closedState", String(s.store_closed || "false") === "true" ? "Tutup. Tombol Beli dinonaktifkan." : "Buka. Pembeli bisa membeli.");
+          setVal("setAnnouncement", s.announcement || "");
+          fillFeeExample();
+        });
+        api("/api/topup/packages").catch(function(){ return []; }).then(function(list){ setTxt("tpPkgCount", String((list || []).length)); });
+        safePushList().catch(function(){ return []; }).then(function(list){ setTxt("pushCount", String((list || []).length)); });
+        var b1 = $("btnSaveProfile");
+        if (b1 && !b1._wired) { b1._wired = true; b1.addEventListener("click", function(){
+          var wa = val("setStoreWa").replace(/\D/g, "");
+          if (!wa) { note("profileNote", "Nomor WhatsApp wajib diisi (angka saja, diawali 62)."); return; }
+          var email = val("setStoreEmail").trim();
+          if (email && email.indexOf("@") < 0) { note("profileNote", "Email tidak valid."); return; }
+          save([["store_name", val("setStoreName").trim() || "GankStore"], ["store_tagline", val("setStoreTagline").trim()], ["store_whatsapp", wa], ["store_email", email], ["store_telegram", val("setStoreTelegram").trim().replace(/^@/, "")]], "profileNote", "Profil toko tersimpan.");
+        }); }
+        var b2 = $("btnSaveFee");
+        if (b2 && !b2._wired) { b2._wired = true; b2.addEventListener("click", function(){
+          var pct = parseFloat(val("setFeeRate"));
+          if (isNaN(pct) || pct < 0 || pct > 50) { note("feeNote", "Isi biaya admin 0–50 (%)."); return; }
+          save([["admin_fee_rate", String(pct / 100)]], "feeNote", "Biaya admin " + pct + "% tersimpan — berlaku untuk invoice baru.");
+        }); }
+        var fi = $("setFeeRate");
+        if (fi && !fi._wired) { fi._wired = true; fi.addEventListener("input", fillFeeExample); }
+        var tm2 = $("setTopupMaint");
+        if (tm2 && !tm2._wired) { tm2._wired = true; tm2.addEventListener("change", function(){
+          save([["topup_maintenance", tm2.checked ? "true" : "false"]], "topupNote", tm2.checked ? "Top Up maintenance aktif. Pembeli tidak bisa order." : "Top Up dibuka kembali.");
+          setTxt("topupMaintState", tm2.checked ? "Maintenance aktif. Pembeli tidak bisa order top up." : "Aktif. Pembeli bisa order top up.");
+          if (window.GS_CONFIG) window.GS_CONFIG.TOPUP_MAINTENANCE = tm2.checked;
+        }); }
+        var sc2 = $("setStoreClosed");
+        if (sc2 && !sc2._wired) { sc2._wired = true; sc2.addEventListener("change", function(){
+          save([["store_closed", sc2.checked ? "true" : "false"]], "storeNote", sc2.checked ? "Toko ditutup sementara." : "Toko dibuka kembali.");
+          setTxt("closedState", sc2.checked ? "Tutup. Tombol Beli dinonaktifkan." : "Buka. Pembeli bisa membeli.");
+          if (window.GS_STORE) window.GS_STORE.closed = sc2.checked;
+          try { renderTicker(); } catch (e) {}
+        }); }
+        var b3 = $("btnSaveStore");
+        if (b3 && !b3._wired) { b3._wired = true; b3.addEventListener("click", function(){
+          save([["announcement", val("setAnnouncement").trim()]], "storeNote", "Pengumuman tersimpan — tampil di ticker beranda.");
+        }); }
       }
       function renderLiveChatAdmin(){
         if (!isAdminUser()) return;

@@ -6,7 +6,9 @@ window.GS_CONFIG = {
   /* Game untuk katalog akun (tetap Point Blank saja). */
   GAMES: ["Point Blank"],
 
-  /* Biaya admin: 10% dari harga, berlaku untuk akun dan top up. */
+  /* Biaya admin DEFAULT: 10% dari harga, berlaku untuk akun dan top up.
+     Admin bisa mengubahnya lewat Pengaturan Toko — nilai di tabel
+     settings (admin_fee_rate) yang dipakai server dan aplikasi. */
   ADMIN_FEE_RATE: 0.10,
 
   /* Top Up sedang MAINTENANCE (perintah Tuan, 6 Nov 2026): pembeli tidak

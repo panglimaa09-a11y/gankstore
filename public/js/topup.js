@@ -123,7 +123,7 @@ var TopUp = (function(){
         el.innerHTML = '<div class="card-body"><div class="card-title">' + esc(p.name) + '</div>' +
           '<div class="card-specs"><span>' + esc(String(p.amount)) + " " + esc(p.currency) + '</span><span>' + esc(p.game) + '</span></div>' +
           '<div class="card-foot"><div class="pkg-price">' + formatIDR(p.price) + '</div>' +
-          '<div style="font-size:13px;color:var(--ink-faint);font-weight:600">+ biaya admin 10% · total ' + formatIDR(Number(p.price || 0) + adminFee(p.price)) + '</div>' +
+          '<div style="font-size:13px;color:var(--ink-faint);font-weight:600">+ biaya admin ' + feePct() + ' · total ' + formatIDR(Number(p.price || 0) + adminFee(p.price)) + '</div>' +
           '<div class="card-actions"><button class="btn-buy" type="button" data-pick="' + p.id + '">Pilih Paket</button></div></div></div>';
         box.appendChild(el);
       });
@@ -163,7 +163,7 @@ var TopUp = (function(){
     var fee = adminFee(selectedPkg.price);
     sel.innerHTML = "<b>" + esc(selectedPkg.name) + "</b> — " + esc(selectedPkg.game) + " (" + esc(String(selectedPkg.amount)) + " " + esc(selectedPkg.currency) + ")";
     box.innerHTML = '<div class="inv-row"><span>Harga paket</span><b>' + formatIDR(selectedPkg.price) + '</b></div>' +
-      '<div class="inv-row"><span>Biaya admin (10%)</span><b>' + formatIDR(fee) + '</b></div>' +
+      '<div class="inv-row"><span>Biaya admin (' + feePct() + ')</span><b>' + formatIDR(fee) + '</b></div>' +
       '<div class="inv-row total"><span>Total bayar</span><b>' + formatIDR(Number(selectedPkg.price || 0) + fee) + '</b></div>';
   }
 

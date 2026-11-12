@@ -78,19 +78,18 @@ function renderQrisCode(amount){
    bukti ke WhatsApp toko; admin konfirmasi lunas manual dari Daftar Stok. */
 function manualQrisBlock(o){
   var total = (typeof formatIDR === "function") ? formatIDR(o.total) : ("Rp" + o.total);
-  var waText = encodeURIComponent("Invoice bukti pembayaran " + o.invoiceNo + " — total " + total + ". Foto bukti terlampir.");
   return '<div class="pay-method qris-manual"><b>Bayar manual via QRIS</b>' +
     '<p>Scan kode QRIS di bawah dengan aplikasi apa saja (DANA, GoPay, OVO, m-banking) — nominal <strong>' + total + '</strong> sudah terisi otomatis, tinggal periksa lalu konfirmasi. Atas nama NEXORA TEAM.</p>' +
     '<div class="qris-code" id="qrisCode"></div>' +
     '<button class="qris-refresh" type="button" id="btnRefreshQris"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>Refresh QRIS</button>' +
     '<p class="qris-total">Total bayar: <b>' + total + '</b></p>' +
-    '<p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (089681992892). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p>' +
-    '<a class="btn-pay" id="btnWaProof" href="https://wa.me/6289681992892?text=' + waText + '" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div>';
+    '<p>Setelah bayar, kirim bukti pembayaran ke WhatsApp toko (' + storeWaDisplay() + '). Begitu dikonfirmasi lunas, data akun langsung diserahkan ke kamu.</p>' +
+    '<a class="btn-pay" id="btnWaProof" href="' + storeWaLink("Invoice bukti pembayaran " + o.invoiceNo + " — total " + total + ". Foto bukti terlampir.") + '" target="_blank" rel="noopener">Kirim Bukti via WhatsApp</a></div>';
 }
 
 /* Blok tombol bayar di halaman invoice (dipanggil dari renderInvoice). */
 function midtransPayBlock(o){
-  var note = "QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin 10%).";
+  var note = "QRIS, e-wallet, atau virtual account bank — total yang dibayar adalah total invoice di atas (harga + biaya admin " + (typeof feePct === "function" ? feePct() : "10%") + ").";
   var manual = manualQrisBlock(o);
   if (!Server.enabled) {
     return manual + '<div class="pay-method"><b>Metode pembayaran: Midtrans</b><p>' + note + '</p></div>' +
